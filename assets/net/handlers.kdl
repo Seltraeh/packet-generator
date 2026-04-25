@@ -39,6 +39,7 @@ import "../net/npc.kdl"
 import "../net/friends.kdl"
 import "../net/event.kdl"
 import "../net/featuring_gate.kdl"
+import "../net/town.kdl"
 
 json InitializeReq {
     doc "Initialization command"
