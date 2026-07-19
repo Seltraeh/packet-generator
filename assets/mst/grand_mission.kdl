@@ -1,0 +1,496 @@
+// F_GRAND_MISSION_* — the Grand Mission (Grand Gaia / "Grand Quest")
+// subsystem MSTs.  IDA names this family "Campaign*MstResponse"; the
+// server-side Campaign handlers (CampaignStart/CampaignMissionGet/...)
+// are the runtime consumers.  10 tables ported 2026-07-19 from
+// 2-mst-decoded to deploy/system/grand_mission_*.json; wrapper keys are
+// each struct's `hash`, sourced from response_mappings.json
+// (mst_responses, response_class as noted per struct).
+//
+// Value evidence in field docs was captured from the ported
+// deploy/system files (26/28/325/357/118/30/1420/46/965/371 rows).
+// Naming: fields reuse names already established for the same hash in
+// other KDL files where one exists (pos_x/pos_y from town.kdl,
+// battle_group_ids/bgm_map/conditions from mission.kdl, the
+// present_type/target_id/target_cnt reward triple from
+// daily_task.kdl / frontier_hunter.kdl, ...).  Unknown fields use
+// unk<N> names — the wire hash in `key` is the stable grep handle.
+
+json GrandMissionMst {
+    hash "as8G75gK"
+    doc "F_GRAND_MISSION_MST — one row per Grand Mission (26 rows).  Wrapper key from response_class=CampaignMissionMstResponse (response_key=as8G75gK, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_mst.json."
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "Grand Mission ID (primary key).  Range 5000000-5200002; referenced as the FK by every other grand_mission_* table."
+    }
+
+    field chapter type="i32::str" {
+        key "24biyLHp"
+        doc "Chapter grouping (1-5).  Same hash is `chapter` in mst/mission.kdl."
+    }
+
+    field map_id type="i32::str" {
+        key "H9sx5D08"
+        doc "FK into GrandMissionMapMst.id (values 1-808)."
+    }
+
+    field unk1 type="i32::str" {
+        key "0u1nvMeS"
+        doc "// UNVERIFIED: constant \"99\" across all 26 rows — some cap/limit (level cap?).  Type from value shape only."
+    }
+
+    field description type=str {
+        key "e0XmDu4q"
+        doc "Mission objective text shown on the info panel.  Captured: \"Find and rescue Gazia\", \"Explore the Infinite Void.\""
+    }
+
+    field fail_condition type=str {
+        key "0xFHwMf7"
+        doc "Failure-condition text.  Captured: \"Squad fell in battle\", \"・Defeat Cardes\" (some rows carry a leading ・ bullet)."
+    }
+
+    field banner_img type=str {
+        key "yTPw0BD7"
+        doc "Banner image filename, grand_quest_NNN.png."
+    }
+
+    field thumbnail_img type=str {
+        key "M2cv6dum"
+        doc "Thumbnail image filename, grand_quest_NNN_thum.png.  Same hash is `thumbnail_img` in mst/dungeon_key.kdl."
+    }
+
+    field unk2 type="i32::str" {
+        key "gFq59B6X"
+        doc "// UNVERIFIED: values 1-4 — plausibly a difficulty tier or sort bucket."
+    }
+
+    field unk3 type=str {
+        key "oPsmRC18"
+        doc "// UNVERIFIED format — kept as `str`: colon-joined comma-quads with irregular tails.  Captured: \"\", \"0,0,5,1,0\", \"-1,0,3,1:-1,0,4,1:0,0,2,1:0,0,5,1\"."
+    }
+
+    field unk4 type="[i32::str]::sep(comma)" {
+        key "Mw3F0V8C"
+        doc "// UNVERIFIED semantics: comma list of 1s, one element per something (per-difficulty flags?).  Captured: \"1\", \"1,1\", \"1,1,1,1\"."
+    }
+
+    field unk5 type="i32::str" {
+        key "yWiB93z0"
+        doc "// UNVERIFIED: 0-300 in coarse steps (100/120/140/...) — plausibly a recommended squad cost."
+    }
+
+    field deck_cost type="i32::str" {
+        key "ziex06DY"
+        doc "Deck-cost cap for the mission; 0 = uncapped.  Captured values: 0, 54.  Same hash is `deck_cost` in mst/user_level.kdl."
+    }
+
+    field unk6 type="i32::str" {
+        key "17JnyicA"
+        doc "// UNVERIFIED: only 0/1 observed — boolean flag of unknown meaning."
+    }
+
+    field reserve_party_disp_flg type="i32::str" {
+        key "W1EkCyc3"
+        doc "Whether the reserve-party UI shows (name per the same hash in net/handlers.kdl).  Constant \"0\" in this table."
+    }
+
+    field bgm type=str {
+        key "2ty57Bcv"
+        doc "Mission BGM filename (mp3), e.g. bf021_map_wasteland.mp3."
+    }
+}
+
+json GrandMissionMapMst {
+    hash "iyCP4N1h"
+    doc "F_GRAND_MISSION_MAP_MST — world-map canvas per Grand Mission map (28 rows).  Wrapper key from response_class=CampaignMapMstResponse (response_key=iyCP4N1h, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_map_mst.json."
+
+    field id type="i32::str" {
+        key "H9sx5D08"
+        doc "Map ID (primary key); referenced by GrandMissionMst.map_id."
+    }
+
+    field name type=str {
+        key "0QyCU1dR"
+        doc "Internal map name, e.g. \"Baladormap\", \"GQX4MAP\"."
+    }
+
+    field img type=str {
+        key "b5VveUd8"
+        doc "Kept as `str`: composite tile list \"<file.jpg>:<x>:<y>,...\" — colon+comma mixed, not an int array.  Captured: \"grand_map000_01.jpg:0:0,grand_map000_02.jpg:0:1024,...\".  Same hash is `img` in mst/first_desc.kdl."
+    }
+
+    field rect1_pos type="[i32::str]::sep(comma)" {
+        key "d54Z3hUc"
+        doc "// UNVERIFIED: x,y pair — constant \"0,0\"; likely the map viewport origin."
+    }
+
+    field rect1_size type="[i32::str]::sep(comma)" {
+        key "sdE1oku7"
+        doc "// UNVERIFIED: w,h pair — captured \"1280,1140\", \"2138,3411\"; likely the map pixel size."
+    }
+
+    field rect2_pos type="[i32::str]::sep(comma)" {
+        key "U0s6Wkoq"
+        doc "// UNVERIFIED: second x,y pair — constant \"0,0\" (scroll rect?)."
+    }
+
+    field rect2_size type="[i32::str]::sep(comma)" {
+        key "W4QdZ6pE"
+        doc "// UNVERIFIED: second w,h pair — mirrors rect1_size in all captured rows."
+    }
+}
+
+json GrandMissionSpotMst {
+    hash "aqb6LS9y"
+    doc "F_GRAND_MISSION_SPOT_MST — map spots / battle points (325 rows; composite key mission_id+point_num).  Wrapper key from response_class=CampaignMapSpotMstResponse (response_key=aqb6LS9y, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_spot_mst.json."
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field point_num type="i32::str" {
+        key "7w0inC1R"
+        doc "Spot number within the mission (1-27).  Same hash is `now_point_num` on the CampaignMissionEntry wire struct (net/handlers.kdl) — the user's saved position points at one of these."
+    }
+
+    field unk1 type="i32::str" {
+        key "0se8qAz1"
+        doc "// UNVERIFIED: constant \"1\" across all 325 rows."
+    }
+
+    field name type=str {
+        key "u3HFse2a"
+        doc "Spot display name, e.g. \"Abandoned Gardens\" (\"???\" for hidden spots)."
+    }
+
+    field img type=str {
+        key "b5VveUd8"
+        doc "Spot image — empty in every captured row (map tiles come from GrandMissionMapMst.img instead)."
+    }
+
+    field pos_x type="i32::str" {
+        key "SnNtTh51"
+        doc "Map X position (0-1800).  Same hash is `pos_x` in mst/town.kdl."
+    }
+
+    field pos_y type="i32::str" {
+        key "M6C1aXfR"
+        doc "Map Y position (100-2875).  Same hash is `pos_y` in mst/town.kdl."
+    }
+
+    field battle_img type=str {
+        key "L8iA9M6c"
+        doc "Battle background image, dungeon_battle_NNNNN.jpg.  Same hash exists as `unknown_L8iA9M6c` in mst/mission.kdl — these values identify it as the battle background."
+    }
+
+    field battle_group_ids type=str {
+        key "8f4NYKxb"
+        doc "Kept as `str`: \"<idx>:<battle_group_id>\" colon pairs, empty for non-battle spots.  Captured: \"\", \"0:101600\".  Same hash and name in mst/mission.kdl."
+    }
+
+    field bgm_map type=str {
+        key "3sRN9BPS"
+        doc "Map BGM (mp3) while on this spot; empty inherits the mission default.  Same hash and name in mst/mission.kdl."
+    }
+
+    field flag_conditions type=str {
+        key "VhX9c8YL"
+        doc "Kept as `str`: \"<flag_id>:<state>\" comma list gating spot visibility (flag ids are GrandMissionFlgMst.id).  Captured: \"\", \"150007:1\", \"10000:1,10001:1\"."
+    }
+}
+
+json GrandMissionRouteMst {
+    hash "Ri1S0JQX"
+    doc "F_GRAND_MISSION_ROUTE_MST — edges connecting map spots (357 rows).  Wrapper key from response_class=CampaignMapRouteMstResponse (response_key=Ri1S0JQX, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_route_mst.json."
+
+    field id type="i32::str" {
+        key "1rcF7R6W"
+        doc "Route ID (primary key)."
+    }
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field from_point type="i32::str" {
+        key "YnVo64z1"
+        doc "// UNVERIFIED direction: spot number at one end of the edge (1-26); range matches GrandMissionSpotMst.point_num."
+    }
+
+    field to_point type="i32::str" {
+        key "AKZ7u5iN"
+        doc "// UNVERIFIED direction: spot number at the other end (1-27)."
+    }
+
+    field battle_group_id type="u32::str" {
+        key "ZSf8e1MG"
+        doc "Battle triggered while traversing the route; 0 = none.  Same hash and name (u32::str) in mst/mission.kdl."
+    }
+
+    field flag_conditions type=str {
+        key "VhX9c8YL"
+        doc "Kept as `str`: flag gate list; mixes comma AND @ separators.  Captured: \"\", \"10000:1,10001:1\", \"100003:1@1\"."
+    }
+}
+
+json GrandMissionIconMst {
+    hash "HUo5G8gz"
+    doc "F_GRAND_MISSION_ICON_MST — decorative/enemy icons placed on the map (118 rows).  Wrapper key from response_class=CampaignMapIconMstResponse (response_key=HUo5G8gz, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_icon_mst.json."
+
+    field id type="i32::str" {
+        key "TMc8k5uF"
+        doc "Icon ID (primary key)."
+    }
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field point_num type="i32::str" {
+        key "7w0inC1R"
+        doc "Spot number the icon is anchored to (10-25)."
+    }
+
+    field img type=str {
+        key "b5VveUd8"
+        doc "Icon asset: GrandBossIcon.sam / GrandEnemyIcon.sam / grand_map_event.png."
+    }
+
+    field offset_x type="i32::str" {
+        key "1s75aGuA"
+        doc "// UNVERIFIED: X offset from the anchor spot (0 or 34 here; 35 in GrandMissionTreasureMst)."
+    }
+
+    field offset_y type="i32::str" {
+        key "1FGjr6Jb"
+        doc "// UNVERIFIED: Y offset from the anchor spot (-20..21)."
+    }
+
+    field flag_conditions type=str {
+        key "VhX9c8YL"
+        doc "Kept as `str`: \"<flag_id>:<state>\" comma list gating icon visibility.  Captured: \"\", \"100000:1,100012:0\"."
+    }
+}
+
+json GrandMissionTreasureMst {
+    hash "hpGBs2R1"
+    doc "F_GRAND_MISSION_TREASURE_MST — treasure chests on the map (30 rows).  Wrapper key from response_class=CampaignMapTreasureMstResponse (response_key=hpGBs2R1, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_treasure_mst.json."
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field id type="i32::str" {
+        key "zIW1vVk2"
+        doc "Treasure ID (primary key)."
+    }
+
+    field point_num type="i32::str" {
+        key "7w0inC1R"
+        doc "Spot number the chest sits on (1-19)."
+    }
+
+    field rarity type="i32::str" {
+        key "7ofj5xa1"
+        doc "Chest tier: 1 or 2 (silver/gold).  Same hash is `rarity` in mst/item.kdl."
+    }
+
+    field reward_id type="i32::str" {
+        key "N1b6SUW4"
+        doc "FK to GrandMissionRewardMst.id — the reward granted on opening.  Same hash is `reward_id` in mst/frontier_hunter.kdl."
+    }
+
+    field offset_x type="i32::str" {
+        key "1s75aGuA"
+        doc "// UNVERIFIED: X offset from the anchor spot (constant 35)."
+    }
+
+    field offset_y type="i32::str" {
+        key "1FGjr6Jb"
+        doc "// UNVERIFIED: Y offset from the anchor spot (constant 21)."
+    }
+
+    field flag_id type="i32::str" {
+        key "VhX9c8YL"
+        doc "Single flag id (GrandMissionFlgMst.id) tracking the opened state.  Pure int in this table — the sibling tables use \"<flag_id>:<state>\" strings under the same hash."
+    }
+
+    field conditions type=str {
+        key "q7Nit8JW"
+        doc "Kept as `str`: \"<id>:<state>\" pair or empty.  Captured: \"\", \"115:0\", \"309:0\".  Same hash is `conditions` (str) in mst/mission.kdl."
+    }
+}
+
+json GrandMissionFlgMst {
+    hash "27tgwCUN"
+    doc "F_GRAND_MISSION_FLG_MST — per-mission progress flags (1420 rows).  Wrapper key from response_class=CampaignFlgMstResponse (response_key=27tgwCUN, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_flg_mst.json."
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field flg_type type="i32::str" {
+        key "ky1xsH0h"
+        doc "// UNVERIFIED: 1 or 2 — flag category."
+    }
+
+    field id type="i32::str" {
+        key "NML08EGS"
+        doc "Flag ID (primary key; unique across all 1420 rows).  Referenced by the flag_conditions/flag_id fields of the spot/route/icon/treasure tables."
+    }
+
+    field percent type="i32::str" {
+        key "ug9xV4Fz"
+        doc "Completion percent contributed by this flag (0-80).  All captured values are whole ints, so typed i32::str; the same hash is `percent` (f32::str) in mst/mission.kdl."
+    }
+
+    field description type=str {
+        key "qp37xTDh"
+        doc "Flag description shown in the completion list; placeholder rows use \" \", \"-\" or \"-0\".  Same hash is `description` in mst/frontier_hunter.kdl and mst/gacha.kdl."
+    }
+
+    field difficulty_level type="i32::str" {
+        key "97yTNbfr"
+        doc "0-3.  Same hash is `difficulty_level` in mst/item.kdl."
+    }
+
+    field unk1 type="i32::str" {
+        key "Ufm6c7RA"
+        doc "// UNVERIFIED: only 0/1 observed — possibly a hidden/secret-flag marker."
+    }
+}
+
+json GrandMissionEndCndMst {
+    hash "0sT4d2zV"
+    doc "F_GRAND_MISSION_END_CND_MST — mission end/clear conditions (46 rows).  Wrapper key from response_class=CampaignMissionEndCndMstResponse (response_key=0sT4d2zV, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_end_cnd_mst.json."
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field unk1 type="i32::str" {
+        key "3rqe6W5V"
+        doc "// UNVERIFIED: constant \"1\" across all 46 rows."
+    }
+
+    field disp_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "Display order / condition id (unique per row, 100-8700).  Same hash is `disp_order` in mst/mission.kdl."
+    }
+
+    field cnd_type type="i32::str" {
+        key "29MgiJIQ"
+        doc "// UNVERIFIED: constant \"1\" here; the same hash carries 1-3 in GrandMissionEventMst."
+    }
+
+    field param type="i32::str" {
+        key "37moriMq"
+        doc "Condition parameter — every captured value is a GrandMissionFlgMst.id-shaped int (10003-801221).  Same hash is `reward_param` in mst/daily_task.kdl / mst/frontier_hunter.kdl; kept int-typed here because this table never carries the colon form."
+    }
+}
+
+json GrandMissionEventMst {
+    hash "x3kCNR4Y"
+    doc "F_GRAND_MISSION_EVENT_MST — scripted map events (965 rows).  Wrapper key from response_class=CampaignEventMstResponse (response_key=x3kCNR4Y, is_mst=true).  CAPTURED FROM: deploy/system/grand_mission_event_mst.json."
+
+    field id type="i32::str" {
+        key "Wmr4xDa8"
+        doc "Event ID (primary key)."
+    }
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id."
+    }
+
+    field priority type="i32::str" {
+        key "yu18xScw"
+        doc "Event priority (10-30).  Same hash is `priority` in mst/gacha.kdl / mst/passive_skill.kdl."
+    }
+
+    field event_type type="i32::str" {
+        key "29MgiJIQ"
+        doc "// UNVERIFIED: 1-3 — event category."
+    }
+
+    field target_id type="i32::str" {
+        key "TdDHf59J"
+        doc "// UNVERIFIED semantics: 0-8731, id of the event's target (spot/flag?).  Same hash is `target_id` in mst/frontier_hunter.kdl."
+    }
+
+    field event_params type=str {
+        key "duN7tx0R"
+        doc "Kept as `str` — trigger/effect list mixing comma+colon groups.  Captured: \"\", \"1,0:501,100003,0\", \"1,0:500,8114,1:501,801014,1:...\"."
+    }
+
+    field event_script type=str {
+        key "85HpkjZW"
+        doc "Kept as `str` — scenario script chain, @-separated groups referencing scenario .txt files.  Captured: \"1,GQX1_1.txt@501,801000,1\"."
+    }
+}
+
+json GrandMissionRewardMst {
+    hash "Q83eyrJM"
+    doc "F_GRAND_MISSION_REWARD_MST — reward definitions (371 rows).  Wrapper key from response_class=CampaignRewardBonusMstResponse (response_key=Q83eyrJM, is_mst=true) — the only reward-shaped class in the Campaign MST family; name match is convention-based.  CAPTURED FROM: deploy/system/grand_mission_reward_mst.json."
+
+    field id type="i32::str" {
+        key "N1b6SUW4"
+        doc "Reward ID (primary key); referenced by GrandMissionTreasureMst.reward_id."
+    }
+
+    field mission_id type="i32::str" {
+        key "j28VNcUW"
+        doc "FK to GrandMissionMst.mission_id.  27 distinct values here vs 26 GrandMissionMst rows — one reward row references a mission id absent from the mst table."
+    }
+
+    field reward_type type="i32::str" {
+        key "IkmC8gG2"
+        doc "Reward category: 1, 2 or 4.  Same hash is `reward_type` in mst/arena.kdl."
+    }
+
+    field conditions type=str {
+        key "q7Nit8JW"
+        doc "Kept as `str` NOT i32::str: values are int-shaped but ~empty in many rows, and an empty string does not survive an int codec.  Captured: \"\", \"100\", \"1000000\".  Same hash is `conditions` in mst/mission.kdl."
+    }
+
+    field unk1 type="i32::str" {
+        key "64hAvkZX"
+        doc "// UNVERIFIED: only 0/1 observed."
+    }
+
+    field present_type type="i32::str" {
+        key "30Kw4WBa"
+        doc "Present/reward kind (3,4,11,12,...).  Same hash is `present_type` in mst/daily_task.kdl — the standard reward triple with target_id + target_cnt."
+    }
+
+    field target_id type="i32::str" {
+        key "TdDHf59J"
+        doc "Rewarded entity id (unit/item id etc. depending on present_type); 0-87602602."
+    }
+
+    field target_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "Reward quantity (1-10000).  Same hash is `target_cnt` in mst/frontier_hunter.kdl / `reward_count` in mst/daily_task.kdl."
+    }
+
+    field param type=str {
+        key "37moriMq"
+        doc "Kept as `str` NOT [i32::str]::sep(colon): captured values include \"1:00\" and \"1:01\" whose leading zeros would not survive an int-array round-trip.  Captured: \"0\", \"1:0\", \"1:00\", \"1:01\"."
+    }
+
+    field name type=str {
+        key "I0ZNnm4b"
+        doc "// UNVERIFIED split vs `description`: short reward label.  Captured: \"100% Completion Bonus\", \"20% Completion Bonus\"."
+    }
+
+    field description type=str {
+        key "zwwtHlMM"
+        doc "// UNVERIFIED split vs `name`: longer reward text (135 distinct values vs name's 76)."
+    }
+}
