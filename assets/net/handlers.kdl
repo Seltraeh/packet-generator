@@ -34,6 +34,18 @@ import "../mst/guild.kdl"
 import "../mst/frontier_gate.kdl"
 import "../mst/purchase.kdl"
 import "../mst/summoner.kdl"
+// mst/skill.kdl and mst/mission_ep3.kdl were authored in the §8.37 pass but
+// never imported, so their structs were never generated.  NOT imported here:
+// mst/mission_npc_unit.kdl and mst/mission_script.kdl, whose wrapper hashes
+// are still placeholders (mission_script's collides with the real
+// scenario_info wire key N4XVE1uA) — see tools/MST_PORTING_BACKLOG.md.
+import "../mst/skill.kdl"
+import "../mst/mission_ep3.kdl"
+import "../mst/unit_evo.kdl"
+import "../mst/unit_ext.kdl"
+import "../mst/skill_ext.kdl"
+import "../mst/area.kdl"
+import "../mst/shop.kdl"
 import "../mst/scenario.kdl"
 import "../net/signal_key.kdl"
 import "../net/challenge_arena.kdl"

@@ -104,6 +104,7 @@ json SkillMst {
 
     field unknown_R8uaKdbf type=str {
         key "R8uaKdbf"
-        doc "Unknown — observed values: ',,' or 'id,id,id'"
+        doc "Unknown — observed values: ',,' or 'id,id,id'.  JSON null on 22 of the 33,381 rows in deploy/system/skill_mst.json, hence optional: without it the strict boot-time parse throws."
+        optional #true
     }
 }

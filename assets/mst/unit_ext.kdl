@@ -1,0 +1,277 @@
+// Unit side-tables: type definitions, per-unit extras, EP3 costs, animation
+// manifests, flavour comments, and the Frontier Evolution (FE) skill tree.
+// All ported in the handbook §8.37 pass; wired 2026-08-05.  Wrapper keys are
+// each struct's `hash`.
+//
+// Value evidence in field docs was captured from the ported deploy/system
+// files (6/8/31/2292/2282/5124/2041 rows).
+//
+// Most display strings in these tables are localisation KEYS
+// ("MST_UNITTYPES_1_NAME", "MST_UNITCOMMENT_51367_DESCRIPTION") rather than
+// text — the client resolves them against its own string bundle, so an empty
+// look on the wire is expected.
+
+json UnitTypeMst {
+    doc "Unit type (Lord/Anima/Breaker/Guardian/Oracle) modifiers (wrapper hash LBY10TPU).  6 rows."
+    hash "LBY10TPU"
+
+    field unit_type_id type="i32::str" {
+        key "nBTx56W9"
+        doc "Type id 1..6.  Same hash/name as net/unit.kdl."
+    }
+
+    field name type="str" {
+        key "Z3ocmb5J"
+        doc "Localisation key for the type name — \"MST_UNITTYPES_1_NAME\" .. \"_6_NAME\"."
+    }
+
+    field unk1 type="[i32::str]::sep(comma)" {
+        key "76IHLVsz"
+        doc "// UNVERIFIED: comma pair, elements 0..15."
+    }
+
+    field unk2 type="[i32::str]::sep(comma)" {
+        key "2M4mQZgk"
+        doc "// UNVERIFIED: comma pair, elements 0..3."
+    }
+
+    field unk3 type="[i32::str]::sep(comma)" {
+        key "Sj9zR38K"
+        doc "// UNVERIFIED: comma pair, elements -3..3 — the signed stat bias this type applies."
+    }
+
+    field unk4 type="[i32::str]::sep(comma)" {
+        key "6D3YN9rc"
+        doc "// UNVERIFIED: comma pair, elements -3..4."
+    }
+
+    field unk5 type="str" {
+        key "ChD5b0jR"
+        doc "// UNVERIFIED: a DECIMAL string (\"0.00\" .. \"10.00\") — kept as a string, there is no float scalar in the type vocabulary."
+    }
+
+    field unk6 type="str" {
+        key "7N1smiod"
+        doc "// UNVERIFIED: a DECIMAL string (\"0.50\" / \"0.75\") — kept as a string for the same reason."
+    }
+}
+
+json UnitExtMst {
+    doc "Per-unit extra parameters (wrapper hash 0H1hV6iD).  Only 8 rows — a sparse override table, not a per-unit row."
+    hash "0H1hV6iD"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit this override applies to (10452..60812).  Same hash/name as unit.kdl."
+    }
+
+    field unk1 type="[i32::str]::sep(colon)" {
+        key "VS7df4oH"
+        doc "// UNVERIFIED: colon quad, elements 0..150 (\"0:0:0:20\") — a stat or rate override."
+    }
+
+    field unk2 type="i32::str" {
+        key "FKVRt01T"
+        doc "// UNVERIFIED: 0/1 flag."
+    }
+
+    field unk3 type="i32::str" {
+        key "dyFUE5fN"
+        doc "// UNVERIFIED: 0..2."
+    }
+}
+
+json UnitEp3Mst {
+    doc "Episode 3 unit unlock costs (wrapper hash XFD1gtfo).  31 rows.  Pairs with MissionEp3Mst in mst/mission_ep3.kdl."
+    hash "XFD1gtfo"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit unlocked (10202..60334).  Same hash/name as unit.kdl."
+    }
+
+    field process_id type="i32::str" {
+        key "hjAy9St3"
+        doc "// UNVERIFIED: 1 or 2 — the unlock kind.  Same hash/name as passive_skill.kdl."
+    }
+
+    field unk1 type="i32::str" {
+        key "gg69JHMH"
+        doc "// UNVERIFIED: 1..2000 (a quantity or threshold)."
+    }
+
+    field zel type="i32::str" {
+        key "Najhr8m6"
+        doc "Zel cost (832..500000).  Same hash mission.kdl/raid.kdl use for zel amounts."
+    }
+}
+
+json UnitCgsMst {
+    doc "Per-unit animation manifests (wrapper hash 07bx6EXN).  2292 rows."
+    hash "07bx6EXN"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit (1..87602603).  Same hash/name as unit.kdl."
+    }
+
+    field anime_files type="str" {
+        key "Kn51uR4Y"
+        doc "// UNVERIFIED shape: PIPE-joined \"<slot>:<file.sam>\" entries — \"1:unit_anime_60584.sam|2:unit_anime_60584.sam|...\".  Kept packed: the outer separator is '|' and the inner is ':', and the same hash carries a completely different colon-triple shape in SkillLevelMst (mst/skill_ext.kdl)."
+    }
+}
+
+json UnitCommentMst {
+    doc "Unit flavour text (wrapper hash gkVH5p8r).  2282 rows — all five text columns are localisation keys or blank."
+    hash "gkVH5p8r"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit (10011..87602603).  Same hash/name as unit.kdl."
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "Localisation key — \"MST_UNITCOMMENT_51367_DESCRIPTION\", or blank.  Same hash/name as item.kdl.  A plain string: free text elsewhere contains commas."
+    }
+
+    field unk1 type="str" {
+        key "gb0qGa1W"
+        doc "// UNVERIFIED: blank or a single space on every captured row."
+    }
+
+    field unk2 type="str" {
+        key "0pMem1xg"
+        doc "// UNVERIFIED: blank or a single space on every captured row."
+    }
+
+    field unk3 type="str" {
+        key "fBg92Ki7"
+        doc "// UNVERIFIED: empty string in all 2282 rows."
+    }
+
+    field unk4 type="str" {
+        key "ZEzhmS53"
+        doc "// UNVERIFIED: blank or \"0\"."
+    }
+}
+
+json UnitFeSkillMst {
+    doc "Frontier Evolution skill nodes (wrapper hash kXes8fSi).  5124 rows — the per-unit FE tree.  Distinct from F_FE_SKILL_MST, which is still unported (no response class)."
+    hash "kXes8fSi"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit this node belongs to (10017..861008).  Same hash/name as unit.kdl."
+    }
+
+    field category_id type="i32::str" {
+        key "VgU78CYj"
+        doc "FE category 1..11 — UnitFeCategoryMst.category_id."
+    }
+
+    field display_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "Node order within the category (1..25).  Same hash/name as banner.kdl."
+    }
+
+    field skill_id type="i32::str" {
+        key "ri6D9yBi"
+        doc "// UNVERIFIED (named from context): skill granted by the node (100500..1900000002)."
+    }
+
+    field unk1 type="str" {
+        key "FHThxDv4"
+        doc "// UNVERIFIED: at-joined entries whose elements can embed '/' (\"1@140000\", \"1000000189/1\").  Kept packed: '/' is not a supported separator."
+    }
+
+    field description type="str" {
+        key "7XYkj2EU"
+        doc "Node effect text — Japanese (\"「攻撃ＢＢの威力をアップ」習得\") or English; free text containing commas and quotes, hence a plain string."
+    }
+}
+
+json UnitFeCategoryMst {
+    doc "Frontier Evolution categories (wrapper hash kvSPgNAk).  2041 rows.  Every column after display_order is zero in the shipped data — the table reuses UnitEvoMst's material/flag hashes but never populates them."
+    hash "kvSPgNAk"
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "Unit (10017..861008).  Same hash/name as unit.kdl."
+    }
+
+    field category_id type="i32::str" {
+        key "VgU78CYj"
+        doc "Category id 1..11 — joined by UnitFeSkillMst.category_id."
+    }
+
+    field name type="str" {
+        key "XLSB42ED"
+        doc "Category name — Japanese, e.g. \"スパーク系\" (Spark), \"特殊\" (Special)."
+    }
+
+    field display_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "Order within the unit (1..8).  Same hash/name as banner.kdl."
+    }
+
+    field zel type="i32::str" {
+        key "Rs7bCE3t"
+        doc "// UNVERIFIED: constant 0.  This hash is the zel cost in UnitEvoMst."
+    }
+
+    field karma type="i32::str" {
+        key "HTVh8a65"
+        doc "// UNVERIFIED: constant 0.  Same hash/name as mission.kdl."
+    }
+
+    field unk1 type="i32::str" {
+        key "Xyt6rhx2"
+        doc "// UNVERIFIED: constant 0 (constant 1 in UnitEvoMst)."
+    }
+
+    field unk2 type="i32::str" {
+        key "0tna4Idu"
+        doc "// UNVERIFIED: constant 0."
+    }
+
+    field unk3 type="i32::str" {
+        key "6GwnugW3"
+        doc "// UNVERIFIED: constant 0."
+    }
+
+    field unk4 type="i32::str" {
+        key "hdF8ND2H"
+        doc "// UNVERIFIED: constant 0."
+    }
+
+    field unk5 type="i32::str" {
+        key "nB7pFdR0"
+        doc "// UNVERIFIED: constant 0."
+    }
+
+    field material_1 type="i32::str" {
+        key "85X6JHQA"
+        doc "// UNVERIFIED: constant 0 here; a material unit id in UnitEvoMst."
+    }
+
+    field material_2 type="i32::str" {
+        key "wh3YRU08"
+        doc "// UNVERIFIED: constant 0 here."
+    }
+
+    field material_3 type="i32::str" {
+        key "7MxucW2J"
+        doc "// UNVERIFIED: constant 0 here."
+    }
+
+    field material_4 type="i32::str" {
+        key "j7fTS3ca"
+        doc "// UNVERIFIED: constant 0 here."
+    }
+
+    field material_5 type="i32::str" {
+        key "Hb8yfmv7"
+        doc "// UNVERIFIED: constant 0 here."
+    }
+}

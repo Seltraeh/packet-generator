@@ -1,0 +1,250 @@
+// World-map geography: gates (top-level continents), areas, and dungeons.
+// All ported in the handbook §8.37 pass; wired 2026-08-05.  Wrapper keys are
+// each struct's `hash`.
+//
+// Value evidence in field docs was captured from the ported deploy/system
+// files (5/411/1532 rows).
+//
+// AreaMst carries JSON NULLs — 284 of its 411 rows have a null `unk1`, plus
+// one null each in `scenario_info` and `unk3`.  Those three fields are
+// `optional #true` so glaze parses null into std::nullopt; without it the
+// strict boot-time parse throws.  This is the first table in the port where
+// null (as opposed to "") appears at all.
+
+json GateMst {
+    doc "World gates (wrapper hash uYHZWC73).  5 rows — Grand Gaia, Ishgria, and the later continents."
+    hash "uYHZWC73"
+
+    field gate_id type="i32::str" {
+        key "0Cq2AlXW"
+        doc "Gate id — 1..4 plus a 999 sentinel row."
+    }
+
+    field name type="str" {
+        key "5vZPshoA"
+        doc "Localisation key for the gate name — \"MST_DUNGEONS_GATE_1_NAME\" — or raw Japanese on the later rows (\"異界\", \"第三部召喚術研究所\")."
+    }
+
+    field unk1 type="i32::str" {
+        key "v0OseM39"
+        doc "// UNVERIFIED: 0..3."
+    }
+
+    field land_img type="str" {
+        key "ip4q1qC7"
+        doc "// UNVERIFIED (named from value): world-map art set — \"landimg\", \"landishugliaimg\"."
+    }
+
+    field bgm type="str" {
+        key "bagWQVt9"
+        doc "World-map BGM — \"bf005_worldmap.mp3\", \"bf066_ishu_worldmap.mp3\"."
+    }
+
+    field unk2 type="i32::str" {
+        key "CvVtDnVM"
+        doc "// UNVERIFIED: constant 1."
+    }
+
+    field image type="str" {
+        key "1gDkL6XR"
+        doc "Gate select button — \"areaselect_grandgaia_btn.png\".  Same hash/name as banner.kdl."
+    }
+
+    field unk3 type="[i32::str]::sep(comma)" {
+        key "gW70zeZ5"
+        doc "// UNVERIFIED: comma quad, elements 0..649 (\"90,166,0,0\") — a map placement rect.  Empty on the sentinel row.  raid.kdl carries this hash as unk4."
+    }
+
+    field unk4 type="[i32::str]::sep(comma)" {
+        key "iP4oueV8"
+        doc "// UNVERIFIED: comma pair, elements 350..700 (\"350,350\", \"350,700\") — likely the map canvas size."
+    }
+
+    field priority type="i32::str" {
+        key "yu18xScw"
+        doc "Sort priority 1..3.  Same hash/name as gacha.kdl."
+    }
+
+    field unk5 type="i32::str" {
+        key "jfN15EdJ"
+        doc "// UNVERIFIED: 0..99."
+    }
+
+    field need_mission_id type="i32::str" {
+        key "HSRhkf70"
+        doc "Mission that unlocks the gate (0 = open from the start; 1577 for Ishgria).  Same hash/name as sound.kdl/town.kdl."
+    }
+
+    field scenario_info type="i32::str" {
+        key "N4XVE1uA"
+        doc "Constant 0 here.  Same hash arena.kdl/LoginInfoReq use for scenario_info; a comma list of .txt scripts in DungeonMst below."
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "Localisation key (\"MST_DUNGEONS_GATE_1_Description\") or raw Japanese.  Same hash/name as item.kdl."
+    }
+}
+
+json AreaMst {
+    doc "World areas (wrapper hash 3SG2wX0R).  411 rows.  Three fields are optional because the shipped data uses JSON null -- see the file header."
+    hash "3SG2wX0R"
+
+    field unk1 type="str" {
+        key "sHMai2ZG"
+        doc "// UNVERIFIED: JSON NULL on 284 of 411 rows, \"0\" on the rest.  Optional for that reason."
+        optional #true
+    }
+
+    field area_id type="i32::str" {
+        key "VjCY7rX4"
+        doc "Area id (0..80014021; row 0 is a sentinel).  Same hash/name as net/mission.kdl."
+    }
+
+    field name type="str" {
+        key "V84mzqoX"
+        doc "Area name — \"Mistral\", \"Atro\", \"Bounties\"; blank on the sentinel row.  Free text containing commas, hence a plain string."
+    }
+
+    field unk2 type="i32::str" {
+        key "3v1qg7Uj"
+        doc "// UNVERIFIED: 0..10."
+    }
+
+    field land_id type="i32::str" {
+        key "9C64Qwe0"
+        doc "Land this area sits on (0..999).  Same hash/name as net/mission.kdl.  F_LAND_MST itself is still unported (no response class)."
+    }
+
+    field display_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "Display order (0..202103173 — later rows encode a date).  Same hash/name as banner.kdl."
+    }
+
+    field img type="str" {
+        key "b5VveUd8"
+        doc "Area background — \"area_0001.jpg\", \"area_sp.jpg\".  Same hash/name as first_desc.kdl."
+    }
+
+    field plate_img type="str" {
+        key "H0UB8pqm"
+        doc "// UNVERIFIED (named from value): area name plate — \"area_plate_0001.png\", \"grand_quest_x.png\"."
+    }
+
+    field need_mission_id type="[i32::str]::sep(comma)" {
+        key "HSRhkf70"
+        doc "Prerequisite mission ids — comma list (elements 0..104410).  Same hash/name as sound.kdl; a comma list as in raid.kdl."
+    }
+
+    field unk3 type="str" {
+        key "np4K1xtq"
+        doc "// UNVERIFIED: empty string in all 411 rows."
+    }
+
+    field scenario_info type="str" {
+        key "N4XVE1uA"
+        doc "// UNVERIFIED: \"0\" on almost every row, JSON NULL on one.  Optional for that reason.  Same hash arena.kdl uses for scenario_info."
+        optional #true
+    }
+
+    field unk4 type="str" {
+        key "gq73WFmj"
+        doc "// UNVERIFIED: blank on almost every row, JSON NULL on one.  Optional for that reason."
+        optional #true
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "Area blurb — Japanese (\"目覚めた地に待つ試練\") or blank.  Same hash/name as item.kdl."
+    }
+}
+
+json DungeonMst {
+    doc "Dungeons (wrapper hash 01pzrTCm).  1532 rows — the quest nodes placed on each area map."
+    hash "01pzrTCm"
+
+    field dungeon_id type="i32::str" {
+        key "MHx05sXt"
+        doc "Dungeon id (1..800000015).  Same hash/name as dungeon_key.kdl/mission.kdl."
+    }
+
+    field name type="str" {
+        key "bWsLFP96"
+        doc "Dungeon name — Japanese (\"神兜殿\", \"神樹海\") or English.  Free text embedding ':' and '@' on some rows, hence a plain string."
+    }
+
+    field land_id type="i32::str" {
+        key "9C64Qwe0"
+        doc "Land (1..999).  Same hash/name as AreaMst."
+    }
+
+    field area_id type="i32::str" {
+        key "VjCY7rX4"
+        doc "Area this dungeon belongs to — AreaMst.area_id."
+    }
+
+    field unk1 type="i32::str" {
+        key "3hPeI1RV"
+        doc "// UNVERIFIED: 0..1000."
+    }
+
+    field display_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "Order within the area (1..100).  Same hash/name as banner.kdl."
+    }
+
+    field room_asset type="str" {
+        key "21VKZo0E"
+        doc "// UNVERIFIED: decoration overlay — \"kaoringo_icon.png\"; blank on most rows.  raid.kdl carries this hash as room_asset."
+    }
+
+    field img type="str" {
+        key "L8iA9M6c"
+        doc "Battle background — \"dungeon_battle_10100.jpg\".  Same hash/name as raid.kdl."
+    }
+
+    field thumbnail_img type="str" {
+        key "M2cv6dum"
+        doc "Node thumbnail; blank on most rows.  Same hash/name as dungeon_key.kdl."
+    }
+
+    field pos_x type="i32::str" {
+        key "SnNtTh51"
+        doc "Map x position (0..500).  Same hash/name as grand_mission.kdl/raid.kdl."
+    }
+
+    field pos_y type="i32::str" {
+        key "M6C1aXfR"
+        doc "Map y position (0..860).  Same hash/name as grand_mission.kdl/raid.kdl."
+    }
+
+    field need_mission_id type="[i32::str]::sep(comma)" {
+        key "HSRhkf70"
+        doc "Prerequisite mission ids — comma list (elements 0..83015903).  Same hash/name as sound.kdl."
+    }
+
+    field unk2 type="str" {
+        key "np4K1xtq"
+        doc "// UNVERIFIED: empty string in all 1532 rows."
+    }
+
+    field unk3 type="str" {
+        key "sYsa10a3"
+        doc "// UNVERIFIED: empty string in all 1532 rows."
+    }
+
+    field scenario_info type="[str]::sep(comma)" {
+        key "N4XVE1uA"
+        doc "Cutscene scripts — comma pair of .txt filenames or \"0\" (\"grand_01_op.txt,0\", \"0,0\").  A COMMA LIST here; the same hash is a plain int in GateMst above and a bare filename in raid.kdl."
+    }
+
+    field unk4 type="i32::str" {
+        key "0u1nvMeS"
+        doc "// UNVERIFIED: 1..200002035.  mission.kdl carries this hash as unk1."
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "Dungeon blurb — free text embedding '@' on some rows, hence a plain string.  Same hash/name as item.kdl."
+    }
+}
