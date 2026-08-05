@@ -62,37 +62,37 @@ json SummonerAbilityMst {
 }
 
 json SummonerAbilityLevelMst {
-    doc "Summoner ability level table (wrapper hash 6XHRamCn, SummonerAbilityLevelMstResponse).  389 rows — the per-level SP cost and effect of each ability."
+    doc "Summoner ability level table (wrapper hash 6XHRamCn, SummonerAbilityLevelMstResponse).  389 rows — the per-level SP cost and effect of each ability.  FIELD NAMES CONFIRMED against SummonerAbilityLevelMstResponse::readParam (IDA, 2026-08-05): every key below matched the setter the binary calls for it, so this struct is verified rather than inferred — unlike the rest of this file."
     hash "6XHRamCn"
 
     field ability_id type="i32::str" {
         key "5pkWU4yH"
-        doc "Ability this row levels — SummonerAbilityMst.id (1001..1019)."
+        doc "Ability this row levels — SummonerAbilityMst.id (1001..1019).  CONFIRMED: setSummonerAbilityID."
     }
 
     field lv type="i32::str" {
         key "D9wXQI2V"
-        doc "Ability level 1..50.  Same hash/name as unit.kdl/town.kdl."
+        doc "Ability level 1..50.  CONFIRMED: setSummonerAbilityLevel.  Same hash/name as unit.kdl/town.kdl."
     }
 
     field name type="str" {
         key "NgrYgZht"
-        doc "Ability name — Japanese only, e.g. \"最大ＨＰ強化\" (Max HP Boost).  Repeats across every level of the same ability."
+        doc "Ability name — Japanese only, e.g. \"最大ＨＰ強化\" (Max HP Boost).  Repeats across every level of the same ability.  CONFIRMED: setSummonerAbilityName."
     }
 
     field need_sp type="i32::str" {
         key "nm1USVcx"
-        doc "// UNVERIFIED (named from context): SP required to reach this level — 0 at level 1, rising to 90000."
+        doc "SP required to reach this level — 0 at level 1, rising to 90000.  CONFIRMED: setNeedSP (this was an inferred guess before the readParam landed)."
     }
 
     field ability_up_id type="i32::str" {
         key "qfg7P2sK"
-        doc "Effect granted at this level — SummonerAbilityUpMst.id (1001..19050)."
+        doc "Effect granted at this level — SummonerAbilityUpMst.id (1001..19050).  CONFIRMED: setAbilityUpID."
     }
 
     field description type="str" {
         key "qp37xTDh"
-        doc "Level blurb — e.g. \"最大ＨＰ＋１％\"; higher tiers carry <br> markup.  Same hash/name as item.kdl/gacha.kdl."
+        doc "Level blurb — e.g. \"最大ＨＰ＋１％\"; higher tiers carry <br> markup.  CONFIRMED: setDescription.  Same hash/name as item.kdl/gacha.kdl."
     }
 }
 
