@@ -215,9 +215,9 @@ json SummonerArmElementMst {
         doc "// UNVERIFIED (named from shape): comma list of \"<lv>:<ability_up_id>:<n>\" triples — the level at which each ability unlocks for this arm/element (\"23:701001:1,52:701021:1\")."
     }
 
-    field unk2 type="[str]::sep(comma)" {
+    field damage_frame type="[str]::sep(comma)" {
         key "6Aou5M9r"
-        doc "// UNVERIFIED: comma list of \"<lv>:<a>:<b>:<c>\" quads (\"23:25:2:2,27:15:2:2\") — a second per-level schedule, present on every row."
+        doc "CONFIRMED setDamageFrame (readParam).  comma list of \"<lv>:<a>:<b>:<c>\" quads (\"23:25:2:2,27:15:2:2\") — a second per-level schedule, present on every row."
     }
 
     field drop_check_count type="i32::str" {
@@ -245,9 +245,9 @@ json SummonerArmElementMst {
         doc "Skill move type 1..3.  Same hash/name as unit.kdl."
     }
 
-    field unk3 type="[i32::str]::sep(comma)" {
+    field move_offset type="[i32::str]::sep(comma)" {
         key "jFX0a7qe"
-        doc "// UNVERIFIED: comma pair, negatives included — \"0,0\", \"-15,0\", \"35,10\" (a sprite offset?)."
+        doc "CONFIRMED setMoveOffset (readParam).  comma pair, negatives included — \"0,0\", \"-15,0\", \"35,10\" (a sprite offset?)."
     }
 
     field after_image type="i32::str" {
