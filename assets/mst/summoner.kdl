@@ -172,7 +172,7 @@ json SummonerArmMst {
 }
 
 json SummonerArmElementMst {
-    doc "Per-element arm stat blocks (wrapper hash kgaeVEzx, SummonerArmElementMstResponse).  276 rows = 23 arms x 6 elements x 2 (the pairs are duplicated in the source data)."
+    doc "Per-element arm stat blocks (wrapper hash kgaeVEzx, SummonerArmElementMstResponse).  276 rows but only 144 DISTINCT — 132 rows are exact duplicates of another row.  Measured 2026-08-06; an earlier note here guessed a clean 23 arms x 6 elements x 2 doubling, which the data does not support (23 x 6 = 138, not 144, and the multiplicity is mixed: some rows appear once, some twice).  The duplication is in the decoded source, not introduced by the port."
     hash "kgaeVEzx"
 
     field arm_id type="i32::str" {
