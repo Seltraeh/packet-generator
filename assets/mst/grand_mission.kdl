@@ -359,9 +359,9 @@ json GrandMissionFlgMst {
         doc "0-3.  Same hash is `difficulty_level` in mst/item.kdl."
     }
 
-    field unk1 type="i32::str" {
+    field disp_flg type="i32::str" {
         key "Ufm6c7RA"
-        doc "// UNVERIFIED: only 0/1 observed — possibly a hidden/secret-flag marker."
+        doc "CONFIRMED setDispFlg (readParam).  only 0/1 observed — possibly a hidden/secret-flag marker."
     }
 }
 
@@ -374,9 +374,9 @@ json GrandMissionEndCndMst {
         doc "FK to GrandMissionMst.mission_id."
     }
 
-    field unk1 type="i32::str" {
+    field end_type type="i32::str" {
         key "3rqe6W5V"
-        doc "// UNVERIFIED: constant \"1\" across all 46 rows."
+        doc "CONFIRMED setEndType (readParam).  constant \"1\" across all 46 rows."
     }
 
     field disp_order type="i32::str" {

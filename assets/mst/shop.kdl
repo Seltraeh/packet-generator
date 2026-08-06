@@ -140,113 +140,113 @@ json PvpFixedSettingMst {
         doc "Ruleset id 1..3.  Same hash banner.kdl uses for its row ids."
     }
 
-    field unk1 type="[i32::str]::sep(colon)" {
+    field atk_mod type="[i32::str]::sep(colon)" {
         key "dnqyyMg6"
-        doc "// UNVERIFIED: colon quad, elements 800..1000 (a per-tier percentage)."
+        doc "CONFIRMED setAtkMod (readParam).  colon quad, elements 800..1000 (a per-tier percentage)."
     }
 
-    field unk2 type="[i32::str]::sep(colon)" {
+    field def_mod type="[i32::str]::sep(colon)" {
         key "ZmG6sGxv"
-        doc "// UNVERIFIED: colon quad, elements 1000..1100."
+        doc "CONFIRMED setDefMod (readParam).  colon quad, elements 1000..1100."
     }
 
-    field unk3 type="[i32::str]::sep(colon)" {
+    field hp_mod type="[i32::str]::sep(colon)" {
         key "sKf4Koy4"
-        doc "// UNVERIFIED: colon quad, elements 1000..1550."
+        doc "CONFIRMED setHpMod (readParam).  colon quad, elements 1000..1550."
     }
 
-    field unk4 type="[i32::str]::sep(colon)" {
+    field rec_mod type="[i32::str]::sep(colon)" {
         key "y2SlttSX"
-        doc "// UNVERIFIED: colon quad, constant 1000."
+        doc "CONFIRMED setRecMod (readParam).  colon quad, constant 1000."
     }
 
-    field unk5 type="[i32::str]::sep(colon)" {
+    field heart_crystal_rev_rate_mod type="[i32::str]::sep(colon)" {
         key "4s95TBoj"
-        doc "// UNVERIFIED: colon quad, constant 1000."
+        doc "CONFIRMED setHeartCrystalRevRateMod (readParam).  colon quad, constant 1000."
     }
 
-    field unk6 type="[i32::str]::sep(colon)" {
+    field bb_dmg_mod type="[i32::str]::sep(colon)" {
         key "absaNyoQ"
-        doc "// UNVERIFIED: colon quad, elements 750..1000."
+        doc "CONFIRMED setBBDmgMod (readParam).  colon quad, elements 750..1000."
     }
 
-    field unk7 type="[i32::str]::sep(colon)" {
+    field sbb_dmg_mod type="[i32::str]::sep(colon)" {
         key "PlaeXUOH"
-        doc "// UNVERIFIED: colon quad, elements 900..1050."
+        doc "CONFIRMED setSBBDmgMod (readParam).  colon quad, elements 900..1050."
     }
 
-    field unk8 type="[i32::str]::sep(colon)" {
+    field ubb_dmg_mod type="[i32::str]::sep(colon)" {
         key "6luDhf9o"
-        doc "// UNVERIFIED: colon quad, constant 1000."
+        doc "CONFIRMED setUBBDmgMod (readParam).  colon quad, constant 1000."
     }
 
-    field unk9 type="[i32::str]::sep(colon)" {
+    field bb_crystal_rev_rate_mod type="[i32::str]::sep(colon)" {
         key "b7KUiAfA"
-        doc "// UNVERIFIED: colon quad, elements 500..1000."
+        doc "CONFIRMED setBBCrystalRevRateMod (readParam).  colon quad, elements 500..1000."
     }
 
-    field unk10 type="[i32::str]::sep(colon)" {
+    field general_bb_fill_rate type="[i32::str]::sep(colon)" {
         key "OiVfjAUf"
-        doc "// UNVERIFIED: colon quad, elements 700..1000."
+        doc "CONFIRMED setGeneralBBFillRate (readParam).  colon quad, elements 700..1000."
     }
 
-    field unk11 type="[i32::str]::sep(colon)" {
+    field active_healing_cap type="[i32::str]::sep(colon)" {
         key "aYJ8ALCR"
-        doc "// UNVERIFIED: colon quad, elements 20000..50000 (an HP or damage cap)."
+        doc "CONFIRMED setActiveHealingCap (readParam).  colon quad, elements 20000..50000 (an HP or damage cap)."
     }
 
-    field unk12 type="[i32::str]::sep(colon)" {
+    field passive_healing_cap type="[i32::str]::sep(colon)" {
         key "XNwxUiRr"
-        doc "// UNVERIFIED: colon quad, elements 20000..30000."
+        doc "CONFIRMED setPassiveHealingCap (readParam).  colon quad, elements 20000..30000."
     }
 
-    field unk13 type="[i32::str]::sep(colon)" {
+    field mitigation_cap type="[i32::str]::sep(colon)" {
         key "EeZ8VYuI"
-        doc "// UNVERIFIED: colon quad, elements 20..50."
+        doc "CONFIRMED setMitigationCap (readParam).  colon quad, elements 20..50."
     }
 
-    field unk14 type="[i32::str]::sep(colon)" {
+    field damage_decrease_cap type="[i32::str]::sep(colon)" {
         key "Pf0mF6gK"
-        doc "// UNVERIFIED: colon quad, constant 100."
+        doc "CONFIRMED setDamageDecreaseCap (readParam).  colon quad, constant 100."
     }
 
-    field unk15 type="[i32::str]::sep(colon)" {
+    field elem_damage_decrease_cap type="[i32::str]::sep(colon)" {
         key "2QxsR0hy"
-        doc "// UNVERIFIED: colon quad, constant 100."
+        doc "CONFIRMED setElemDamageDecreaseCap (readParam).  colon quad, constant 100."
     }
 
-    field unk16 type="[i32::str]::sep(colon)" {
+    field active_reraise_cap type="[i32::str]::sep(colon)" {
         key "6pXtgtPA"
-        doc "// UNVERIFIED: colon quad, constant 2."
+        doc "CONFIRMED setActiveReraiseCap (readParam).  colon quad, constant 2."
     }
 
-    field unk17 type="[i32::str]::sep(colon)" {
+    field passive_reraise_cap type="[i32::str]::sep(colon)" {
         key "CuVhQmOv"
-        doc "// UNVERIFIED: colon quad, constant 2."
+        doc "CONFIRMED setPassiveReraiseCap (readParam).  colon quad, constant 2."
     }
 
-    field unk18 type="[i32::str]::sep(colon)" {
+    field active_damage_over_time_cap type="[i32::str]::sep(colon)" {
         key "uFheXxzX"
-        doc "// UNVERIFIED: colon quad, constant 100."
+        doc "CONFIRMED setActiveDamageOverTimeCap (readParam).  colon quad, constant 100."
     }
 
-    field unk19 type="[i32::str]::sep(colon)" {
+    field passive_damage_over_time_cap type="[i32::str]::sep(colon)" {
         key "oaKBPw9e"
-        doc "// UNVERIFIED: colon quad, elements 50..100."
+        doc "CONFIRMED setPassiveDamageOverTimeCap (readParam).  colon quad, elements 50..100."
     }
 
-    field unk20 type="[i32::str]::sep(colon)" {
+    field bb_reduce_cap type="[i32::str]::sep(colon)" {
         key "c6oqlnlT"
-        doc "// UNVERIFIED: colon quad, elements 50..100."
+        doc "CONFIRMED setBBReduceCap (readParam).  colon quad, elements 50..100."
     }
 
-    field unk21 type="[str]::sep(comma)" {
+    field unit_enabled_parts type="[str]::sep(comma)" {
         key "0HL6ujld"
-        doc "// UNVERIFIED: the one non-quad column — a comma list whose elements are themselves colon-joined sextets (\"1,1,1,1,1,1:1,1,1,1,1,1:...\"), so elements stay strings.  Likely a per-slot allow mask."
+        doc "CONFIRMED setUnitEnabledParts (readParam).  the one non-quad column — a comma list whose elements are themselves colon-joined sextets (\"1,1,1,1,1,1:1,1,1,1,1,1:...\"), so elements stay strings.  Likely a per-slot allow mask."
     }
 
-    field unk22 type="[i32::str]::sep(colon)" {
+    field passive_no_damage_cap type="[i32::str]::sep(colon)" {
         key "clwU9Ona"
-        doc "// UNVERIFIED: colon quad, elements 25..50."
+        doc "CONFIRMED setPassiveNoDamageCap (readParam).  colon quad, elements 25..50."
     }
 }

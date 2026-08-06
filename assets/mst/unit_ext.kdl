@@ -95,9 +95,9 @@ json UnitEp3Mst {
         doc "// UNVERIFIED: 1 or 2 — the unlock kind.  Same hash/name as passive_skill.kdl."
     }
 
-    field unk1 type="i32::str" {
+    field value type="i32::str" {
         key "gg69JHMH"
-        doc "// UNVERIFIED: 1..2000 (a quantity or threshold)."
+        doc "CONFIRMED setValue (readParam).  1..2000 (a quantity or threshold)."
     }
 
     field zel type="i32::str" {
@@ -135,24 +135,24 @@ json UnitCommentMst {
         doc "Localisation key — \"MST_UNITCOMMENT_51367_DESCRIPTION\", or blank.  Same hash/name as item.kdl.  A plain string: free text elsewhere contains commas."
     }
 
-    field unk1 type="str" {
+    field comment_mix type="str" {
         key "gb0qGa1W"
-        doc "// UNVERIFIED: blank or a single space on every captured row."
+        doc "CONFIRMED setCommentMix (readParam).  blank or a single space on every captured row."
     }
 
-    field unk2 type="str" {
+    field comment_evo type="str" {
         key "0pMem1xg"
-        doc "// UNVERIFIED: blank or a single space on every captured row."
+        doc "CONFIRMED setCommentEvo (readParam).  blank or a single space on every captured row."
     }
 
-    field unk3 type="str" {
+    field comment_skill type="str" {
         key "fBg92Ki7"
-        doc "// UNVERIFIED: empty string in all 2282 rows."
+        doc "CONFIRMED setCommentSkill (readParam).  empty string in all 2282 rows."
     }
 
-    field unk4 type="str" {
+    field comment_summon type="str" {
         key "ZEzhmS53"
-        doc "// UNVERIFIED: blank or \"0\"."
+        doc "CONFIRMED setCommentSummon (readParam).  blank or \"0\"."
     }
 }
 
@@ -180,9 +180,9 @@ json UnitFeSkillMst {
         doc "// UNVERIFIED (named from context): skill granted by the node (100500..1900000002)."
     }
 
-    field unk1 type="str" {
+    field term_skill type="str" {
         key "FHThxDv4"
-        doc "// UNVERIFIED: at-joined entries whose elements can embed '/' (\"1@140000\", \"1000000189/1\").  Kept packed: '/' is not a supported separator."
+        doc "CONFIRMED setTermSkill (readParam).  at-joined entries whose elements can embed '/' (\"1@140000\", \"1000000189/1\").  Kept packed: '/' is not a supported separator."
     }
 
     field description type="str" {

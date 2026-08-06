@@ -105,9 +105,9 @@ json ColosseumFormationMst {
         doc "Formation set — 1 for the 1xx ids, 2 for the 2xx ids.  Same hash/name as net/user.kdl."
     }
 
-    field unk1 type="i32::str" {
+    field element type="i32::str" {
         key "iNy0ZU5M"
-        doc "// UNVERIFIED: 1..3, the index within the set.  This hash is `element` in unit.kdl/skill.kdl — that meaning does not apply here."
+        doc "CONFIRMED setElement (readParam).  1..3, the index within the set.  This hash is `element` in unit.kdl/skill.kdl — that meaning does not apply here."
     }
 
     field img type="[str]::sep(comma)" {
@@ -140,9 +140,9 @@ json ColosseumSupportMst {
         doc "Support name — Japanese only, e.g. \"ブレイブライズ\"."
     }
 
-    field unk1 type="i32::str" {
+    field support_type type="i32::str" {
         key "esz3O04i"
-        doc "// UNVERIFIED: constant 1 here (1 or 2 in FrontierGateSupportMst, where it looks like a category split)."
+        doc "CONFIRMED setSupportType (readParam).  constant 1 here (1 or 2 in FrontierGateSupportMst, where it looks like a category split)."
     }
 
     field process_id type="[i32::str]::sep(at)" {

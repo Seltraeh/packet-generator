@@ -44,9 +44,9 @@ json RaidWorldMst {
         doc "Short world prefix — captured \"rw1\"."
     }
 
-    field unk1 type="i32::str" {
+    field interval_sec type="i32::str" {
         key "Rqc8pi0x"
-        doc "// UNVERIFIED: constant 4 — likely the max party/room size."
+        doc "CONFIRMED setIntervalSec (readParam).  constant 4 — likely the max party/room size."
     }
 }
 
@@ -99,9 +99,9 @@ json RaidRcMst {
         doc "// UNVERIFIED (named from context): raid class rank id, 2..7 captured.  friends.kdl still carries this hash as unk_7x3pPB2C."
     }
 
-    field unk1 type="[str]::sep(comma)" {
+    field reward_info type="[str]::sep(comma)" {
         key "JQ23rIvk"
-        doc "// UNVERIFIED: comma list of packed colon tuples — captured \"6:20302:1:1:1,8:0:3:0:0\".  Likely the rank-up requirement set."
+        doc "CONFIRMED setRewardInfo (readParam).  comma list of packed colon tuples — captured \"6:20302:1:1:1,8:0:3:0:0\".  Likely the rank-up requirement set."
     }
 
     field scenario_info type="str" {
@@ -159,29 +159,29 @@ json RaidBossMst {
         doc "Battle BGM — e.g. \"bf049_raid_boss.mp3\"."
     }
 
-    field unk1 type="i32::str" {
+    field recover_comp_sec type="i32::str" {
         key "8Pbr70Wv"
-        doc "// UNVERIFIED: 0..60 captured."
+        doc "CONFIRMED setRecoverCompSec (readParam).  0..60 captured."
     }
 
-    field unk2 type="i32::str" {
+    field move_time type="i32::str" {
         key "iSgK67Du"
-        doc "// UNVERIFIED: 0..5 captured (difficulty tier?)."
+        doc "CONFIRMED setMoveTime (readParam).  0..5 captured (difficulty tier?)."
     }
 
-    field unk3 type="i32::str" {
+    field interval_move_time type="i32::str" {
         key "w46VY1zm"
-        doc "// UNVERIFIED: 0..1800 captured (time limit in seconds?)."
+        doc "CONFIRMED setIntervalMoveTime (readParam).  0..1800 captured (time limit in seconds?)."
     }
 
-    field unk4 type="i32::str" {
+    field escape_hp_per type="i32::str" {
         key "ogFx8s2Y"
-        doc "// UNVERIFIED: 0..30 captured."
+        doc "CONFIRMED setEscapeHpPer (readParam).  0..30 captured."
     }
 
-    field unk5 type="i32::str" {
+    field rest_flg type="i32::str" {
         key "S8NI2xZk"
-        doc "// UNVERIFIED: 0/1 flag."
+        doc "CONFIRMED setRestFlg (readParam).  0/1 flag."
     }
 }
 
@@ -309,9 +309,9 @@ json RaidMissionBossMst {
     doc "Boss placements per raid mission (wrapper hash 7pJD5tNd, RaidMissionBossMstResponse).  264 rows."
     hash "7pJD5tNd"
 
-    field unk1 type="i32::str" {
+    field mission_boss_id type="i32::str" {
         key "SP29fLtH"
-        doc "// UNVERIFIED: 1..88003 captured — placement/slot ordinal on low rows, mission-id-like on high rows."
+        doc "CONFIRMED setMissionBossID (readParam).  1..88003 captured — placement/slot ordinal on low rows, mission-id-like on high rows."
     }
 
     field mission_id type="i32::str" {
@@ -324,24 +324,24 @@ json RaidMissionBossMst {
         doc "Boss spawned — RaidBossMst.id."
     }
 
-    field unk2 type="i32::str" {
+    field init_point_num type="i32::str" {
         key "i5r7Vjkq"
-        doc "// UNVERIFIED: 0..15 captured (spawn spot index?)."
+        doc "CONFIRMED setInitPointNum (readParam).  0..15 captured (spawn spot index?)."
     }
 
-    field unk3 type="i32::str" {
+    field rest_point_num type="i32::str" {
         key "E0yfb8eK"
-        doc "// UNVERIFIED: 0..15 captured."
+        doc "CONFIRMED setRestPointNum (readParam).  0..15 captured."
     }
 
-    field unk4 type="i32::str" {
+    field boss_visible_flg type="i32::str" {
         key "g9EcMPR6"
-        doc "// UNVERIFIED: 0/1 flag."
+        doc "CONFIRMED setBossVisibleFlg (readParam).  0/1 flag."
     }
 
-    field unk5 type="[str]::sep(comma)" {
+    field boss_appear_cnd_param type="[str]::sep(comma)" {
         key "P6uVAa3m"
-        doc "// UNVERIFIED: comma list of packed colon triples — captured \"1:0:0,1:0:0,1:0:0\"."
+        doc "CONFIRMED setBossAppearCndParam (readParam).  comma list of packed colon triples — captured \"1:0:0,1:0:0,1:0:0\"."
     }
 }
 
@@ -394,9 +394,9 @@ json RaidMissionPointMst {
         doc "Map point index this entry binds to — RaidPointMst.point_id (0..15)."
     }
 
-    field unk1 type="i32::str" {
+    field count type="i32::str" {
         key "H6k1LIxC"
-        doc "// UNVERIFIED: 0..8 captured."
+        doc "CONFIRMED setCount (readParam).  0..8 captured."
     }
 
     field item_info type="[str]::sep(comma)" {
@@ -419,9 +419,9 @@ json RaidPointMst {
         doc "Point index within the map (0..19)."
     }
 
-    field unk1 type="i32::str" {
+    field point_type type="i32::str" {
         key "AZFM14In"
-        doc "// UNVERIFIED: 0/1 flag."
+        doc "CONFIRMED setPointType (readParam).  0/1 flag."
     }
 
     field name type="str" {
@@ -439,9 +439,9 @@ json RaidPointMst {
         doc "Map y position (0..1536).  Same hash/name as grand_mission.kdl."
     }
 
-    field unk2 type="i32::str" {
+    field pick_time type="i32::str" {
         key "X7g8cNAI"
-        doc "// UNVERIFIED: 0..40 captured."
+        doc "CONFIRMED setPickTime (readParam).  0..40 captured."
     }
 
     field img type="str" {
@@ -449,9 +449,9 @@ json RaidPointMst {
         doc "Point/battle thumbnail — e.g. \"dungeon_battle_10100.jpg\"."
     }
 
-    field unk3 type="[str]::sep(comma)" {
+    field battle_effect type="[str]::sep(comma)" {
         key "8f4NYKxb"
-        doc "// UNVERIFIED: comma list of \"<a>:<b>\" pairs — captured \"3:10100,1:10101,0:10102\" (spawn table per point?)."
+        doc "CONFIRMED setBattleEffect (readParam).  comma list of \"<a>:<b>\" pairs — captured \"3:10100,1:10101,0:10102\" (spawn table per point?)."
     }
 
     field bgm type="str" {

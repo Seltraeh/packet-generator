@@ -105,9 +105,9 @@ json FrontierGateSupportMst {
         doc "Support name — \"Sanctioned Supplies 3\", or untranslated (\"バイタルブースト\")."
     }
 
-    field unk1 type="i32::str" {
+    field support_type type="i32::str" {
         key "esz3O04i"
-        doc "// UNVERIFIED: 1 or 2 — splits the 1xx ids from the 2xxxxx ids, so likely a category/era flag."
+        doc "CONFIRMED setSupportType (readParam).  1 or 2 — splits the 1xx ids from the 2xxxxx ids, so likely a category/era flag."
     }
 
     field process_id type="[i32::str]::sep(at)" {

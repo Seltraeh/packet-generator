@@ -45,24 +45,24 @@ json DbbMst {
         doc "// UNVERIFIED (named from value): second unit of the pair (730227..861008)."
     }
 
-    field unk1 type="str" {
+    field unit3_id type="str" {
         key "preOM2FT"
-        doc "// UNVERIFIED: empty string in all 141 rows."
+        doc "CONFIRMED setUnit3Id (readParam).  empty string in all 141 rows."
     }
 
-    field unk2 type="str" {
+    field unit4_id type="str" {
         key "72R7Jsij"
-        doc "// UNVERIFIED: empty string in all 141 rows."
+        doc "CONFIRMED setUnit4Id (readParam).  empty string in all 141 rows."
     }
 
-    field unk3 type="str" {
+    field unit5_id type="str" {
         key "uDHaNnu6"
-        doc "// UNVERIFIED: empty string in all 141 rows."
+        doc "CONFIRMED setUnit5Id (readParam).  empty string in all 141 rows."
     }
 
-    field unk4 type="str" {
+    field unit6_id type="str" {
         key "k0ajkcu0"
-        doc "// UNVERIFIED: empty string in all 141 rows."
+        doc "CONFIRMED setUnit6Id (readParam).  empty string in all 141 rows."
     }
 
     field skill_id type="i32::str" {
