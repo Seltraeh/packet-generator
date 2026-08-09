@@ -68,6 +68,7 @@ import "../net/featuring_gate.kdl"
 import "../net/town.kdl"
 import "../net/tutorial.kdl"
 import "../net/badge_info.kdl"
+import "../net/frontier_gate.kdl"
 
 json InitializeReq {
     doc "Initialization command"
@@ -1364,3 +1365,507 @@ json MissionEndResp {
     }
 }
 
+
+// Frontier Gate — request/response wrappers.  The FrontierGateInfo entry type
+// and the full decode evidence live in net/frontier_gate.kdl; the IDA audit is
+// tools/ida/audits/dPM7oJDl_audit.txt.
+//
+// Registration: REGISTER("M17pPotk", FrontierGateInfo, "sochkegz").  Note the
+// request GroupId (M17pPotk) is NOT the response key (dPM7oJDl) — handbook 6.1.
+
+json FrontierGateInfoReq {
+    doc "FrontierGateInfo (M17pPotk) request.  createBody @0x13BB8C8 emits only the three BaseRequest tags (userInfo/signalKey/version) and ZERO addParam/addGroup/addNode calls, so this carries loginInfo only and the server derives the gate list from the resolved user.  The two trailing setFrogateID(\"\") calls in createBody are client-side resets of the suspended-info singletons, not wire fields."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json FrontierGateInfoResp {
+    doc "FrontierGateInfo (M17pPotk) response — the player's per-gate progress list, keyed dPM7oJDl.  is_array=True per readparam_analysis.json, and readParam calls FrontierGateInfoList::addObject once per node, so this is a list even when it holds a single gate.  The legacy handler returned this empty ({\"dPM7oJDl\": []}), which is the safe idle shape."
+
+    field gates type="[FrontierGateInfo]" {
+        key "dPM7oJDl"
+        doc "One entry per Frontier Gate the player has progress on."
+    }
+}
+
+// Frontier Gate tier 2 — FrontierGateStart.  Entry types and the decode
+// evidence are in net/frontier_gate.kdl.
+//
+// Registration: REGISTER("l3lkDBSc", FrontierGateStart, "vYPCD34q").
+
+json FrontierGateStartReq {
+    doc "FrontierGateStart (l3lkDBSc) request.  createBody @0x13BC3C0 branches on the isFGPlus flag: the normal Frontier Gate path emits group Mg8K8Y1a (gate id + support id) plus the deck/unit snapshot groups MxmCpDRC/52xDBRGr; the FGPlus path emits Che7rAre/cexa3Uwr/cr6qeFUP instead.  Only the normal path is modelled — handbook §11.2 says do not mix FGPlus into this subsystem.  The deck/unit snapshot groups are deliberately NOT declared yet; they belong to tier 3 (see tools/FRONTIER_GATE_STATE_MODEL.md) and the lenient read drops them harmlessly until then."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field frogate type="[FrontierGateStartEntry]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "addGroup(\"Mg8K8Y1a\") + a single addNode — the gate being entered and the support picked."
+    }
+
+    field party_deck type="[FrontierGatePartyDeckInfo]" {
+        key "MxmCpDRC"
+        doc "The party the client is entering with, from FrontierGateBaseRequest::createBodySaveDataDeck.  Parsed so it can be echoed back — the client rebuilds its FG party list from the response."
+    }
+
+    field units type="[FrontierGateUserUnitInfo]" {
+        key "52xDBRGr"
+        doc "The unit snapshot, from FrontierGateBaseRequest::createBodySaveDataUnit.  MissionStartScene::downloadFiles reads FrontierGateUserUnitInfoList to decide which unit assets to fetch, so this MUST come back or the battle loads with no unit files."
+    }
+}
+
+json FrontierGateStartResp {
+    doc "FrontierGateStart (l3lkDBSc) response — the freshly opened run, keyed Mg8K8Y1a.  A single OBJECT, not an array: FrontierGateNumResponse::readParam writes the FrontierGateNum shared singleton rather than appending to a list (is_array=false in readparam_analysis.json).  Note the request wraps this same key in an array while the response does not."
+
+    field num type="FrontierGateNum" {
+        key "Mg8K8Y1a"
+        doc "The active run: its handle, gate, support and stat multipliers."
+    }
+
+    field party_deck type="[FrontierGatePartyDeckInfo]" {
+        key "MxmCpDRC"
+        doc "The run's party, echoed back so the client's FG deck list is populated."
+    }
+
+    field units type="[FrontierGateUserUnitInfo]" {
+        key "52xDBRGr"
+        doc "The run's units, echoed back.  Without this FrontierGateUserUnitInfoList is empty and MissionStartScene::downloadFiles fetches no unit assets — the mission then crashes mid-load."
+    }
+}
+
+json DungeonEventUpdateReq {
+    doc "DungeonEventUpdate (BjAt1D6b) request — identity only as far as the server is concerned, but its login envelope carries the 9yVsu21R scene-intro list the client has played, which is the reason this struct exists rather than the handler ignoring the body."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user; also carries special_scenario_info (9yVsu21R)."
+    }
+}
+
+// Generic shop spend.  CAPTURED FROM: a live Recover tap on the Frontier Gate
+// "no Hunter Orbs" prompt, 2026-08-07 —
+//   "32ibWjFG":[{"60IsqxDt":"5","03UGMHxF":"1","5gXxT7LZ":"0","rA9jDCP5":"0"}]
+json ShopUseEntry {
+    doc "One shop action — request group 32ibWjFG, a single node."
+
+    field shop_use_type type="i32::str" {
+        key "60IsqxDt"
+        doc "ShopUseType — WHICH action this is.  5 = fully restore Hunter Orbs (the Frontier Gate / Frontier Hunter attempt currency).  Other values (energy refill, warehouse expansion, inventory slots) are undecoded; the handler must ignore what it does not recognise rather than guess."
+    }
+
+    field cost type="i32::str" {
+        key "03UGMHxF"
+        doc "Gem cost of the action; 1 for the orb restore.  Same hash as team_info brave_coin and GachaInfoMst need_gems — see handbook §10.3 for the collision."
+    }
+
+    field ext_cnt type="i32::str" {
+        key "5gXxT7LZ"
+        doc "ExtCnt (named via UserUnitInfoResponse, which uses the same hash).  0 on the orb-restore capture."
+    }
+
+    field unk_ra9j type="i32::str" {
+        key "rA9jDCP5"
+        doc "// UNVERIFIED: 0 on the orb-restore capture; no named setter anywhere in the corpus."
+    }
+}
+
+json ShopUseReq {
+    doc "ShopUse (xe8tiSf4) request.  createBody also emits conditional params edy7fq3L / T1IxCpTF / 9i2xhMaJ and a second group d2b8d79J for unit-targeted and Vortex-Arena uses; those are not modelled because no capture exercises them and the lenient read drops them harmlessly."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field shop_use type="[ShopUseEntry]::size(1)" {
+        key "32ibWjFG"
+        doc "The shop action being performed."
+    }
+}
+
+json ShopUseResp {
+    doc "ShopUse (xe8tiSf4) response.  The binary defines no ShopUseResponse class, so this returns the refreshed team_info the way every other currency-spending handler does (UnitSell/UnitMix) — that is what makes the client's gem and orb counters update without a full UserInfo round trip."
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Refreshed team info: gems after the spend, orbs after the restore."
+    }
+}
+
+// Frontier Hunter hub.  "Challenge" is this binary's internal name for Frontier
+// Hunter — c5yZnpB4 resolves to setFrohunID (ChallengeMvpResponse,
+// ChallengeRankRewardResponse), and the Survey Office's HR / Hunter Orbs header
+// is Frontier Hunter chrome that Frontier Gate sits behind.
+json ChallengeInfo {
+    doc "The currently running Frontier Hunter event — response key cvg8hzp9 (ChallengeInfoResponse), a single field.  The client needs a live event id before the Survey Office will show event state."
+
+    field frohun_id type="i32::str" {
+        key "c5yZnpB4"
+        doc "setFrohunID — the active F_FROHUN_MST (challenge_mst.json) row id.  CONFIRMED by cross-class reuse: named setFrohunID in ChallengeMvpResponse (nUmaEC41) and ChallengeRankRewardResponse (p73SJiWv)."
+    }
+}
+
+json ChallengeBaseResp {
+    doc "ChallengeBase (nUAW2B0a) response.  The binary defines no ChallengeBaseResponse class, so this emits the response keys the Survey Office needs.  Currently only cvg8hzp9 (the active event id) — the HR ladder already reaches the client as an MST (challenge_hr_mst.json ships under h09mEvDR via Initialize), so it does not need repeating here.  // UNVERIFIED: whether the hub also expects s7A3bGLe (ChallengeUserInfo) or kN2i7qds (ChallengeUserTeam); add them only if this alone is not enough."
+
+    field challenge_info type="ChallengeInfo" {
+        key "cvg8hzp9"
+        doc "The running Frontier Hunter event."
+    }
+
+    field user_team type="ChallengeUserTeam" {
+        key "kN2i7qds"
+        doc "Frontier Hunter header state — this is what feeds ChallengeHeaderInfo, where the Hunter Orb (Aube) counter actually lives."
+    }
+}
+
+// Frontier Hunter ranking board.  Every field below is a REAL named setter from
+// readparam_analysis.json — this struct contains no guessed names.
+json ChallengeRankingEntry {
+    doc "One row of the Frontier Hunter ranking board — response key Hmiwj75u (ChallengeRankingResponse), an array.  Fields 14-17 are the Summoner avatar, so each row renders the player's character."
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "setUserID."
+    }
+
+    field handle_name type="str" {
+        key "B5JQyV8j"
+        doc "setHandleName — the displayed player name."
+    }
+
+    field team_lv type="i32::str" {
+        key "2Fh3J7ng"
+        doc "setTeamLv — the player's account level."
+    }
+
+    field unit_id type="str" {
+        key "pn16CNah"
+        doc "setUnitID — the player's showcased unit (unit_mst id)."
+    }
+
+    field unit_lv type="i32::str" {
+        key "4A6LzBxr"
+        doc "setUnitLv — that unit's level."
+    }
+
+    field point1 type="str" {
+        key "U4pMNjy0"
+        doc "setPoint1.  std::string on this class while Point2/Point3 are ints — the client keeps this one unconverted."
+    }
+
+    field point2 type="i32::str" {
+        key "pG2n1A28"
+        doc "setPoint2.  Same hash the Frontier Gate info response uses for Progress/PlayProgress."
+    }
+
+    field point3 type="i32::str" {
+        key "2Cn0bWt9"
+        doc "setPoint3."
+    }
+
+    field rank_order type="i32::str" {
+        key "vV4P53m7"
+        doc "setRankOrder — position within the board.  Also used by FrontierGateRankingResponse and SPChallengeRankingResponse."
+    }
+
+    field info_type type="i32::str" {
+        key "NH65Wj0f"
+        doc "setInfoType.  // UNVERIFIED: the enum is not decoded; likely distinguishes the viewer's own row from other players' rows."
+    }
+
+    field rank type="i32::str" {
+        key "9w5e3ZJB"
+        doc "setRank — the displayed rank number."
+    }
+
+    field mission_id type="str" {
+        key "j28VNcUW"
+        doc "setMissionID — which mission the score was set on."
+    }
+
+    field unit_img_type type="i32::str" {
+        key "2pAyFjmZ"
+        doc "setUnitImgType — which artwork variant to draw for the unit."
+    }
+
+    field ep3_flg type="i32::str" {
+        key "jkldTrhL"
+        doc "setEp3Flg — Episode 3 marker."
+    }
+
+    field sex type="i32::str" {
+        key "9i2xhMaJ"
+        doc "setSex — Summoner avatar gender."
+    }
+
+    field element type="i32::str" {
+        key "iNy0ZU5M"
+        doc "setElement — Summoner avatar element."
+    }
+
+    field hair_id type="str" {
+        key "btZizNep"
+        doc "setHairID — Summoner avatar hair.  Named via UserGiftInfoResponse / SummonerFriendInfoResponse."
+    }
+
+    field arm_id type="str" {
+        key "RVVgyuor"
+        doc "setArmID — Summoner avatar weapon.  Named via SummonerFriendInfoResponse / RaidRoomPartyInfoResponse."
+    }
+}
+
+json ChallengeRankingReq {
+    doc "ChallengeRanking (2Kxi7rIB) request.  createBody emits group cvg8hzp9 carrying c5yZnpB4 — the Frontier Hunter event whose board is being viewed, i.e. exactly the id ChallengeBase hands out."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field challenge type="[ChallengeInfo]::size(1)" {
+        key "cvg8hzp9"
+        doc "The event being ranked — reuses ChallengeInfo, the same one-field shape ChallengeBase returns."
+    }
+}
+
+json ChallengeRankingResp {
+    doc "ChallengeRanking (2Kxi7rIB) response — the board, keyed Hmiwj75u.  is_array=true in readparam_analysis.json."
+
+    field ranking type="[ChallengeRankingEntry]" {
+        key "Hmiwj75u"
+        doc "Board rows, best rank first."
+    }
+}
+
+// Frontier Hunter header state — response key kN2i7qds
+// (ChallengeUserTeamResponse, a single object, is_array=false).
+//
+// THIS IS WHERE HUNTER ORBS LIVE.  Found 2026-08-07 by binary xref: orbs are
+// internally called "Aube", and the counter is ChallengeHeaderInfo::getAube —
+// NOT UserTeamInfo::fight_point, which is what the server had been setting.
+//
+//   ChallengeHeaderInfo::getAubeMax() { return DefineMst::getMaxfrohunP(); }
+//   MissionStartScene::initConnect()  spends one on Frontier Gate entry:
+//       Aube = getAube(); setAube(max(Aube,1) - 1)
+//   FrontierGateConditionScene::textWindowAube()  is the "no Hunter Orbs" popup
+//
+// ChallengeHeaderInfo's settable fields are Aube, AubeTimer, AubeRestTimer,
+// FrogateID, FrogateScore, HR, Order, Search — and this response carries five
+// of them.  Two are known; the other three are inlined setters, so which key is
+// Aube is being resolved by probe rather than guessed.
+json ChallengeUserTeam {
+    doc "Frontier Hunter header state — HR, Hunter Orbs (Aube) and the Frontier Gate score that the Survey Office chrome renders."
+
+    field hr_id type="i32::str" {
+        key "Sv80kL5r"
+        doc "setHR — Hunter Rank, the \"HR n\" in the Survey Office header.  CONFIRMED by cross-class reuse: setHRID in ChallengeHrResponse (h09mEvDR) and ChallengeRankRewardResponse (p73SJiWv)."
+    }
+
+    field unk_first type="i32::str" {
+        key "38sHatGk"
+        doc "// UNVERIFIED — PROBE VALUE 4.  One of ChallengeHeaderInfo's inlined setters; candidates are Aube (the orb count), AubeTimer, AubeRestTimer, Order and Search.  Whichever probe number surfaces as Hunter Orbs in the client names this key."
+    }
+
+    field unk_second type="i32::str" {
+        key "6mh0jiKJ"
+        doc "// UNVERIFIED — PROBE VALUE 5.  See unk_first."
+    }
+
+    field unk_third type="i32::str" {
+        key "RHKA30s5"
+        doc "// UNVERIFIED — PROBE VALUE 6.  See unk_first."
+    }
+
+    field frogate_score type="i32::str" {
+        key "vvXp7Uek"
+        doc "setFrogateScore — CONFIRMED named setter (readparam_analysis.json).  The player's Frontier Gate score, carried on a Challenge response because the two subsystems share header state."
+    }
+}
+
+// Frontier Gate run control — the "Continue / Pause / Retire" prompt between
+// floors.  All three post to their own GroupId and all three address the run by
+// its server-issued handle.
+//
+// The j3g5P4cq (MissionStatus) enum is DECODED from the createBody constants:
+// End sends 3, Save sends 4.  Continue sends neither, so "keep fighting" is
+// implied by the endpoint rather than by a status value.
+
+json FrontierGateRunRef {
+    doc "Addresses a run by its handle — request group Mg8K8Y1a for Continue."
+
+    field frogate_num type="i32::str" {
+        key "2FQdEbG3"
+        doc "The run handle the server issued at Start; the client round-trips it opaquely."
+    }
+}
+
+json FrontierGateContinueReq {
+    doc "FrontierGateContinue (uiFIMUH6) request — the Continue button.  createBody emits only the run handle; no party snapshot, so the server must already know the run."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field run type="[FrontierGateRunRef]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "The run being continued."
+    }
+}
+
+json FrontierGateContinueResp {
+    doc "FrontierGateContinue (uiFIMUH6) response.  No dedicated response class exists in the binary, so this returns the run under Mg8K8Y1a the way Start does — the client reads FrontierGateNum back before requesting the next floor."
+
+    field num type="FrontierGateNum" {
+        key "Mg8K8Y1a"
+        doc "The run, with its status advanced."
+    }
+}
+
+json FrontierGateEndEntry {
+    doc "Addresses the run being ended — request group Mg8K8Y1a for End."
+
+    field frogate_num type="i32::str" {
+        key "2FQdEbG3"
+        doc "Run handle."
+    }
+
+    field mission_status type="i32::str" {
+        key "j3g5P4cq"
+        doc "Literal 3 for End — createBody hardcodes it (addParam(v4, \"j3g5P4cq\", 3)).  This is what decodes the MissionStatus enum: 3 = retired/ended."
+    }
+}
+
+json FrontierGateEndReq {
+    doc "FrontierGateEnd (cAJp7U4l) request — the Retire button."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field run type="[FrontierGateEndEntry]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "The run being retired, with status 3."
+    }
+}
+
+json FrontierGateSaveEntry {
+    doc "Addresses the run being suspended — request group Mg8K8Y1a for Save."
+
+    field frogate_id type="i32::str" {
+        key "hBNPQAU0"
+        doc "Gate id.  Note Save identifies the run by GATE, not by run handle, unlike Continue and End."
+    }
+
+    field mission_status type="i32::str" {
+        key "j3g5P4cq"
+        doc "Literal 4 for Save — createBody hardcodes it.  MissionStatus 4 = suspended/paused."
+    }
+}
+
+json FrontierGateSaveReq {
+    doc "FrontierGateSave (Ng73nFHJ) request — the Pause button.  Unlike Continue and End this re-uploads the full party (MxmCpDRC + 52xDBRGr) via createBodySaveDataDeck/Unit, because a suspended run has to be restorable later."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field run type="[FrontierGateSaveEntry]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "The run being suspended, with status 4."
+    }
+
+    field party_deck type="[FrontierGatePartyDeckInfo]" {
+        key "MxmCpDRC"
+        doc "Party snapshot at the point of suspension."
+    }
+
+    field units type="[FrontierGateUserUnitInfo]" {
+        key "52xDBRGr"
+        doc "Unit snapshot at the point of suspension."
+    }
+}
+
+json FrontierGateRetryEntry {
+    doc "Addresses the run being retried — request group Mg8K8Y1a for Retry."
+
+    field frogate_num type="i32::str" {
+        key "2FQdEbG3"
+        doc "Run handle."
+    }
+
+    field mission_status type="i32::str" {
+        key "j3g5P4cq"
+        doc "Literal 3, same constant End uses — createBody hardcodes it.  Retry is therefore 'end this attempt and start it again', not a distinct status."
+    }
+}
+
+json FrontierGateRetryReq {
+    doc "FrontierGateRetry (9pzHMBzq) request — the 'continue at the cost of a Hunter Orb' prompt after a loss.  Re-uploads the DECK only (createBodySaveDataDeck); unlike Save it does not resend the unit snapshot, so the server must already hold one."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field run type="[FrontierGateRetryEntry]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "The run being retried."
+    }
+
+    field party_deck type="[FrontierGatePartyDeckInfo]" {
+        key "MxmCpDRC"
+        doc "Party at the point of retry — HP and gauges reset by the client."
+    }
+}
+
+json FrontierGateRunStateResp {
+    doc "Shared response for the run-control verbs that must hand the party back: Continue and Retry.  Returns the run plus the stored party so the client can rebuild FrontierGateUserUnitInfoList before the next floor — without it MissionStartScene::downloadFiles fetches no unit assets and the party comes up empty."
+
+    field num type="FrontierGateNum" {
+        key "Mg8K8Y1a"
+        doc "The run."
+    }
+
+    field party_deck type="[FrontierGatePartyDeckInfo]" {
+        key "MxmCpDRC"
+        doc "The run's party deck, restored from the stored snapshot."
+    }
+
+    field units type="[FrontierGateUserUnitInfo]" {
+        key "52xDBRGr"
+        doc "The run's units, restored from the stored snapshot."
+    }
+}
+
+json FrontierGateRestartEntry {
+    doc "Addresses a gate to restart from the beginning — request group Mg8K8Y1a."
+
+    field frogate_id type="i32::str" {
+        key "hBNPQAU0"
+        doc "Gate id.  Restart identifies by GATE, like Save, because the old run is being discarded."
+    }
+}
+
+json FrontierGateRestartReq {
+    doc "FrontierGateRestart (v0m1FU0g) request — abandon the current run and begin the gate again."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field run type="[FrontierGateRestartEntry]::size(1)" {
+        key "Mg8K8Y1a"
+        doc "The gate being restarted."
+    }
+}

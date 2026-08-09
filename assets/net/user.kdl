@@ -889,6 +889,24 @@ json LoginInfoReq {  // # TODO: actually support (GumiLiveInfo), as it's not sup
         doc "Country code"
     }
 
+    // The client reports which one-off scene intros it has already played as a
+    // trailing-comma list, e.g. "randall," then "randall,frontiergate_v2,"
+    // after entering Frontier Gate.  CAPTURED FROM: DungeonEventUpdate
+    // (BjAt1D6b) requests, 2026-08-07.
+    //
+    // Kept `str` deliberately rather than [str]::sep(comma): every observed
+    // value ends in a trailing comma, which the array codec would drop and
+    // then re-emit differently (handbook §3.3).
+    //
+    // This is the RESPONSE side's LoginInfoResp.user_special_scenario_info
+    // (same key) flowing the other way — the server stores what the client
+    // reports and echoes it back so the intros stay marked as seen.  Without
+    // it declared here the value was silently discarded by the lenient read.
+    field special_scenario_info type="str" {
+        key "9yVsu21R"
+        doc "Comma-terminated list of one-off scene intros the client has already shown (\"randall,frontiergate_v2,\").  Mirrors LoginInfoResp.user_special_scenario_info."
+    }
+
     field scenario_info type="str" {
         key "N4XVE1uA"
         doc "Scenario progress marker included by some login-info requests."
