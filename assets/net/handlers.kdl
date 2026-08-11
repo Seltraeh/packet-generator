@@ -295,8 +295,42 @@ json CampaignStartEventInfo {
     }
 }
 
+json CampaignRewardBonusEntry {
+    doc "One earnable reward under response key p04iC2wr (CampaignRewardBonusInfoResponse) — the reward list the Grand Mission info panel renders.  Field names and types are the real IDA setters (readparam_analysis.json: response_class=CampaignRewardBonusInfoResponse, response_key=p04iC2wr, func_addr=0x1426160, is_array=true); the legacy hand-edited header for the same class stringifies each uint32_t member, so every numeric field is quoted on the wire.  The six fields are exactly the client-facing subset of GrandMissionRewardMst (mst/grand_mission.kdl), which is where CampaignStart sources them."
+
+    field reward_id type="str" {
+        key "N1b6SUW4"
+        doc "setRewardID (std::string).  GrandMissionRewardMst.id."
+    }
+
+    field present_type type="i32::str" {
+        key "30Kw4WBa"
+        doc "setPresentType (uint32_t, stringified on the wire).  3=zel, 6=unit, 8=gem, 4/5/7=item domains — see CampaignReceipt.cpp for the grant dispatch."
+    }
+
+    field target_id type="str" {
+        key "TdDHf59J"
+        doc "setTargetID (std::string).  Rewarded entity id, interpreted per present_type."
+    }
+
+    field target_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "setTargetCnt (uint32_t, stringified on the wire).  Reward quantity."
+    }
+
+    field target_param type="str" {
+        key "37moriMq"
+        doc "setTargetParam (std::string).  GrandMissionRewardMst.param — kept string-typed because captured values include leading-zero colon forms (\"1:00\", \"1:01\")."
+    }
+
+    field reward_type type="i32::str" {
+        key "IkmC8gG2"
+        doc "setRewardType (uint32_t, stringified on the wire).  1=completion-percentage bonus, 2=treasure/flag reward, 4=first-clear bonus."
+    }
+}
+
 json CampaignEmptyEntry {
-    doc "Placeholder element type for the always-empty CampaignStart response arrays (eqp_items NjZ6ds1S, rsv_items 5EByfWJ4, reward_bonus p04iC2wr).  The vectors are never populated, so this field is never emitted."
+    doc "Placeholder element type for the always-empty CampaignStart response arrays (eqp_items NjZ6ds1S, rsv_items 5EByfWJ4).  The vectors are never populated, so this field is never emitted."
 
     field unused type="i32::str" {
         key "_"
@@ -337,9 +371,9 @@ json CampaignStartResp {
         doc "Single-object event flags."
     }
 
-    field reward_bonus type="[CampaignEmptyEntry]" {
+    field reward_bonus type="[CampaignRewardBonusEntry]" {
         key "p04iC2wr"
-        doc "Reward bonus info (empty in the current phase)."
+        doc "Earnable rewards for the selected mission set, sourced from F_GRAND_MISSION_REWARD_MST."
     }
 }
 
