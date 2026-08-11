@@ -58,6 +58,20 @@ json ItemSellEntry {
     }
 }
 
+json ItemEditReq {
+    doc "ItemEdit (ruoB7bD8) — the battle-item loadout the player sets on the quest-prep screen.  Shape from ItemEditRequest::createBody @ 0x13A5C2C: addGroup(\"71U5wzhI\") holding UserEquipItemInfo nodes {kixHbe54 item_id, XuJL4pc5 disp_order, wgV86x1q item_num}.  createBody writes TWO runs into that one group — the main loadout at disp_order 0..n and a second run at disp_order+100 — so slot numbers are stored verbatim rather than being renumbered.  The request also carries addGroup(\"nAligJSQ\") (UserEquipBonusItemInfo: h7eY3sAK/kixHbe54/XuJL4pc5/wgV86x1q); the server does not consume bonus items, so the lenient read skips it.  Note this key matches the UserInfoResp.equipInfo response key — unusual (handbook §6.1) but both carry the same UserEquipItemInfo list class."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field equipItems type="[UserEquipItemInfo]" {
+        key "71U5wzhI"
+        doc "The chosen loadout, one node per occupied slot.  An empty/absent group means the player cleared every slot."
+    }
+}
+
 json ItemSellReq {
     doc "Sell warehouse items for zel.  Wire: {\"M73i1c5U\":[{\"n6E8iMf3\":\"5\",\"wgV86x1q\":\"3\"},...]}.  Zel credit per unit = ItemMst.sell_price.  Legacy fork acked with an empty body and the client applies the zel/count changes locally, so no Resp struct exists."
 
