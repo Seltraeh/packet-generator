@@ -234,13 +234,231 @@ json EvoResultEntry {
         doc "Original (\"before\") MST id, used by the evo animation.  Quoted decimal integer on the wire."
     }
 
-    field unk_u1 type="i32::str" {
+    field user_unit_id_before type="i32::str" {
         key "u1ECvfg8"
-        doc "Unknown; send 0.  Quoted decimal integer on the wire."
+        doc """
+        UnitEvoInfo::setUserUnitIDBefore — the instance id the unit had BEFORE
+        the evolution.  This server evolves in place (an UPDATE on the same
+        user_units row), so it is the same value as edy7fq3L; it is a distinct
+        field because a server that minted a new row would differ here.
+        Quoted decimal integer on the wire.
+        """
     }
 
-    field unk_dv3 type="i32::str" {
+    field evolution_type type="i32::str" {
         key "dV3qji4I"
-        doc "Unknown; send 0.  Quoted decimal integer on the wire."
+        doc """
+        UnitEvoInfo::setEvolutionType (StrToInt).  The DOMAIN IS UNDECODED —
+        the request carries no type and no consumer of
+        UnitEvoInfo::getEvolutionType has been read, so 0 is a placeholder, not
+        a known value.  Normal vs omni is the obvious guess given
+        unit_evo_omni_type_mst exists, but nothing here confirms it.
+        Safe to leave: this key is the last in UnitOpeEvoResponse::readParam's
+        chain, but the commit is gated on the last-field flag (a6), not on this
+        key, so UnitEvoInfoList::addObject still fires without it.
+        Quoted decimal integer on the wire.
+        """
+    }
+}
+
+// ---------------------------------------------------------------------------
+// UnitOpeResult — the unit-operation RESULT payload, response key 1ZbHB6Im
+// (UnitOpeResultResponse, func_addr 0x13F88DC).
+//
+// "UnitOpe" = unit operation: fusion, evolution and the other unit ops all
+// report their outcome through this one shape.  It is what drives the RESULT
+// SCREEN — the xp bar sweep and the level-up flourish — and this server had
+// never sent it, which is why the fusion screen rendered the unit but the bar
+// never moved and no level-up was processed.
+//
+// The give-away is the field set: it is entirely BEFORE/AFTER pairs.  A bar
+// cannot animate from a single end point, and handbook §3.4 already recorded
+// the same mechanism on the mission result screen (F5Vs19mb), where a
+// before_lv the server did not know existed caused a bogus level cascade.
+// Same trap, different screen: there it was populated wrongly, here not at all.
+//
+// All 27 fields decoded from the readParam strcmp chain — see
+// tools/ida/audits/1ZbHB6Im_audit.txt.  Types are taken from the pseudocode
+// (StrToInt -> i32::str, byref std::string -> str), NOT from
+// readparam_analysis.json, which has no entry for this class at all.
+// ---------------------------------------------------------------------------
+
+json UnitOpeResult {
+    doc "Result of a unit operation (fusion / evolution) — drives the result screen's level-up animation.  Response key 1ZbHB6Im."
+
+    field unit_id type="str" {
+        key "pn16CNah"
+        doc "setUnitID — the unit's MST id."
+    }
+
+    field user_unit_id type="str" {
+        key "edy7fq3L"
+        doc "setUserUnitID — which owned unit this result is about."
+    }
+
+    field zel type="i32::str" {
+        key "Najhr8m6"
+        doc "setZel — zel spent on the operation."
+    }
+
+    field exp type="i32::str" {
+        key "d96tuT2E"
+        doc "setExp — exp gained by the operation."
+    }
+
+    field success_type type="i32::str" {
+        key "6hMI5xeF"
+        doc """
+        setSuccessType — great/super success tier.
+        // UNVERIFIED: the value set.  BF fusion has normal / Great Success /
+        Super Success outcomes and this is the only field that could carry it;
+        0 is sent for a normal result until a capture shows the other values.
+        """
+    }
+
+    field before_lv type="i32::str" {
+        key "81CsGAR9"
+        doc "setBeforeLv — level BEFORE the operation.  The bar animates from here."
+    }
+
+    field after_lv type="i32::str" {
+        key "MD8r7Wa0"
+        doc "setAfterLv — level after."
+    }
+
+    field before_exp type="i32::str" {
+        key "rQ9JVD0w"
+        doc "setBeforeExp — exp within the level before the operation."
+    }
+
+    field after_exp type="i32::str" {
+        key "K3iqB72Q"
+        doc "setAfterExp — exp within the level after."
+    }
+
+    field before_skill_lv type="i32::str" {
+        key "vZH12LoA"
+        doc "setBeforeSkillLv — BB level before."
+    }
+
+    field after_skill_lv type="i32::str" {
+        key "8hVR4Fjr"
+        doc "setAfterSkillLv — BB level after."
+    }
+
+    field before_extra_skill_lv type="i32::str" {
+        key "g9DXe3HZ"
+        doc "setBeforeExtraSkillLv — SBB level before."
+    }
+
+    field after_extra_skill_lv type="i32::str" {
+        key "0xgWq5bD"
+        doc "setAfterExtraSkillLv — SBB level after."
+    }
+
+    field lvup_status type="str" {
+        key "5Hi7MVQe"
+        doc """
+        setLvupStatus — NOT a flag.  A COLON-SEPARATED STAT SNAPSHOT,
+        "lv:hp:atk:def:heal".
+
+        // CONFIRMED from UnitMixPlayScene::parseMixResult @0x1C17C10
+        (tools/ida/audits/ParseMixResult_audit.txt).  The scene reads it and
+        branches on LENGTH:
+            getLvupStatus(&s);
+            if (len(s)) goto LABEL_47;          // use the server's value
+            // otherwise build it locally:
+            IntToString(level); LongLongToString(getHp()); ...atk, def, rec...
+            joined with ':'
+        So an EMPTY string is a supported path — the client reconstructs the
+        snapshot from the UserUnitInfo it is already displaying.
+
+        // ⚠ SEND IT EMPTY unless you have all five values.  Anything
+        non-empty is parsed as a five-field colon list and indexed at
+        +24/+48/+72/+96; sending "1" or "0" as a boolean flag reads off the end
+        of a one-element list and CRASHES the client on the ritual animation.
+        That cost three crash cycles.  The level-up flourish does NOT come from
+        here — it is driven by the before_lv/after_lv pair, which parseMixResult
+        loops over separately (`while (lv < afterLv) getLevelUpEvent(...)`).
+        """
+    }
+
+    field param_up_state type="str" {
+        key "Xoq6z0VI"
+        doc """
+        setParamUpState — the same "lv:hp:atk:def:heal" colon list as
+        lvup_status, used for the stat-gain flourish.
+
+        // CONFIRMED from parseMixResult: guarded by `if (len)`, then
+        CommonUtils::parseList with separator descriptor 0x3A02 (0x3A = ':'),
+        then StrToInt at +0/+24/+48/+72/+96 — five fields.
+        // Empty is SAFE here: the length guard skips the whole block.  But
+        note the block contains a null-deref if it ever does run with a level
+        that matches no MixResultStatus entry (`v119 = 0` then
+        `MixResultStatus::getHp(v119)`), so do not populate it speculatively.
+        """
+        optional #true
+    }
+
+    field before_eqp_frame_id type="i32::str" {
+        key "WT2X78J1"
+        doc "setBeforeEqpFrameID — sphere frame in slot 1 before."
+    }
+
+    field after_eqp_frame_id type="i32::str" {
+        key "N2Iiemv4"
+        doc "setAfterEqpFrameID — sphere frame in slot 1 after."
+    }
+
+    field before_eqp_frame_id2 type="i32::str" {
+        key "1wme6kJz"
+        doc "setBeforeEqpFrameID2 — sphere frame in slot 2 before."
+    }
+
+    field after_eqp_frame_id2 type="i32::str" {
+        key "m0fq76GY"
+        doc "setAfterEqpFrameID2 — sphere frame in slot 2 after."
+    }
+
+    field before_fe_bp type="i32::str" {
+        key "0xhLsnDv"
+        doc "setBeforeFeBP — Frontier Enhancement BP before."
+    }
+
+    field after_fe_bp type="i32::str" {
+        key "3YVEeL2a"
+        doc "setAfterFeBP — Frontier Enhancement BP after."
+    }
+
+    field before_fe_info type="str" {
+        key "TLbr6q4U"
+        doc "setBeforeFeInfo — FE allocation before.  String setter."
+        optional #true
+    }
+
+    field after_fe_info type="str" {
+        key "Wyn8wrxw"
+        doc "setAfterFeInfo — FE allocation after.  String setter."
+        optional #true
+    }
+
+    field before_max_fe_bp type="i32::str" {
+        key "kuHWF7yc"
+        doc "setBeforeMaxFeBP — FE BP cap before."
+    }
+
+    field after_max_fe_bp type="i32::str" {
+        key "ksED59z9"
+        doc "setAfterMaxFeBP — FE BP cap after."
+    }
+
+    field before_dbb_skill_level type="i32::str" {
+        key "KLpo4OX6"
+        doc "setBeforeDbbSkillLevel — Dual Brave Burst skill level before."
+    }
+
+    field after_dbb_skill_level type="i32::str" {
+        key "lo7ebFla"
+        doc "setAfterDbbSkillLevel — Dual Brave Burst skill level after."
     }
 }

@@ -1401,72 +1401,216 @@ json UserTownLocationDetail {
 }
 
 json UserDungeonKeyInfo {
-    doc "TODO"
- 
+    doc """
+    Per-user dungeon-key inventory — one row per DungeonKeyMst id (1 Metal Key,
+    2 Jewel Key, 3 Imp Key).  Emitted inside UserInfo under eFU7Qtb0 as an
+    array; drives the Vortex parade entry and the "Receive Key" button in the
+    Akras Summoners' Hall Administration Office.
+
+    Field names come from UserDungeonKeyInfoResponse::readParam — see
+    tools/ida/audits/eFU7Qtb0_audit.txt.  6 of 8 are authoritative setters out
+    of readparam_analysis.json; 16KMNJLb and H6k1LIxC are hand-coded getValue()
+    paths and are documented per-field below.
+    """
+
     field user_id type="str" {
         key "h7eY3sAK"
-        doc "ID of the user for this session."
+        doc "ID of the user for this session.  setUserID."
     }
 
-    field unk type="i32::str" {
+    field dungeon_key_id type="i32::str" {
         key "16KMNJLb"
-        doc "TODO"
+        doc """
+        Which key this row describes — joins to DungeonKeyMst.id
+        (1 Metal Key, 2 Jewel Key, 3 Imp Key).
+
+        // CONFIRMED as setDungeonKeyID by the readParam pseudocode
+        (tools/ida/audits/eFU7Qtb0_audit.txt).  This upgrades what was a
+        HIGH-confidence inference from the MST join — readparam_analysis.json
+        lists no setter for this hash because it is a STRING setter, and that
+        export only captured the StrToInt ones.
+
+        DELIBERATE TYPE DEVIATION: the setter takes a std::string built from
+        the raw wire value, so strictly this is `str`.  Kept as `i32::str`
+        because the wire form is identical either way (a quoted integer) and
+        the value is an id used for joins against DungeonKeyMst.id — typing it
+        as a string would force std::stoi at every use site for no change in
+        what is transmitted.
+        """
     }
 
-    field unk2 type="i32::str" {
+    field possession type="u32::str" {
         key "wgV86x1q"
-        doc "TODO"
+        doc """
+        How many of this key the player currently holds.  setPossession.
+        Capped by DungeonKeyMst.possession_limit (N7I9vYZb = 50 on all rows).
+        """
     }
 
-    field unk3 type="i32::str" {
+    field last_receipt_day type="u32::str" {
         key "KI42FwRt"
-        doc "TODO"
+        doc """
+        Day the key was last claimed.  setLastReceiptDay.  A day ordinal for
+        the once-per-day claim check, not an epoch stamp — the binary names
+        this one "...Day" and next_receipt_possible_date "...Date".
+        """
     }
 
-    field unk4 type="i32::str" {
+    field active_type type="u32::str" {
         key "BY8fZ7M1"
-        doc "TODO"
+        doc """
+        Which parade tier is currently live for this key.  setActiveType.
+        Reads against DungeonKeyMst.usage_pattern (CR6aKWg8), whose tiers are
+        spend-1 / spend-3 / spend-5 (Metal Parade / Super / Mega).
+        // UNVERIFIED: whether this indexes the tier or holds the raw key
+        count spent — both readings fit a 1/3/5 ladder.
+        """
     }
 
-    field unk5 type="i32::str" {
-        key "phe9Ta54"
-        doc "TODO"
-    }
-
-    field unk6 type="bool::bool" {
+    field receipt_possible_flg type="u32::str" {
         key "g85qMNxf"
-        doc "TODO"
+        doc """
+        Whether a key can be claimed right now — drives the "Receive Key"
+        button.  setReceiptPossibleFlg.
+        // REVERTED FROM bool::bool: readParam takes uint32_t, not bool.  The
+        "Flg" suffix reads boolean but the wire type is an int.
+        """
     }
 
-    field unk7 type="str" {
+    field next_receipt_possible_date type="str" {
         key "b6QR1CH5"
-        doc "TODO"
+        doc """
+        When the next claim unlocks.  setNextReceiptPossibleDate.
+
+        // REVERTED FROM u32::str: readparam_analysis.json claims uint32_t, but
+        the pseudocode (tools/ida/audits/eFU7Qtb0_audit.txt) shows the handler
+        building a std::string from the raw wire value and passing it byref —
+        there is no StrToInt on this path, unlike its five int siblings.  The
+        export reports the PRE-CONVERSION type, not the setter's; trust the
+        pseudocode.  This also explains the Day/Date split noted below:
+        last_receipt_day really is an int ordinal, this really is a date.
+
+        // UNVERIFIED: the string FORMAT.  Sent as "YYYY-MM-DD hh:mm:ss" to
+        match the only other string date this server emits
+        (UserClearMissionInfo.clear_date) and the datetime strings documented
+        for FrontierGate start_date/end_date in net/frontier_gate.kdl.  Before
+        this was decoded the server sent raw epoch seconds as a quoted int,
+        which the client would have stored verbatim as the literal text
+        "1786334400".
+        """
     }
 
-    field unk8 type="i32::int" {
+    field cnt type="u32::str" {
         key "H6k1LIxC"
-        doc "TODO"
+        doc """
+        // CONFIRMED as setCnt (StrToInt, so genuinely an int) by the readParam
+        pseudocode — tools/ida/audits/eFU7Qtb0_audit.txt.  This matches the
+        cross-class reading: the same hash is setCnt in PermitRecipeResponse
+        and a remaining-count in UserAchievementTradeInfo /
+        GuildUserExchangeInfo / UnitSelectorGachaUserInfo.
+
+        // STILL UNVERIFIED: WHICH count.  The setter name is generic and the
+        handler does nothing with the value beyond storing it, so the audit
+        confirmed the type without settling the meaning.  Candidates remain:
+        claims used today, claims remaining, or a mirror of
+        DungeonKeyMst.distribute_count (khsb74Nq).  Kept optional and OMITTED
+        from the wire — a confirmed setter name is not a licence to invent a
+        value (handbook §3.4).  Settling it needs a live capture, not another
+        IDA pass.
+        // REVERTED FROM i32::int: sibling User*Info ints are all quoted
+        (UserUnitInfo.exp = i32::str) because JsonNode::addParam stringifies.
+        """
+        optional #true
     }
 }
 
 json UserReleaseInfo {
-    doc "TODO"
+    doc """
+    Per-user feature-release state, keyed Dp0MjKAf (UserReleaseInfoResponse),
+    emitted inside UserInfo.  This is the server's half of the client's
+    "function release" system — the thing that draws the level_lock overlays
+    (vortex_quest_locked.png, parade_locked.png, new_feature.png).
 
-    field unk type="i32::int" {
+    HOW THE SYSTEM WORKS.  The conditions live CLIENT-SIDE in
+    F_FUNCTION_RELEASE_MST (12 rows, function ids 8-19), each row being
+    `function_id` + a `type:param` condition where type 2 = "mission <param>
+    cleared" (e.g. "2:20100") and type 4 was seen once as "4:4".  Function ids
+    1-7 do not appear in that table and are the client's hardcoded early gates
+    (town etc.).  That MST is NOT sendable — its decoded file is a bare list
+    with no wrapper key and the binary defines no FunctionReleaseMstResponse —
+    so the server cannot change the conditions.  This response is the only
+    lever the server has over feature locks.
+
+    // UNVERIFIED, and the reason this struct is authored but NOT yet emitted:
+    nothing here is proven to be the Vortex's lock.  The function id the client
+    uses for the Vortex is unknown (the shipped table's 8-19 all point at
+    late-game missions, so the Vortex is most likely one of the hardcoded 1-7).
+    Emitting a guessed id would lock or unlock some unrelated feature.  Resolve
+    with tools/ida/readparam_audit_dp0mjkaf.py, or by xrefing
+    vortex_quest_locked.png / parade_locked.png in the binary.
+
+    // UNVERIFIED: readparam_analysis.json reports is_array=false for this
+    class, yet the UserInfoResp field is declared `[UserReleaseInfo]` and a
+    per-function list is what the system implies.  Left as an array — the
+    single-object reading would mean one release row per user, which cannot
+    express a multi-function gate.  Confirm from the pseudocode.
+    """
+
+    field function_id type="u32::str" {
         key "JHYubaBP"
-        doc "TODO"
+        doc """
+        Which client function this row is about — joins to
+        F_FUNCTION_RELEASE_MST.JHYubaBP, and to FeatureGatingInfo.e63D1BV0
+        (FeatureID).  Feature id 2 is the Parade, read straight out of
+        DungeonSPConfirmScene::initialize.
+
+        // CONFIRMED by the readParam pseudocode (tools/ida/audits/Dp0MjKAf_audit.txt):
+        the handler stores this via vtable slot +48 after StrToInt, then reads
+        it back through slot +40 and passes it to
+        `UserReleaseInfoList::getObjectWithFunctionID`.  The list is keyed on
+        this field, so it is the function id by construction — not an
+        inference from the MST join any more.
+        """
     }
 
-    field unk2 type="i32::str" {
+    field released type="bool::str" {
         key "g6PujUgD"
-        doc "TODO"
+        doc """
+        Whether the function is released to this player.  Set unconditionally
+        when merging into an existing row, so the server is authoritative.
+
+        // CONFIRMED as a BOOLEAN by the readParam pseudocode: the handler does
+        `StrToInt(...) != 0` and passes a _BOOL8 to vtable slot +64 (its getter
+        is slot +56).  Wire form is therefore a quoted int, hence bool::str.
+        // REVERTED FROM u32::str, which was inferred from
+        readparam_analysis.json's uint32_t before the pseudocode was available;
+        readparam reports the pre-conversion type, not the setter's.
+        // UNVERIFIED: the NAME. Slot +64 has no symbol, so "released" is read
+        off its role — it is the only per-function state this row carries, and
+        FeatureGatingHandler::shouldGateLocked(int) is what consumes it.
+        """
     }
 
-    field unk3 type="i32::str" {
+    field new_flg type="bool::str" {
         key "dJNpLc81"
-        doc "TODO"
+        doc """
+        The "NEW" badge on a freshly released feature — what draws
+        level_lock/new_feature.png, and what UserEnteredFeatureList (2386Diw1)
+        clears once the player opens it.
+
+        Sticky: when merging into an existing row the handler only copies this
+        across if the existing value is still false (`if (getSlot72() == 0)`),
+        so once the badge is set the server cannot clear it by resending 0.
+
+        // CAPTURED FROM: cross-class anchoring — setNewFlg (uint32_t) in both
+        RaidUserBagInfoResponse and UserUnitInfoResponse, plus six further
+        classes using it as the same new-item badge.  Corroborated by
+        new_feature.png sitting beside the lock art in content/level_lock/.
+        // CONFIRMED as a BOOLEAN by the pseudocode: `StrToInt(...) != 0` into
+        vtable slot +80 (getter +72).  Same REVERTED FROM u32::str note as
+        `released` above.
+        """
     }
-    
 }
 
 json UserEquipItemInfo {

@@ -57,6 +57,7 @@ import "../net/items.kdl"
 import "../net/scenario.kdl"
 import "../net/unit.kdl"
 import "../net/permit_place.kdl"
+import "../net/dungeon_key.kdl"
 import "../net/reinforcement_info.kdl"
 import "../net/mission.kdl"
 import "../net/gacha.kdl"
@@ -1165,16 +1166,52 @@ json UnitEvoReq {
 }
 
 json UnitEvoResp {
-    doc "UnitEvo response (response_class=UnitOpeEvoResponse).  Carries the evolution result (I82p0wCL), an incremental unit-cache update (qC2tJs4E), the updated team info (fEi17cnx), and the reinforce/stat animation payload (xZH6EIQ7)."
+    doc "UnitEvo response (response_class=UnitOpeEvoResponse).  Carries the evolution result (I82p0wCL), a full unit-cache rebuild (4ceMWH6k), the updated team info (fEi17cnx), and the reinforce/stat animation payload (xZH6EIQ7)."
 
     field evo_result type="[EvoResultEntry]" {
         key "I82p0wCL"
         doc "Which MST id the base evolved into (and the evolved unit's DB id)."
     }
 
-    field unit_update type="[UserUnitInfo]" {
-        key "qC2tJs4E"
-        doc "Incremental unit-cache update for the evolved unit."
+    field unit_refresh type="[UserUnitInfo]" {
+        key "4ceMWH6k"
+        doc """
+        FULL-REPLACE unit cache rebuild — the ONLY key that can change a unit
+        the client already owns, because its ctor flag makes readParam call
+        removeAllObjects() before re-adding.  Send the COMPLETE roster here or
+        the client loses every unit omitted.
+
+        Evolution needs this for the same reason fusion does: the client has no
+        local apply path.  It never rewrites the evolved unit and never drops
+        the consumed materials, and it issues no request afterwards, so without
+        this the unit list keeps showing the pre-evolution form until Home.
+
+        The historical note here said DO NOT USE 4ceMWH6k because it soft-locked
+        the result screen.  That test is superseded — the same key is confirmed
+        working on UnitMix (2026-08-10) now that lvup_status is a valid table;
+        the earlier build sent "1", which crashes the result scene by itself.
+        The removeAllObjects release() hazard is still the thing to suspect if a
+        result screen ever does hang on this.
+
+        OPTIONAL ON PURPOSE: a plain vector serialises as "4ceMWH6k": [] when
+        unset, and an empty full-replace list is the one payload that could
+        clear the roster outright.
+        """
+        optional #true
+    }
+
+    field ope_result type="[UnitOpeResult]" {
+        key "1ZbHB6Im"
+        doc """
+        DO NOT POPULATE THIS FOR EVOLUTION — the evolution result screen never
+        reads it.  UnitOpeResult::shared() has exactly one scene consumer,
+        UnitMixPlayScene::parseMixResult (the other two callers are the response
+        ctor and its readParam), and UnitOpeResult is a SINGLETON, so writing it
+        from an evolution reply mutates state a fusion scene may later read.
+        Evolution reports through its own class instead: I82p0wCL ->
+        UnitOpeEvoResponse -> UnitEvoInfo (see EvoResultEntry).
+        Retained only because the field is shared with UnitMixResp.
+        """
     }
 
     field team_info type="[UserTeamInfo]::size(1)" {
@@ -1217,7 +1254,57 @@ json UnitMixResp {
 
     field unit_update type="[UserUnitInfo]" {
         key "qC2tJs4E"
-        doc "Incremental unit-cache update for the fused base unit."
+        doc """
+        INERT for fusion — kept only so the shape stays documented.  This key
+        is INSERT-IF-ABSENT, not an update: UserUnitInfoResponse::readParam
+        ends with
+
+            v187 = UserUnitInfoList::exist(list, userUnitId);
+            if ( (v187 & 1) == 0 ) { ...; addObject(...); return 1; }
+            return 1LL;              // already owned -> entry DISCARDED
+
+        and a fusion base unit is always already owned, so whatever we put
+        here is parsed and then dropped.  It is the right key for genuinely
+        NEW units (drops, gacha).  Use unit_refresh below to actually change
+        an owned unit.
+        """
+    }
+
+    field unit_refresh type="[UserUnitInfo]" {
+        key "4ceMWH6k"
+        doc """
+        FULL-REPLACE unit cache rebuild — the ONLY key that can change a unit
+        the client already owns, because its ctor flag makes readParam call
+        removeAllObjects() before re-adding.  Send the COMPLETE roster here or
+        the client loses every unit omitted.
+
+        CONFIRMED WORKING on the fusion reply, 2026-08-10: the fusion menu shows
+        the new level and the fodder are gone with no trip to Home.
+        The one caveat to remember is that removeAllObjects() release()s every
+        CCObject in both containers, so any scene still holding a raw
+        UserUnitInfo* dangles.  This key soft-locked the result screen once
+        (2026-08-09), but that build also sent lvup_status "1", which crashes
+        parseMixResult by itself.  If a result screen ever hangs on this again,
+        the release() is the mechanism to suspect.
+
+        Why it is here at all: the client has NO local apply path.  It never
+        updates the fused unit and never removes the fodder — removeObject's
+        only real callers are the FrontierGate/FGPlus friend lists and
+        removeObjectWithUserUnitID has none.  It also requests nothing after a
+        fusion.  So without this key the fusion menu stays stale until Home.
+
+        OPTIONAL ON PURPOSE, and it must stay that way.  A plain vector
+        serialises as "4ceMWH6k": [] when unset — qC2tJs4E demonstrably does
+        exactly that today — and an empty full-replace list is the one payload
+        that could clear the client's roster outright.  As std::optional the
+        key is absent entirely unless we mean it.
+        """
+        optional #true
+    }
+
+    field ope_result type="[UnitOpeResult]" {
+        key "1ZbHB6Im"
+        doc "The result-screen payload — before/after levels and exp for the level-up animation.  See UnitOpeResult in net/unit.kdl."
     }
 
     field team_info type="[UserTeamInfo]::size(1)" {
@@ -1867,5 +1954,209 @@ json FrontierGateRestartReq {
     field run type="[FrontierGateRestartEntry]::size(1)" {
         key "Mg8K8Y1a"
         doc "The gate being restarted."
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Dungeon keys (Vortex parades).  Entry types are in net/dungeon_key.kdl; the
+// per-user row is UserDungeonKeyInfo in net/user.kdl, decoded in
+// tools/ida/audits/eFU7Qtb0_audit.txt.
+//
+// Registration:
+//   REGISTER("1mr9UsYz", GetDistributeDungeonKeyInfo, "r0ZA3pn5")
+//   REGISTER("WCJE0xe2", DungeonKeyReceipt,           "V4pfQo5C")
+//   REGISTER("aGT5S6qZ", DungeonKeyUse,               "3rPx6tTw")
+// GroupIds and AES keys from the legacy handler registry
+// (server/gimuserver/gme/handlers/*RequestHandler.hpp), where all three were
+// 7-line empty-OK stubs — there was no behaviour to port.
+// ---------------------------------------------------------------------------
+
+json GetDistributeDungeonKeyInfoReq {
+    doc """
+    GetDistributeDungeonKeyInfo (1mr9UsYz) request.  createBody @0x13A4D14
+    emits ONLY the three BaseRequest tags (userInfo/signalKey/version) and zero
+    addParam/addGroup calls, so this carries loginInfo alone and the server
+    derives everything from the resolved user plus the current date.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json DungeonKeyReceiptReq {
+    doc """
+    DungeonKeyReceipt (WCJE0xe2) request — claim today's key at the Akras
+    Summoners' Hall Administration Office.  createBody @0x13A34E4 emits
+    addGroup("9S5M2yI3") + one addNode.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field receipt type="[DungeonKeyReceiptEntry]::size(1)" {
+        key "9S5M2yI3"
+        doc "The key being claimed."
+    }
+}
+
+json DungeonKeyUseReq {
+    doc """
+    DungeonKeyUse (aGT5S6qZ) request — spend keys to open a parade tier.
+    createBody @0x13A366C emits addGroup("xki65BPq") + one addNode.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field use type="[DungeonKeyUseEntry]::size(1)" {
+        key "xki65BPq"
+        doc "The key being spent and how many."
+    }
+}
+
+json DungeonKeyInfoResp {
+    doc """
+    Shared response for all three dungeon-key handlers — the player's current
+    key inventory, keyed eFU7Qtb0 (UserDungeonKeyInfoResponse, is_array=true).
+
+    There is no dedicated Receipt or Use response class in the binary: eFU7Qtb0
+    is the ONLY dungeon-key response it defines, so every handler answers with
+    the post-mutation inventory and the client re-reads its list from that.
+    The legacy stubs returned {} instead, which left the client's key count
+    stale until the next UserInfo.
+    """
+
+    field keys type="[UserDungeonKeyInfo]" {
+        key "eFU7Qtb0"
+        doc "One entry per DungeonKeyMst row (Metal / Jewel / Imp)."
+    }
+}
+
+// ---------------------------------------------------------------------------
+// UpdateInfoLight (ynB7X5P9 / 7kH9NXwC) — the client's "anything new for me?"
+// poll.  See handbook §8.41.
+//
+// The client fires this roughly every time it returns to Home (~143 times in a
+// single logged session) and its createBody @0x13AF9F4 emits ONLY the userInfo
+// and signalKey tags — the request carries no fields whatsoever.  Both this
+// server and the legacy fork answered it with a bare {}, i.e. "nothing has
+// changed", every single time.
+//
+// Nothing constrains a GME response to a fixed class: GameResponseParser
+// dispatches each top-level key independently through getResponseObject (504
+// keys, see tools/ida/audits/getResponseObject_FULL.txt), so a response is a
+// BAG OF KEYS and this poll can carry whatever actually changed.
+//
+// Uses 4ceMWH6k for units, not qC2tJs4E.  Per §8.32 the same class is
+// registered twice with different flags — 4ceMWH6k -> UserUnitInfoResponse(v3, 1)
+// clears the list before appending (full replace) and qC2tJs4E ->
+// UserUnitInfoResponse(v3, 0) appends (incremental, which is what unit DROPS
+// use).  A refresh poll wants the authoritative current list, so: full replace.
+// ---------------------------------------------------------------------------
+
+json UpdateInfoLightReq {
+    doc "UpdateInfoLight (ynB7X5P9) request — loginInfo only; createBody emits no addParam/addGroup calls at all."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json UpdateInfoLightResp {
+    doc """
+    UpdateInfoLight (ynB7X5P9) response — the mutable per-user state, resent so
+    the client can refresh without a relaunch.
+
+    Deliberately NOT the whole UserInfo payload: this fires on every return to
+    Home, so it carries only what actually changes during play.  The MST tables,
+    PermitPlace, gacha catalog and so on are login-time data and stay out.
+    """
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Energy, zel, karma, level, exp — the header the player is looking at."
+    }
+
+    // NO unit list here.  4ceMWH6k was tried and removed on 2026-08-09.
+    //
+    // Its readParam opens with UserUnitInfoList::removeAllObjects(), which
+    // RELEASES every CCObject in the list.  This poll fires on every return to
+    // Home — ~143 times a session — and Home displays the party units, so we
+    // would be freeing objects a live scene holds pointers to, over and over.
+    // The same call soft-locked the fusion result screen when the clearing key
+    // was tried there, which is what exposed the hazard.
+    //
+    // It also bought nothing: sending the full list here did NOT make
+    // evolutions or level-ups appear without a relaunch, so there is no
+    // benefit to weigh against the risk.  If unit refresh is revisited, it
+    // needs a mechanism that does not clear a list other scenes are holding.
+
+    field clear_mission_info type="[UserClearMissionInfo]" {
+        key "UT1SVg59"
+        doc "Cleared-mission history — the progression driver the client evaluates unlocks against."
+    }
+}
+
+// ---------------------------------------------------------------------------
+// HomeInfo (NiYWKdzs / f6uOewOD) — requested by the client as it ENTERS the
+// Home scene.  createBody @0x1C69270 emits only the three BaseRequest tags, so
+// it carries no fields of its own.
+//
+// This is the unit cache's rebuild point.  See §8.41: the client has NO
+// in-session path to correct a cached unit — UnitMixMainScene holds a POINTER
+// to the UserUnitInfo it rendered at initialize() and never re-reads, and the
+// incremental key (qC2tJs4E) can only APPEND, which getNotParty would render
+// as a duplicate because it does not de-duplicate.  The only thing that
+// rebuilds the cache is 4ceMWH6k, whose readParam calls removeAllObjects().
+//
+// That call RELEASES every CCObject in the list, so it is only safe where no
+// scene is holding unit pointers — which is exactly a scene boundary.  Login
+// is the proven-safe case (UserInfo lands, then scenes build), and HomeInfo
+// has the same ordering: the client asks for it while entering Home, before
+// HomeScene binds its party sprites.  Trying the same key mid-fusion
+// soft-locked the ritual screen, which is what established the rule.
+// ---------------------------------------------------------------------------
+
+json HomeInfoReq {
+    doc "HomeInfo (NiYWKdzs) request — loginInfo only; createBody emits no addParam/addGroup calls."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json HomeInfoResp {
+    doc """
+    HomeInfo (NiYWKdzs) response — the unit-cache rebuild.
+
+    Deliberately minimal: the team header and the authoritative unit list.
+    Everything else the Home scene needs it already has from login.
+    """
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Energy, zel, karma, level — the header the player sees on Home."
+    }
+
+    field unit_info type="[UserUnitInfo]" {
+        key "4ceMWH6k"
+        doc """
+        The full owned-unit list, FULL-REPLACE variant.
+
+        This is what makes a fusion or evolution visible without relaunching:
+        4ceMWH6k's readParam clears both of UserUnitInfoList's containers (the
+        dictionary at +44 and the array at +45) before repopulating, so the
+        stale entry is actually gone rather than shadowed.
+        // Safe HERE and only here-like places — see the block comment above.
+        // Do NOT copy this key onto a mutation reply such as UnitMix/UnitEvo.
+        """
     }
 }

@@ -134,9 +134,30 @@ json MissionMst {
         optional #true
     }
 
-    field unknown_HSRhkf70 type=str {
+    field need_mission_id type="[i32::str]::sep(comma)" {
         key "HSRhkf70"
-        doc "Unknown — wire format is HETEROGENEOUS across the 3433-row dataset: 3396 rows hold a single integer (\"0\", \"1\", \"10067\"), 36 rows hold a comma-separated pair (\"666,20067\", \"2100001,2100002\", \"10080,10165\"), 1 row is empty (\"\").  Earlier port typed this as `i32::str` based on the prior 'final-dungeon flag' guess in the doc — the comma-pair rows fail Glaze's single-int parse (`expected_quote` at the comma).  // REVERTED FROM i32::str: comma-pair values invalidate the narrower type.  // CAPTURED FROM: deploy/system/mission_mst.json.  // UNVERIFIED: semantic — possibly 'related mission id pair' or 'flag id pair', but no handler currently reads this field so the right narrowing is unclear."
+        doc """
+        Missions that must be CLEARED before this one becomes available.
+        0 (or empty) means no prerequisite.
+
+        // IDENTIFIED 2026-08-09 — this was `unknown_HSRhkf70`, documented as
+        "possibly a related mission id pair, no handler reads it".  It is the
+        same hash AreaMst.need_mission_id and DungeonMst.need_mission_id
+        already use, and Mistral's data proves the semantic outright: the
+        dungeon-1..80 chain is strictly linear through this field —
+        mission 1 need 0, 2 need 1, 10 need 2, 11 need 10, 12 need 11,
+        20 need 12, ... 85 need 84 — and the dungeons interlock the same way
+        (dungeon 20 need 12, 30 need 23, 40 need 33).  Area 200 "Morgan"
+        needs 85, the last mission of Mistral.  That is a progression graph,
+        not a "related id" coincidence.
+
+        // REVERTED FROM str: now typed like its two siblings.  The shape
+        matches theirs exactly — 3396 single ints, 36 comma pairs
+        ("666,20067", "10080,10165"), and 1 empty row (the id-0 sentinel,
+        which already carries nulls in several other columns).  The comma
+        pairs are why a bare i32::str fails; the list codec is what the
+        siblings use for the identical data.
+        """
     }
 
     field unknown_np4K1xtq type=str {
