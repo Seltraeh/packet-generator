@@ -102,9 +102,9 @@ json MissionMst {
         doc "Unknown string field — usually empty"
     }
 
-    field unknown_S2ChOKo6 type=str {
+    field repeat_clear_bonus type=str {
         key "S2ChOKo6"
-        doc "Unknown string field — usually empty"
+        doc "setRepeatClearBonus — bonus payload applied on repeat clears.  The same hash is already named repeat_clear_bonus on the MissionReward response (net/mission.kdl), whose doc notes this MST column as the likely source the response copies through.  Empty across every F_MISSION_MST row in the current dataset."
     }
 
     field unknown_wHN6nfh9 type=str {
@@ -170,15 +170,15 @@ json MissionMst {
         doc "Unknown string — usually empty"
     }
 
-    field unknown_N4XVE1uA type=str {
+    field scenario_info type=str {
         key "N4XVE1uA"
-        doc "Unknown nullable string — observed: '0,0'.  Null on mission row 0."
+        doc "Scenario/cutscene script binding, \"<flag>,<script.txt>\".  The same hash is `scenario_info` in mst/area.kdl, mst/arena.kdl, mst/raid.kdl, mst/scenario.kdl and net/user.kdl, and it carries script filenames in every table that populates it (area_mst: \"8thAnniv_Start.txt\"; dungeon_mst: \"0,map101-ending.txt\"; raid_mission_mst: \"0,RC7_Dark_End.txt\").  F_MISSION_MST itself is nearly always \"0,0\" (no cutscene) with a handful of \"0,map1-dungeon0-Nend.txt\" rows.  Null on mission row 0."
         optional #true
     }
 
-    field unknown_L8iA9M6c type=str {
+    field battle_img type=str {
         key "L8iA9M6c"
-        doc "Unknown nullable string.  Null on mission row 0."
+        doc "Battle background image (dungeon_battle_<id>.jpg).  Same hash is `battle_img` in mst/grand_mission.kdl and `img` in mst/area.kdl / mst/raid.kdl; dungeon_mst (299 distinct), grand_mission_spot_mst (144) and raid_point_mst (109) all populate it with dungeon_battle_*.jpg filenames.  Empty in F_MISSION_MST — quest battle backgrounds come from the dungeon row instead.  Null on mission row 0."
         optional #true
     }
 

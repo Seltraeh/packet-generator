@@ -28,9 +28,9 @@ json MissionStartReqItem {
         doc "Always \"0\" in captured player requests. Distinct from IKqx1Cn9.h7eY3sAK (real user UUID). // UNVERIFIED purpose."
     }
 
-    field unk_J3stQ7jd type="i32::str" {
+    field friend_point type="i32::str" {
         key "J3stQ7jd"
-        doc "Always \"0\" in captured requests. // UNVERIFIED."
+        doc "setFriendPoint.  Confirmed by the 9Q1Lq5FS readParam audit (handbook §8.27, which corrected an earlier \"account_id\" reading) and by the same hash already being named friend_point in MissionStartInfo below, net/user.kdl and net/reinforcement_info.kdl.  Always \"0\" in captured requests."
     }
 
     field mission_id type="i32::str" {
@@ -38,9 +38,9 @@ json MissionStartReqItem {
         doc "Mission ID being started. Cross-refs F_MISSION_MST.id (see MissionMst in mst/mission.kdl). Quoted on wire."
     }
 
-    field unk_jkldTrhL type="i32::str" {
+    field ep3_flg type="i32::str" {
         key "jkldTrhL"
-        doc "Always \"0\" in captured requests. // UNVERIFIED."
+        doc "Episode 3 flag — the same hash is already named ep3_flg in net/frontier_gate.kdl and net/handlers.kdl, and mst/item.kdl carries it as a constant 0 column.  Always \"0\" in captured requests.  // UNVERIFIED against a readparam setter: no response class in the export names this hash."
     }
 
     field active_deck type="i32::str" {
@@ -48,14 +48,14 @@ json MissionStartReqItem {
         doc "Squad/deck index 0-9 the player selected. Server UPDATEs userinfo.active_deck. IDA setter (other response classes): ActiveGuildDeck."
     }
 
-    field unk_nA95Bdj6 type="i32::str" {
+    field quest_bonus_type type="i32::str" {
         key "nA95Bdj6"
-        doc "Always \"0\" in captured requests. // UNVERIFIED."
+        doc "setQuestBonusType (uint32_t) — which event/quest bonus is active for this run.  Setter recovered from the PermitPlace response family (PermitPlace/PermitPlaceSp/PermitPlaceML Response::readParam, readparam_analysis.json), where the same hash carries the per-mission bonus advertised to the client.  Always \"0\" in captured requests = no bonus active."
     }
 
-    field unk_5Z1LNoyH type="i32::str" {
+    field quest_bonus_rate type=str {
         key "5Z1LNoyH"
-        doc "Always \"0\" in captured requests. // UNVERIFIED."
+        doc "setQuestBonusRate — the bonus multiplier paired with quest_bonus_type.  Setter per the PermitPlace response family; note the setter takes std::string (not int) there, so this is typed `str` rather than i32::str even though every captured request value is \"0\"."
     }
 
     field unk_u1iPEVUq type="i32::str" {
@@ -144,19 +144,19 @@ json MissionEndReqBattleResult {
         doc "Highest single-turn damage this battle. IDA setter MaxTurnDamage. Captured: \"28145\"."
     }
 
-    field unk_XP06YWdT type="i32::str" {
+    field max_turn_spark_cnt type="i32::str" {
         key "XP06YWdT"
-        doc "Captured \"1\". // UNVERIFIED no readparam setter."
+        doc "setMaxTurnSparkCnt — best single-turn spark count.  Setter recovered from ColosseumBattleResultResponse::readParam (readparam_analysis.json), which shares this battle-result stat block with the mission flow.  Captured \"1\"."
     }
 
-    field unk_U8uZLA34 type="i32::str" {
+    field spark_cnt type="i32::str" {
         key "U8uZLA34"
-        doc "Captured \"2\". // UNVERIFIED."
+        doc "setSparkCnt — total sparks this battle.  Setter per ColosseumBattleResultResponse::readParam.  Captured \"2\"."
     }
 
-    field unk_rZQJF5G9 type="i32::str" {
+    field skill_use_cnt type="i32::str" {
         key "rZQJF5G9"
-        doc "Captured \"4\". // UNVERIFIED."
+        doc "setSkillUseCnt — number of skill activations.  Setter per ColosseumBattleResultResponse::readParam.  Captured \"4\"."
     }
 
     field unk_TW1Mrtp5 type="i32::str" {
@@ -184,9 +184,9 @@ json MissionEndReqBattleResult {
         doc "Captured \"109\". // UNVERIFIED."
     }
 
-    field unk_GRCVD1i8 type="i32::str" {
+    field bb_ko_cnt type="i32::str" {
         key "GRCVD1i8"
-        doc "Captured \"5\". // UNVERIFIED."
+        doc "setBBKoCnt — kills landed with a Brave Burst.  Setter per ColosseumBattleResultResponse::readParam.  Captured \"5\"."
     }
 
     field unk_Uy15wSJd type="i32::str" {
