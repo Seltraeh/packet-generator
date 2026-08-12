@@ -45,9 +45,9 @@ json UnitTypeMst {
         doc "// UNVERIFIED: comma pair, elements -3..4."
     }
 
-    field unk5 type="str" {
+    field appearance_rate type="str" {
         key "ChD5b0jR"
-        doc "// UNVERIFIED: a DECIMAL string (\"0.00\" .. \"10.00\") — kept as a string, there is no float scalar in the type vocabulary."
+        doc "Percent chance this type is rolled when a unit is acquired without a fixed type.  // RENAMED FROM: unk5 (whose doc guessed the range as \"0.00\"..\"10.00\").  The six rows read 23.00, 23.00, 22.00, 22.00, 10.00, 0.00 — they SUM TO EXACTLY 100, which is what identifies this as a distribution rather than a multiplier, and Rex's 0.00 matches the game never handing Rex out from a normal drop.  MissionArchiver uses these weights when a mission's unit_drop_type is 0 (\"random\").  Kept a decimal string: there is no float scalar in the type vocabulary."
     }
 
     field unk6 type="str" {
