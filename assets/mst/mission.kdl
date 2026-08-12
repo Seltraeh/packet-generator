@@ -42,14 +42,14 @@ json MissionMst {
         doc "Story chapter number"
     }
 
-    field stamina_cost type="i32::str" {
+    field battle_count type="i32::str" {
         key "69vnphig"
-        doc "Energy/stamina cost to enter this mission"
+        doc "Number of battles (waves) in the mission.  // RENAMED FROM: stamina_cost — this is NOT the energy cost.  The friendly-key decode of F_MISSION_MST names it missionBattleCount, and the data agrees: the two tutorials carry 3 here and have exactly 3 authored stages, mission 10 carries 5 and its original capture had 5 waves.  The energy cost is energy_use (A8DEK5ob) below."
     }
 
-    field unknown_A8DEK5ob type="i32::str" {
+    field energy_use type="i32::str" {
         key "A8DEK5ob"
-        doc "Unknown integer field — always 0 in MST_1"
+        doc "Energy/stamina consumed to enter this mission.  // RENAMED FROM: unknown_A8DEK5ob.  Named missionEnergyUse by the friendly-key decode, and independently confirmed as setUseActionPoint by the Grand Mission readParam audit (the same hash on CampaignMissionMstResponse).  Values agree with the game: 0 for both tutorials (free), 3 for mission 10, 8 for mission 85."
     }
 
     field exp_rate type=str {
