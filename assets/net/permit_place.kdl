@@ -26,21 +26,41 @@ json PermitPlaceSP {
 }
 
 json PermitReceipe {
-  doc "TODO"
+  doc """
+  One synthesis recipe the player is allowed to craft.  Emitted in UserInfo
+  under 51yQrDBR (PermitRecipeResponse).
 
-  field unk1 type="i32::str" {
+  This list IS the synthesis menu.  MyTownItemListScene::setRecipeList
+  (0x18E9434) and its sphere twin walk PermitRecipeInfoList — never
+  RecipeMstList — and resolve each permitted id against the recipe master, so a
+  missing 51yQrDBR renders an empty Synthesis facility.  The server derives the
+  set from the player's town facility levels via TownFacilityLvMst.release_recipe.
+
+  Setters are PermitRecipeInfo::set* (libgame.so 0x126D388..0x126D50C).
+  """
+
+  field recipe_id type="i32::str" {
     key "4HqhTf3a"
-    doc "TODO"
+    doc "setRecipeID — joins to ReceipeMst.id."
   }
 
-  field unk2 type="i32::int" {
+  field craft_count type="i32::str" {
     key "H6k1LIxC"
-    doc "TODO"
+    doc "setCnt — how many times this recipe has already been crafted.  GameUtils::updatePermitRecipe (0x1177C28) bumps it client-side with setCnt(getCnt() + 1) after each craft, so the server reports the persisted total."
   }
 
-  field unk3 type="i32::int" {
+  field available_seconds type="i32::str" {
     key "VDKB0Y5h"
-    doc "TODO"
+    doc """
+    setLimit — SECONDS REMAINING in this recipe's availability window, not a
+    craft cap.  setLimit (0x126D4A4) stores the value and stamps now();
+    getRemainingTime (0x126D4CC) returns -1 unchanged when it is negative,
+    otherwise max(0, limit - elapsed).
+
+    -1 therefore means "permanent" and is what the timeless recipes need
+    (ReceipeMst.availability_end is 9999-12-31 for those).  Sending 0 reads as
+    already-expired — the same epoch-zero trap as handbook 6.12.
+    """
   }
 
 }

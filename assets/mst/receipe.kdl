@@ -1,54 +1,65 @@
 json ReceipeMst {
-    doc "TODO"
-    
+    doc """
+    F_RECIPE_MST — the synthesis catalog behind the town's Synthesis and sphere
+    facilities.  617 rows.
+
+    Column names come from zipping the hashed decode against the translated one
+    (see reference notes on MST naming sources): both carry the same 617 rows in
+    the same column order, so the mapping is positional and verified, not
+    inferred from value shape.
+
+    Which of these a player may craft is NOT decided here — that is PermitRecipe
+    (51yQrDBR), derived from their town facility levels.
+    """
+
     field id type="i32::str"  {
         key "4HqhTf3a"
-        doc "TODO"
+        doc "recipeId.  The id ItemMix sends back in its craft CSV and PermitRecipe carries."
     }
 
     field item_id type="i32::str"  {
         key "kixHbe54"
-        doc "TODO"
+        doc "itemId — what the recipe produces, joining to ItemMst.id."
     }
 
     field item_count type="i32::str"  {
         key "wgV86x1q"
-        doc "TODO"
+        doc "How many of item_id one craft yields.  1 on all 617 rows.  // UNVERIFIED: the translated decode leaves this column unnamed; the name is inferred from the value and from the same hash meaning setPossession (a count) on UserDungeonKeyInfo."
     }
 
     field karma type="i32::str" {
         key "HTVh8a65"
-        doc "TODO"
+        doc "Karma one craft costs.  0 for the low-tier recipes; the sphere recipes run to 100000."
     }
 
     // TODO(arves): This is actually [i32::str => i32::str]::str
     field materials type="str" {
         key "75YV2q1i"
-        doc "TODO"
+        doc "recipeMaterials — \"<itemId>:<count>,...\" consumed per craft.  Example: recipe 1009 (Cure) is \"10000:1,10300:1\", one Green Grass from the Forest tile plus one Green Drop from the River tile."
     }
 
     field keyitem_ids type="str" {
         key "7dEB1Kwj"
-        doc "TODO"
+        doc "requiredItemId — a single item id on 228 rows, empty on the other 389.  Where present it also appears inside materials, so it reads as a highlight/gating marker rather than an extra cost."
     }
 
-    field unk2 type="i32::str" {
+    field required_material_amount type="i32::str" {
         key "H6k1LIxC"
-        doc "TODO"
+        doc "requiredMaterialAmount.  Only two values in the data: -1 on 542 rows and 1 on 75.  // UNVERIFIED: no consumer read yet; -1 plainly means \"none\"."
     }
 
-    field unk type="i32::str" {
+    field visual_id type="i32::str" {
         key "XuJL4pc5"
-        doc "TODO"
+        doc "visualId — per-recipe art id.  Same hash and meaning as ItemMst.visual_id."
     }
 
-    field unk3 type="datetime" {
+    field availability_start type="datetime" {
         key "qA7M9EjP"
-        doc "TODO"
+        doc "availabilityTimeStart.  \"0000-00-00 00:00:00\" on all 617 rows, i.e. always started."
     }
 
-    field unk4 type="datetime" {
+    field availability_end type="datetime" {
         key "SzV0Nps7"
-        doc "TODO"
+        doc "availabilityTimeEnd.  \"9999-12-31 23:59:59\" on all 617 rows, so every shipped recipe is permanent and PermitRecipe.available_seconds goes out as -1 for all of them.  A real window would only appear on event recipes this MST does not carry."
     }
 }

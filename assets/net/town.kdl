@@ -2,21 +2,51 @@
 
 // ---------------------------------------------------------------------------
 // TownUpdate  (id: CuQ5oB8U)
-// Fires on in-town navigation / interaction (NOT on town entry).
-// Request shape is not yet fully reversed; stub {} response keeps session alive.
+// The resource-tile tap report.  MyTownTopScene::collectItem queues one of
+// these after every tap on a sparkling tile (0x18F2A78), so it fires on
+// harvesting, not on town entry or navigation.
+// Shape from TownUpdateRequest::createBody @0x13AD1FC.
 // ---------------------------------------------------------------------------
 
+json TownCollectLog {
+    doc "Single-element array wrapper carrying everything TownUpdate reports."
+
+    field collect_log type="str" {
+        key "0mRaAo39"
+        doc """
+        "<locationId>:<tapCnt>,..." — how many taps the player has taken on each
+        tile since the last flush, built by walking MyTownCollectLogList
+        (getLocationID / getTapCnt per entry).
+
+        It reports counts only, never which items dropped: the server pre-rolled
+        the period's loot into UserTownLocationDetail.drop_item_info and the
+        client merely replayed it, so the server resolves the same entries by
+        index when applying the taps.
+        """
+    }
+
+    field bought_sound_ids type="[i32::str]::sep(comma)" {
+        key "LzKDI2i7"
+        doc "Sound-room purchases, from UserState::getBuySoundList — the jukebox tracks the player owns.  Unrelated to the resource tiles; flushed on the same request."
+    }
+}
+
 json TownUpdateReq {
-    doc "In-town navigation / interaction event.  Exact request fields not yet reversed."
+    doc "Resource-tile tap report — see TownCollectLog."
 
     field loginInfo type="[LoginInfoReq]::size(1)" {
         key "IKqx1Cn9"
         doc "Standard user-info tag present on nearly every request."
     }
+
+    field collect type="[TownCollectLog]::size(1)" {
+        key "EuY6L7AX"
+        doc "The tap log plus the owned-sound list."
+    }
 }
 
 json TownUpdateResp {
-    doc "Empty response — stub sufficient to keep session alive."
+    doc "Empty response — the client already applied the rewards locally off the pre-rolled drop list, so nothing has to come back.  The next UserInfo carries the authoritative warehouse, zel, karma and tap state."
 }
 
 // ---------------------------------------------------------------------------
@@ -31,12 +61,12 @@ json TownKarmaPayment {
 
     field karma type="i64::str" {
         key "HTVh8a65"
-        doc "Total karma cost for the entire upgrade batch."
+        doc "Total karma injected across the batch (createBody's own local is named InjectionKarma).  This is what leaves the player's balance; the per-row HTVh8a65 values are where it landed."
     }
 }
 
 json TownFacilityUpdateEntry {
-    doc "One facility entry inside a TownFacilityUpdate request.  Mirrors UserTownFacilityInfo but omits user_id and per-facility karma (those are server-authoritative or unused in the request)."
+    doc "One facility entry inside a TownFacilityUpdate request.  createBody (0x18F66D4 -> TownFacilityUpdateRequest::createBody) sends the post-injection state of every facility row."
 
     field facility_id type="i32::str" {
         key "y9ET7Aub"
@@ -45,7 +75,20 @@ json TownFacilityUpdateEntry {
 
     field lv type="i32::str" {
         key "D9wXQI2V"
-        doc "Desired new level for this facility."
+        doc "New level for this facility after the injection batch."
+    }
+
+    field karma type="i32::str" {
+        key "HTVh8a65"
+        doc """
+        Karma ACCUMULATED toward the next level — a progress bar, not a price.
+
+        MyTownFacilityExtScene2::injectionFacility (0x18F66D4) adds the injected
+        karma to UserTownFacilityInfo::getKarma(), and when the running total
+        reaches TownFacilityLvMst.karma it bumps the level and keeps the
+        remainder.  Dropping this field on the floor resets every player's
+        progress bar to 0 on the next login.
+        """
     }
 }
 
@@ -59,7 +102,12 @@ json TownLocationUpdateEntry {
 
     field lv type="i32::str" {
         key "D9wXQI2V"
-        doc "Desired new level for this location."
+        doc "New level for this location after the injection batch."
+    }
+
+    field karma type="i32::str" {
+        key "HTVh8a65"
+        doc "Karma accumulated toward this location's next level — see TownFacilityUpdateEntry.karma."
     }
 }
 

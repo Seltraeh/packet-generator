@@ -108,3 +108,49 @@ json ItemSphereEqpReq {
         doc "Equip operations (the client batches changed units into one node's packed string)."
     }
 }
+
+// ---------------------------------------------------------------------------
+// ItemMix  (id: 4P5GELTF)
+// Synthesis at the town's Synthesis facility and its sphere counterpart.
+// Shape from ItemMixRequest::createBody @0x13A663C — one param, built by
+// ItemMixRequest::itemCsvData @0x13A67AC.
+// ---------------------------------------------------------------------------
+
+json ItemMixEntry {
+    doc "Single-element array wrapper holding the whole craft batch as one CSV."
+
+    field recipe_csv type="str" {
+        key "4HqhTf3a"
+        doc """
+        "<recipeId>:<count>,<recipeId>:<count>,..." — what to craft and how many
+        of each.
+
+        itemCsvData walks the client's ItemMixResultInfo list, dedupes on
+        getRecipeID(), counts the repeats, and joins the pairs with ',' after
+        appending ':' + IntToString(count).  The repeats come from
+        MyTownItemMixScene::continueMix, which is the "craft again" button.
+
+        The key is the same 4HqhTf3a that PermitRecipeResponse::readParam feeds
+        to setRecipeID, so the id space is confirmed to be ReceipeMst.id rather
+        than an item id.
+        """
+    }
+}
+
+json ItemMixReq {
+    doc "Craft one or more recipes.  Server consumes ReceipeMst.materials and karma from the player and credits the results; the client applies its own copy optimistically."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field mix type="[ItemMixEntry]::size(1)" {
+        key "JTf2jY5o"
+        doc "The craft batch."
+    }
+}
+
+json ItemMixResp {
+    doc "Empty response — the client already applied the craft locally.  The next UserInfo carries the authoritative warehouse and karma."
+}

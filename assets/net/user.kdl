@@ -1372,31 +1372,53 @@ json UserSettings {
 }
 
 json UserTownLocationDetail {
-    doc "TODO"
+    doc """
+    Per-user harvest state for one town resource tile (River / Forest / Farm /
+    Mountain).  One row per TownLocationMst id; MyTownTopScene::setLocationInfo
+    skips any location with no detail row, so the tile is not drawn at all
+    without one — even while it is still mission-locked.
+
+    Field names are the binary's own setters (UserTownLocationDetail::set*,
+    libgame.so 0x12ACD30..0x12AD054); see tools/TOWN_STATE_MODEL.md.
+    """
 
     field user_id type="str" {
         key "h7eY3sAK"
         doc "ID of the user for this session."
     }
 
-    field unk type="i32::str" {
+    field location_id type="i32::str" {
         key "un80kW9Y"
-        doc "TODO"
+        doc "setLocationID.  Joins to TownLocationMst.id: 1 Mountain, 2 River, 3 Farm, 4 Forest."
     }
 
-    field unk2 type="datetime" {
+    field start_date type="datetime" {
         key "qA7M9EjP"
-        doc "TODO"
+        doc "setStartdate — when the current harvest period began.  WRITE-ONLY as far as the client is concerned: getStartdate has zero callers in libgame.so, and no MyTownTopScene string references a countdown, so the refresh clock is entirely server-side.  Sent because the field is part of the struct the client parses."
     }
 
-    field unk3 type="i32::str" {
+    field tap_cnt type="i32::str" {
         key "mDaE3t6A"
-        doc "TODO"
+        doc "setTapCnt — taps REMAINING in this period, not taps taken.  The sparkle particle is drawn iff this is >= 1 (setLocationInfo 0x18F1574), and collectItem calls decTapCnt(1) per tap.  Rolled from TownLocationLvMst tap_cnt_start..tap_cnt_end at the start of each period."
     }
 
-    field unk4 type="str" {
+    field drop_item_info type="str" {
         key "eip3MS5L"
-        doc "TODO"
+        doc """
+        setDropItemInfo — the whole period's loot, PRE-ROLLED BY THE SERVER, as
+        "<itemId>:<zel>:<karma>,..." with one comma element per tap.
+
+        getCollectItemInfo (0x18F3868) picks element `count - tap_cnt`, so the
+        list is consumed front-to-back as tap_cnt counts down; collectItem
+        (0x18F244C) splits that element on ':' and applies incWarehouseItem(+1)
+        / incZel / incKarma locally.  An item id the ItemMst list does not
+        resolve (e.g. "0") simply grants no item that tap; zel and karma are
+        applied only when >= 1.
+
+        The client keeps no drop table of its own, which is why the tap report
+        (TownUpdate 0mRaAo39) carries only tap counts — the server already knows
+        what it handed out.
+        """
     }
 }
 
