@@ -409,3 +409,32 @@ json SummonTicketV2Mst {
         optional #true
     }
 }
+
+json UnitSelectorGachaMst {
+    doc "Unit Selector Gacha (Burst Hero Selector) catalog.  Wrapper key JukkSeNA.  Loaded from deploy/system/unit_selector_gacha_ticket_mst.json (16 rows via port_mst.py, from F_UNIT_SELECTOR_GACHA_TICKET_MST_Ver106).  Each row is one selector door: the gacha it belongs to, display name, icon, and the pool of unit ids a player may pick from when redeeming a matching V2 ticket.  Consumed by the UnitSelectorGachaTicket handler (k57TdKDj) to validate the picked unit."
+
+    field selector_id type="i32::str" {
+        key "XIvaD6Jp"
+        doc "Selector id.  Echoed back in UnitSelectorGachaUserInfo (also XIvaD6Jp)."
+    }
+
+    field gacha_id type="i32::str" {
+        key "7Ffmi96v"
+        doc "Gacha door id this selector belongs to (joins to GachaInfoMst.id)."
+    }
+
+    field name type="str" {
+        key "s35idar9"
+        doc "Display name, e.g. \"Brave Burst Heroes Selector Ticket\"."
+    }
+
+    field image type="str" {
+        key "TAFzS4j3"
+        doc "Icon filename served from /content/, e.g. \"unit_selector_ticket.png\"."
+    }
+
+    field unit_pool type="[i32::str]::sep(comma)" {
+        key "r7MSYD2c"
+        doc "Comma-separated unit ids the player may pick from, e.g. \"810658,820658,830658,840658,850658,860658\"."
+    }
+}
