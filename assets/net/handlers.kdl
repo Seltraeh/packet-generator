@@ -55,6 +55,8 @@ import "../net/summoner_journal.kdl"
 import "../net/user.kdl"
 import "../net/items.kdl"
 import "../net/scenario.kdl"
+import "../net/present.kdl"
+import "../net/achievement.kdl"
 import "../net/unit.kdl"
 import "../net/permit_place.kdl"
 import "../net/dungeon_key.kdl"
@@ -1094,6 +1096,37 @@ json UserInfoResp {
     field excludedDungeonMissions type="[ExcludedDungeonMissionMst]" {
         key "3aDk1xk7"
         doc "TODO"
+    }
+
+    field gachaInfo type="[GachaInfoMst]" {
+        key "1IR86sAv"
+        doc """
+        Available summon gates — the same rows GachaList sends.
+
+        Duplicated onto UserInfo because the summon screen paints BEFORE any
+        GachaList round trip when the tutorial drives it: tuto15.txt issues
+        `change_gacha_top_scene` directly, so SummonsCategorizationScene opens
+        with whatever the client already holds.  Sending it only on GachaList
+        left GachaInfoList empty and the scene crashed on entry.
+
+        Safe to send from here because GameResponseParser::getResponseObject
+        (0x1392568) dispatches this key globally — `1IR86sAv` constructs a
+        GachaInfoResponse no matter which handler's payload carries it.
+        GachaActionScene and SummonsDetailScene both resolve gates through
+        GachaInfoList::getObjectWithGachaID, which this populates.
+        """
+    }
+
+    field gachaCategories type="[GachaCategory]" {
+        key "IBs49NiH"
+        doc """
+        Summon-screen banner rail — the same rows GachaList sends.
+
+        Same reasoning as gachaInfo above: dispatched globally by
+        getResponseObject into a GachaCategoryMstResponse, so it populates
+        GachaCategoryMstList regardless of which response carries it, and the
+        banner rail is what the tutorial's forced scene change needs present.
+        """
     }
 }
 

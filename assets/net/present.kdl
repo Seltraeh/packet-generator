@@ -1,0 +1,208 @@
+json UserPresentInfo {
+    doc """
+    One entry in the player's present box.
+
+    Response key sEA41vFK (UserPresentInfoResponse, func_addr 0x1400740).  Every
+    field below carries its real setter name from the readParam export — none of
+    this is inferred.
+
+    The response class declares three params with no readParam setter, reached
+    on the client through hand-coded getValue() calls.  `h7eY3sAK` is modelled
+    below — it is the ordinary user id (see user.kdl) and only *looked* unknown
+    because it has no setter.  **Omitting it made the client discard every
+    present**: the rows went out fully populated and the box still rendered
+    empty.  A missing setter name does NOT mean unknown semantics — check the
+    key against those already documented elsewhere before dismissing it.
+
+    All three of those params are now modelled.  `ZC0msu2L` (setDescription) and
+    `g85qMNxf` (setIsReceipt) were recovered by decompiling
+    `UserPresentInfoResponse::readParam` — neither appears in
+    `readparam_analysis.json`, so the export's silence meant "not extracted",
+    not "does not exist".
+
+    `DbMVG16I` is an OPERATION CODE, not a per-present field — it is stored on
+    the RESPONSE object (`*((_DWORD *)this + 8)`), not on UserPresentInfo, and
+    it decides what happens to the parsed entry:
+
+        1 or 2 -> removeObjectWithPresentID, then **addObject**  (upsert)
+        3      -> removeObjectWithPresentID only                 (delete)
+        other  -> NOTHING — the entry is parsed and then dropped
+
+    `addObject` appears exactly once in readParam and lives inside the 1-or-2
+    branch, so this key is what puts a present into the list at all.  Omitting
+    it, or sending 0, means the box is always empty no matter how correct every
+    other field is.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "Owning user id — same key and value as the login envelope's user id.  Hand-coded on the client (no readParam setter) and REQUIRED: without it the present box renders empty."
+    }
+
+    field present_id type="str" {
+        key "S1B82FHK"
+        doc "setPresentID.  Opaque id echoed back by PresentReceipt to identify which present is being claimed."
+    }
+
+    field present_type type="i32::str" {
+        key "30Kw4WBa"
+        doc """
+        setPresentType — what the present actually pays out.  Same key and same
+        vocabulary as the campaign reward rows (grand_mission.kdl present_type,
+        consumed by CampaignReceipt): 3 = zel, 8 = gem, 6 = unit,
+        4/5/7 = item/material/sphere (all resolve in item_mst).
+        """
+    }
+
+    field target_id type="str" {
+        key "TdDHf59J"
+        doc "setTargetID — rewarded entity id, interpreted per present_type (unit_mst id for 6, item_mst id for 4/5/7, unused for currency)."
+    }
+
+    field target_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "setTargetCnt — how many of target_id, or the currency amount for present_type 3/8."
+    }
+
+    field target_param type="str" {
+        key "37moriMq"
+        doc "setTargetParam — extra per-type payload.  // UNVERIFIED: empty on every present this server creates; kept because the setter is real."
+    }
+
+    field receipt_type type="i32::str" {
+        key "i1WQkh4G"
+        doc "setReceiptType — echoed back in PresentReceiptReq alongside present_id, so it selects how the claim is processed."
+    }
+
+    field present_date type="i32::str" {
+        key "fAi8Th5s"
+        doc "setPresentDate — unix seconds when the present was granted."
+    }
+
+    field present_date_str type="str" {
+        key "ya7UHG9v"
+        doc "setPresentDateStr — display form of present_date, \"YYYY-MM-DD HH:MM:SS\".  Travels WITH its epoch sibling; the pair must agree."
+    }
+
+    field receipt_date type="i32::str" {
+        key "0wmDb9vi"
+        doc "setReceiptDate — unix seconds when claimed, 0 while unclaimed."
+    }
+
+    field receipt_date_str type="str" {
+        key "vo1GT3Rs"
+        doc "setReceiptDateStr — display form of receipt_date, empty while unclaimed."
+    }
+
+    field description type="str" {
+        key "ZC0msu2L"
+        doc "setDescription — the tile's display text.  Confirmed from UserPresentInfoResponse::readParam (0x1400740); it has no entry in readparam_analysis.json, which is why it was missed initially."
+    }
+
+    field list_op type="i32::str" {
+        key "DbMVG16I"
+        doc """
+        List operation for this entry: 1/2 = add-or-update, 3 = delete.
+        Anything else (including 0, and omitting the key) makes the client parse
+        the entry and discard it — `addObject` is only reached from the 1-or-2
+        branch of UserPresentInfoResponse::readParam.
+
+        // REVERTED FROM omitted: this was first mis-modelled as `is_receipt`
+        // (readparam_analysis.json names it IsReceipt, which the decompiled
+        // readParam contradicts), then removed entirely on the reading that
+        // 1/2 meant "remove".  Both were wrong; 1/2 is remove-then-ADD.
+        """
+    }
+
+    field is_receipt type="bool::str" {
+        key "g85qMNxf"
+        doc """
+        setIsReceipt(bool) — 1 once claimed, 0 while pending.  THIS is the real
+        received flag.
+
+        // REVERTED FROM DbMVG16I: this field was originally keyed to DbMVG16I
+        // because readparam_analysis.json lists that key against a setter named
+        // IsReceipt.  The decompiled readParam disagrees: DbMVG16I is stored on
+        // the RESPONSE object (`*((_DWORD *)this + 8)`), not on UserPresentInfo,
+        // and g85qMNxf is what actually reaches setIsReceipt.  While we sent
+        // DbMVG16I and omitted g85qMNxf, setIsReceipt was never called at all
+        // and the box reported "no Gifts to receive".
+        """
+    }
+}
+
+json PresentListReq {
+    doc """
+    Request for the present box listing.
+
+    Bare request: PresentListRequest::createBody (0x13ABBB0) adds only
+    createUserInfoTag + createSignalKeyTag + createVersionTag, plus
+    createCampaignReceiptInfoTag when FUNC_CAMPAIGN_SCHEME is on.  So there is
+    nothing to parse beyond the identity envelope.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json PresentListResp {
+    doc "The user's present box — every present row, claimed and unclaimed, from the user_presents table."
+
+    field presents type="[UserPresentInfo]" {
+        key "sEA41vFK"
+        doc "Present box contents."
+    }
+}
+
+json PresentReceiptNode {
+    doc "Single node of the present-claim group (o6uWU0Z7)."
+
+    field receipt_type type="i32::str" {
+        key "i1WQkh4G"
+        doc "UserState::getReceiptType — echoed back from the listing entry being claimed."
+    }
+
+    field present_id type="str" {
+        key "S1B82FHK"
+        doc "UserState::getPresentID — which present to claim."
+    }
+}
+
+json PresentReceiptReq {
+    doc """
+    Claim one present.
+
+    Wire: {\"o6uWU0Z7\":[{\"i1WQkh4G\":<receiptType>,\"S1B82FHK\":\"<presentId>\"}]}
+    per PresentReceiptRequest::createBody (0x13ABC7C).  Note i1WQkh4G is added
+    via the addParam(..., int) overload and S1B82FHK via the string overload.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[PresentReceiptNode]" {
+        key "o6uWU0Z7"
+        doc "The present being claimed."
+    }
+}
+
+json PresentReceiptResp {
+    doc """
+    Result of a claim: the refreshed present box plus the updated HUD currency,
+    so the client re-renders the list and the header in one pass.
+    """
+
+    field presents type="[UserPresentInfo]" {
+        key "sEA41vFK"
+        doc "Present box after the claim — the claimed row now carries is_receipt 1."
+    }
+
+    field teamInfo type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Refreshed zel/karma/gem totals after the grant."
+    }
+}

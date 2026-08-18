@@ -1,0 +1,114 @@
+json GetAchievementInfoNode {
+    doc """
+    The achievement query selector.
+
+    Wire: {\"1Q2pGAXE\":[{\"YQG2AE5h\":<mode>,\"KT71m8Ae\":<n>,\"3rhygS9K\":<n>}]}
+    per GetAchievementInfoRequest::createBody (0x13A4BD8).  All three go out
+    through the addParam(..., int) overload.
+    """
+
+    field mode type="i32::str" {
+        key "YQG2AE5h"
+        doc """
+        Which list the client is asking for.  createBody branches on this same
+        value straight after sending it: 1 clears UserAchievementSubjectInfoList
+        (subject/mission list), 2 clears UserAchievementTradeInfoList (the trade
+        shop).  So the client empties the list it is about to be sent, which
+        means a response omitting that list leaves it EMPTY rather than stale.
+        """
+    }
+
+    field category type="i32::str" {
+        key "KT71m8Ae"
+        doc "Achievement category.  Same key as F_ACHIEVEMENT_SUBJECT_MST's category column, so the two are joinable.  // UNVERIFIED: no readParam setter names exist for the achievement responses; semantics inferred from the shared MST key."
+    }
+
+    field sub_category type="i32::str" {
+        key "3rhygS9K"
+        doc "Achievement sub-category.  Also shared with F_ACHIEVEMENT_SUBJECT_MST.  // UNVERIFIED: as above."
+    }
+}
+
+json GetAchievementInfoReq {
+    doc "Request for the achievement screen.  Sent when the menu that hosts achievements opens — GroupId YPBU7MD8, AES key AKjzyZ81."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[GetAchievementInfoNode]" {
+        key "1Q2pGAXE"
+        doc "The query selector."
+    }
+}
+
+json GetAchievementInfoResp {
+    doc """
+    Achievement screen payload — INTENTIONALLY EMPTY for now.
+
+    The four response classes are known but NOT decoded:
+        Bnc4LpM8  UserAchievementInfoResponse           3 x uint32
+        YTRJLG65  UserAchievementSubjectInfoResponse    9 fields (M7SXoc31 = subject id)
+        9j3ALx8I  UserAchievementTradeInfoResponse      4 fields
+        LcFCx1Uz  UserAchievementSPSubjectInfoResponse  1 field  (M7SXoc31)
+
+    `readparam_analysis.json` carries their keys and C++ types but every setter
+    name is null, so what the fields MEAN is unknown.  Handbook §3.4: shipping a
+    response key with unknown fields stuffed with 0/\"\" is worse than omitting
+    it, because the client takes a present-but-wrong value at face value while a
+    missing key falls back to its own default.  So this response deliberately
+    carries nothing until a readParam audit names the setters.
+
+    Registering the handler at all is still the right move: it converts a hard
+    \"Unsupported request: YPBU7MD8\" — which kills the screen before anything
+    else on it can load — into an empty achievements list.
+    """
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back to the client."
+    }
+}
+
+json DailyTaskUserInfoResp {
+    doc """
+    Brave Points & Rewards payload (m7g0Ekb5).
+
+    Echoes the three daily-task MST tables back to the client.  They are ALSO
+    sent in Initialize, so this looks redundant — it is not.  The client empties
+    the list it is about to receive before issuing a request (proved for the
+    achievement path, where GetAchievementInfoRequest::createBody calls
+    UserAchievementSubjectInfoList::removeDataObject / removeAllObjects).  With
+    this handler answering {} the Brave Points screen therefore WIPED the tiles
+    Initialize had populated at boot, and they never came back — the screen
+    rendered once on a fresh launch and was empty on every visit afterwards.
+
+    Re-sending the tables makes the screen self-sufficient rather than depending
+    on boot state that it destroys on entry.
+
+    Per-user state (BP totals, task progress) is still absent — that lives in
+    6C0kzwM5 UserBraveMedalInfoResponse and is not modelled yet, so counters
+    read 0 and prizes show "Short of BP".
+    """
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back to the client."
+    }
+
+    field dailyTaskBonuses type="DailyTaskBonusMst" {
+        key "p283g07d"
+        doc "Bonus tier table — same rows Initialize sends."
+    }
+
+    field dailyTaskPrizes type="[DailyTaskPrizeMst]" {
+        key "a739yK18"
+        doc "Redeem Prizes catalog — same rows Initialize sends."
+    }
+
+    field dailyTasks type="[DailyTaskMst]" {
+        key "k23D7d43"
+        doc "Today's Tasks table — same rows Initialize sends."
+    }
+}

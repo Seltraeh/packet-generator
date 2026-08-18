@@ -29,7 +29,7 @@ json ItemMst {
 
     field item_type type="i32::str" {
         key "h0K7wjeH"
-        doc "itemType — item category enum, decoded from the data distribution: 1 = battle consumable / sellable (potions 20000-20002, cures, junk Trash/Garbage rows; 103 rows, max_stack 99) · 2 = crafting material (herbs etc.; 470 rows, max_stack 999) · 3 = sphere (equipment; MST_SPHERES_* rows, ids 30000+; 1021 rows, max_stack 1) · 4 = evolution item (MST_EVOITEM_* rows, ids 110000+; 33 rows) · 5 = exp/booster token (Experience Token, 経験の水; 8 rows) · 6 = sphere, crafted multi-effect tier (ids 230xxx with @-tiered passive_skill_info; 33 rows; // UNVERIFIED: exact 3-vs-6 client distinction).  UserInfo's mission item bar (equip_info) filters on item_type == 1."
+        doc "itemType — item category enum, decoded from the data distribution: 1 = battle consumable / sellable (potions 20000-20002, cures, junk Trash/Garbage rows; 103 rows, max_stack 99) · 2 = crafting material (herbs etc.; 470 rows, max_stack 999) · 3 = sphere (equipment; MST_SPHERES_* rows, ids 30000+; 1021 rows, max_stack 1) · 4 = evolution item (MST_EVOITEM_* rows, ids 110000+; 33 rows) · 5 = exp/booster token (Experience Token, 経験の水; 8 rows) · 6 = sphere, crafted multi-effect tier (ids 230xxx with @-tiered passive_skill_info; 33 rows; // UNVERIFIED: exact 3-vs-6 client distinction).  // REVERTED FROM 'equip_info filters on item_type == 1': UserInfo no longer derives the mission item bar from this field at all.  The battle-item loadout is REPORTED from user_equip_items, written by ItemEdit (ruoB7bD8) and seeded for a new account by CreateUser; item_type is not consulted."
     }
 
     field unk_LH7JB1xI type="i32::str" {
