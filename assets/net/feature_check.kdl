@@ -303,8 +303,15 @@ json FeatureCheck {
     }
 
     field enable_new_video_ads_slot type="bool::int" {
-        key "video_ads_slot"
-        doc "Enables the slot machines with video ads"
+        key "video_ads_slots"
+        doc """
+        Enables the slot machines with video ads.  The key is PLURAL.
+        It read `video_ads_slot` here until 2026-08-19 - a name the client
+        never looks up.  FeatureManager::onFeatureCheckRes @0x1C780FC reads
+        video_ads_slots and writes its flag byte only when isInt(), so a
+        misspelled key leaves that byte at whatever it was initialised to
+        instead of at the value we sent.
+        """
     }
 
     field enable_battle_speed_button type="bool::int" {
@@ -372,8 +379,17 @@ json FeatureCheck {
 
     // new
     field enable_old_video_ads_slot type="bool::int" {
-        key "old_video_ads_slot"
-        doc "TODO"
+        key "old_video_ads_slots"
+        doc """
+        Legacy video-ad slot machine.  PLURAL, same correction and same
+        evidence as video_ads_slots (parser @0x1C7839C).  This is one of the
+        two bytes guarding the free-spin block in
+        RandallSlotActionScene::setLayoutControl @0x1A6F140: it writes
+        [0x287b7b8] and video_ads writes [0x2886838].  Both must be non-zero
+        for the client to request slot_freespin_base.png and
+        slot_freespin_btn_on.png, neither of which ships in game_content -
+        that 404 is what crashed the Slots tile.
+        """
     }
 
 
