@@ -136,5 +136,33 @@ json TownFacilityUpdateReq {
 }
 
 json TownFacilityUpdateResp {
-    doc "Empty response — client already updated its UI state optimistically."
+    doc """
+    The two lists an upgrade invalidates and the client cannot recompute itself.
+
+    injectionFacility already applied the new level and karma to its own
+    UserTownFacilityInfo / UserTownLocationInfo before sending, so echoing those
+    back would be noise.  These two are different:
+
+      * permitReceipes — the synthesis menu is derived server-side from facility
+        levels via TownFacilityLvMst.release_recipe.  Without it the newly
+        unlocked recipes only appear after a relaunch, because
+        PermitRecipeInfoList is otherwise filled once from UserInfo.
+      * townLocationDetail — a levelled-up tile's remaining taps are re-rolled
+        against its new drop pool, and drop_item_info is server-authored.
+
+    Both response classes replace their whole list: readParam calls
+    removeAllObjects() when (row 0, field 0) and addObject() on each row's last
+    field, with no per-row operation code (contrast the present box, handbook
+    6.20).  So sending the full set is a clean swap, not an append.
+    """
+
+    field permitReceipes type="[PermitReceipe]" {
+        key "51yQrDBR"
+        doc "Complete recipe set the player's facility levels now permit."
+    }
+
+    field townLocationDetail type="[UserTownLocationDetail]" {
+        key "s8TCo2MS"
+        doc "Complete harvest state for every tile, re-rolled where a level change invalidated the pre-rolled drops."
+    }
 }
