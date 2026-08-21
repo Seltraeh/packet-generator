@@ -96,12 +96,10 @@ json BraveSlotPrize {
         doc """
         Human-readable, for logs only.
 
-        ⚠ It is NOT what goes out as CW1bko4F.  setPrizeData feeds that
-        straight to createPrizeDrawInfo, which looks it up with
-        UnitMstList/ItemMstList::getObject(STRING) - so it must be the TARGET
-        ID as a string.  Sending a description made that lookup return null,
-        the prize sprite was never created, and setLayoutControl then crashed
-        dereferencing it while positioning prize_detail_unit_image.
+        ⚠ It is NOT what goes out as CW1bko4F.  That field is built from
+        target_id and target_cnt as "<targetId>@<count>" - createPrizeDrawInfo
+        splits it and needs BOTH halves.  See the CW1bko4F doc in handlers.kdl;
+        a bare id reads element [1] off the end of the split vector.
         """
     }
 }

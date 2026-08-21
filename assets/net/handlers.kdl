@@ -2297,7 +2297,23 @@ json SlotgameResultInfo {
 
     field prize_data type=str {
         key "CW1bko4F"
-        doc "setPrizeData (slot 8).  The prize description shown with the result."
+        doc """
+        setPrizeData (slot 8).  TWO fields, '@'-separated: "<targetId>@<count>".
+
+        NOT a description, and NOT a bare id.  createPrizeDrawInfo @0x1A75674
+        splits this on RandallSlotScene::SLOT_PRIZE_DATA_DELIMITER (= "@"),
+        resolves element [0] via UnitMstList/ItemMstList::getObject(STRING),
+        and builds the popup label as getItemName() + "x" + element [1].
+
+        ⚠ Element [1] is read at [vector + 0x18] with NO bounds check
+        (@0x1A75CE0).  A single-field value therefore constructs a std::string
+        from whatever heap follows the vector and memcpy's from a wild pointer
+        - memory CORRUPTION, not a clean crash, so the same payload can render
+        fine one run and take the client down the next.
+
+        Only elements [0] and [1] are ever read; two fields is exactly right.
+        Same shape as b5yeVr61 ("<medalId>@<cost>").
+        """
     }
 
     field prize_rank type=str {
