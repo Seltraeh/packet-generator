@@ -1,0 +1,73 @@
+json BraveSlotPrize {
+    doc """
+    One outcome of a Brave Slots pull.
+
+    The SERVER decides the outcome and the client animates to it - wheelSpin's
+    sibling here is RandallSlotActionScene, which stops the reels where
+    SlotgameResultInfo tells it to.  So a prize carries both what is paid AND
+    the reel positions that represent it.
+
+    Symbols come from the picture list already authored in
+    deploy/system/brave_slots.json (rY6j0Jvs): 81 j_god, 1 s_flog, 7 allup_unit,
+    2 b_flog, 8 c_god, 6 pup_unit, 3 b_emperor, 18 sphere, 9 g_god, 80 m_god,
+    13/12/15 item, 82 medal.
+
+    There is no source anywhere - wiki included - for what a given triple paid
+    in the live game, so this table is authored, like the Mystery Chest
+    contents.  Rewards deliberately reuse the shared present_type vocabulary.
+    """
+
+    field key type=str {
+        key "key"
+        doc "Stable identifier, used in logs so an odd result is legible without decoding ids."
+    }
+
+    field weight type="u32::int" {
+        key "weight"
+        doc "Relative chance of this outcome.  Rolled against the sum of all weights."
+    }
+
+    field reels type="[u32::int]" {
+        key "reels"
+        doc """
+        The three picture ids the reels stop on, left to right.
+
+        Goes out as h6smq0WE (setReelStopNum), comma-joined.  The exact encoding
+        the client expects is UNVERIFIED - it is a string field carrying several
+        numbers, which handbook 3.4 says to treat as a delimited list, but
+        nothing pins whether these are picture ids or reel indices.  If the
+        reels stop somewhere other than the symbols named here, THIS is the
+        field to change first.
+        """
+    }
+
+    field prize_type type=str {
+        key "prize_type"
+        doc "Goes out as yT3NBME0 (setPrizeType)."
+    }
+
+    field prize_rank type=str {
+        key "prize_rank"
+        doc "Goes out as 3WZ7KTp8 (setPrizeRank).  Drives how loud the win presentation is."
+    }
+
+    field present_type type="u32::int" {
+        key "present_type"
+        doc "Shared reward vocabulary: 3 = zel, 8 = gem, 6 = unit, 4/5/7 = item domains.  Zero means the pull pays nothing."
+    }
+
+    field target_id type="u32::int" {
+        key "target_id"
+        doc "Rewarded entity, interpreted per present_type."
+    }
+
+    field target_cnt type="u32::int" {
+        key "target_cnt"
+        doc "Quantity awarded."
+    }
+
+    field description type=str {
+        key "description"
+        doc "Shown with the result; also goes out as CW1bko4F (setPrizeData)."
+    }
+}

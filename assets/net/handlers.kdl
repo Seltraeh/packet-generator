@@ -2276,6 +2276,136 @@ json MysteryBoxClaimResp {
     }
 }
 
+json SlotgameResultInfo {
+    doc """
+    One Brave Slots pull result, keyed s8r5M6wI (SlotgameResultInfoResponse).
+
+    Field map decoded 2026-08-21 from readParam @0x1448E58.  Every setter on
+    this class is BOTH inlined and dispatched through the vtable, so these were
+    resolved by slot and then cross-checked: VideoAdsSlotgameResultInfoResponse
+    shares all nine keys and puts its two extra fields on slots 24 and 26,
+    exactly where the 10th and 11th declared members sit.  All nine take
+    std::string.
+
+    Full replace with no operation code - removeAllObjects() then addObject().
+    """
+
+    field prize_type type=str {
+        key "yT3NBME0"
+        doc "setPrizeType (vtable slot 6)."
+    }
+
+    field prize_data type=str {
+        key "CW1bko4F"
+        doc "setPrizeData (slot 8).  The prize description shown with the result."
+    }
+
+    field prize_rank type=str {
+        key "3WZ7KTp8"
+        doc "setPrizeRank (slot 10).  Drives how loud the win presentation is."
+    }
+
+    field picture_pattern type=str {
+        key "D20kuSLy"
+        doc "setPicturePattern (slot 12)."
+    }
+
+    field effect_sam type=str {
+        key "HgI9wEJ0"
+        doc "setEffectSam (slot 14).  Names a .sam effect bundle - the scene loads SlotFrameLightHighSpeedAdd.sam and SlotReelSideLightAdd.sam."
+    }
+
+    field effect_type type=str {
+        key "3Vcj8eUn"
+        doc "setEffectType (slot 16)."
+    }
+
+    field effect_param type=str {
+        key "NLbQm24T"
+        doc "setEffectParam (slot 18)."
+    }
+
+    field reel_stop_num type=str {
+        key "h6smq0WE"
+        doc """
+        setReelStopNum (slot 20) - WHERE THE THREE REELS STOP.
+
+        The server decides the outcome and the client animates to it, so this is
+        the field that makes the machine land somewhere meaningful.  It is a
+        string carrying several numbers, which handbook 3.4 says to read as a
+        delimited list; the exact encoding is UNVERIFIED, so if the reels stop
+        somewhere other than the symbols the prize names, start here.
+        """
+    }
+
+    field medal_num type=str {
+        key "A0P7psui"
+        doc "setMedalNum (slot 22).  The medal balance AFTER the pull."
+    }
+}
+
+json SlotActionEntry {
+    doc "The pull being requested."
+
+    field slot_id type="i32::int" {
+        key "zS45RFGb"
+        doc "Which machine.  1 is Brave Slots, matching brave_slots.json."
+    }
+
+    field draw_cnt type="i32::int" {
+        key "d04gRmkE"
+        doc "How many pulls.  The client sends 1."
+    }
+}
+
+json SlotActionReq {
+    doc """
+    SlotAction (vChFp73J) request - pulling the lever.
+
+    From SlotActionRequest::createBody @0x13C95C8: identity, signal key, version
+    tag, then "kLz5ujP2":[{ zS45RFGb, d04gRmkE }].  BOTH params use the INT
+    overload of JsonNode::addParam, not the string one.
+
+    Fired from RandallSlotActionScene::touchBegan @0x1A70DCC - the lever pull,
+    NOT opening the screen.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field entries type="[SlotActionEntry]" {
+        key "kLz5ujP2"
+        doc "The pull.  The client sends exactly one."
+    }
+}
+
+json SlotActionResp {
+    doc """
+    SlotAction (vChFp73J) response.
+
+    Carries the result the reels stop on, the refreshed medal balance so the
+    counter is right without a relaunch, and team_info so any currency the pull
+    paid lands on screen at once.
+    """
+
+    field results type="[SlotgameResultInfo]" {
+        key "s8r5M6wI"
+        doc "The pull outcome.  One entry."
+    }
+
+    field medal_info type="[UserBraveMedalInfo]" {
+        key "6C0kzwM5"
+        doc "Medal balances after the pull."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Refreshed header for gem/zel prizes."
+    }
+}
+
 json DailyLoginReq {
     doc """
     DailyLogin (4aClzokO) request - the Daily Spin's SPIN action.
