@@ -64,6 +64,11 @@ json SlotGameInfoR {
         key "rY6j0Jvs"
         doc "The reel symbols, by picture id."
     }
+
+    field reels type="[SlotGameReelInfo]" {
+        key "iW62Scdg"
+        doc "The reel strips.  One row per id named in info.reel_pos, or the scene crashes - see SlotGameReelInfo."
+    }
 }
 
 json SlotgameInfoResp {
@@ -123,15 +128,27 @@ json ControlCenterEnterResp {
 }
 
 json SlotGameReelInfo {
-    doc "TODO"
-    field id type="i32::int" {
+    doc """
+    One reel strip.
+
+    RandallSlotActionScene::setReelInit @0x1A6DAD4 splits
+    SlotgameInfo::getSlotReelPos() ("1,2,3") on commas and, for EACH entry,
+    calls SlotgameReelInfoList::getObject(id) then getSlotReelData().
+
+    ⚠ getObject returns NULL when the id is absent (@0x1305628) and
+    setReelInit does not check before dereferencing - so a machine whose
+    reel_pos names a reel we did not send crashes the scene.  Every id in
+    reel_pos MUST have a row here.
+    """
+
+    field id type="i32::str" {
         key "PINm2pM5"
-        doc "TODO"
+        doc "Reel id, matched against the entries in SlotgameInfo.reel_pos.  QUOTED, because this rides inside a picojson-parsed string (see SlotgameInfoResp)."
     }
 
     field reel_data type="str" {
         key "Z8eJi4pq"
-        doc "TODO"
+        doc "The strip: comma-separated picture ids the reel cycles through, split on ',' at @0x1A6DC10."
     }
 }
 
