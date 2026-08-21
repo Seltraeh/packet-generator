@@ -1,6 +1,6 @@
 json SlotGameInfo {
     doc "TODO"
-    field id type="i32::int" {
+    field id type="i32::str" {
         key "zS45RFGb"
         doc "TODO"
     }
@@ -34,7 +34,7 @@ json SlotGameInfo {
 
 json SlotGamePictureInfo {
     doc "TODO"
-    field id type="i32::int" {
+    field id type="i32::str" {
         key "sE6tyI9i"
         doc "TODO"
     }
@@ -83,7 +83,7 @@ json SlotgameInfoResp {
        on default data and RandallSlotActionScene::downloadFiles asked for no
        sprites, because getSlotgameInfo()->getSlotImage() had nothing in it.
 
-    2. C38FmiUn IS A JSON STRING, not a nested object.  readParam @0x1447E5C
+    2. ALL THREE FIELDS ARE JSON STRINGS, not nested structures.  readParam @0x1447E5C
        runs strlen() then picojson::parse() over the value and looks the inner
        fields up in the resulting map, so the whole SlotGameInfo has to be
        serialized and embedded as one string.
@@ -94,14 +94,14 @@ json SlotgameInfoResp {
         doc "SlotGameInfo serialized to JSON and embedded AS A STRING.  The client picojson-parses it (readParam @0x1447EA8)."
     }
 
-    field pictures type="[SlotGamePictureInfo]" {
+    field pictures type=str {
         key "rY6j0Jvs"
-        doc "The reel symbols."
+        doc "The reel symbols, serialized to JSON and embedded AS A STRING - readParam @0x14486F8 runs strlen() and picojson::parse() over this exactly like C38FmiUn."
     }
 
-    field reels type="[SlotGameReelInfo]" {
+    field reels type=str {
         key "iW62Scdg"
-        doc "Reel definitions.  The third field SlotgameInfoResponse handles; we have no data for it yet, so it goes out empty."
+        doc "Reel definitions, also a picojson-parsed STRING (readParam @0x1448A2C).  We have no data for it, so it goes out as an empty JSON array."
     }
 }
 
