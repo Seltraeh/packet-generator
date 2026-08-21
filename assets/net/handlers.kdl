@@ -2191,6 +2191,42 @@ json UpdateInfoLightResp {
 // soft-locked the ritual screen, which is what established the rule.
 // ---------------------------------------------------------------------------
 
+json DailyLoginReq {
+    doc """
+    DailyLogin (4aClzokO) request - the Daily Spin's SPIN action.
+
+    loginInfo only: DailyLoginRequest::createBody @0x1CC9880 emits just
+    createUserInfoTag + createSignalKeyTag, with no addGroup or addParam.
+
+    Note this is NOT sent when the screen opens - DailyLoginScene::initConnect
+    is 16 bytes, i.e. empty.  It is fired from updateEvent state 2 @0xE53058,
+    immediately before the wheel animates.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json DailyLoginResp {
+    doc """
+    DailyLogin (4aClzokO) response.
+
+    Carries the same DailyLoginRewardsUserInfo the Initialize reply seeds, so
+    the client's singleton is replaced with the post-spin state: one more spin
+    used, and XIvaD6Jp set to the reward the spin landed on.
+
+    Drudr2w5 IS dispatched by GameResponseParser::getResponseObject @0x1396CD4,
+    so it lands on DailyLoginRewardsUserInfo whichever handler sends it.
+    """
+
+    field dailyLoginRewards type="DailyLoginRewardsUserInfo" {
+        key "Drudr2w5"
+        doc "Post-spin state: spins used, the day, and the reward landed on."
+    }
+}
+
 json HomeInfoReq {
     doc "HomeInfo (NiYWKdzs) request — loginInfo only; createBody emits no addParam/addGroup calls."
 
