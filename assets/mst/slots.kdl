@@ -47,15 +47,78 @@ json SlotGamePictureInfo {
 
 
 json SlotGameInfoR {
-    doc "TODO"
+    doc """
+    The Brave Slots machine definition, as stored in
+    deploy/system/brave_slots.json.
+
+    THIS IS THE STORAGE SHAPE, NOT THE WIRE SHAPE.  It is serialized into
+    SlotgameInfoResp, whose C38FmiUn is a JSON STRING - see there.
+    """
+
     field info type="SlotGameInfo" {
         key "C38FmiUn"
-        doc "TODO"
+        doc "Machine configuration: id, name, reel positions, the medal it spends, sprite list, help url."
     }
 
     field pictures type="[SlotGamePictureInfo]" {
         key "rY6j0Jvs"
-        doc "TODO"
+        doc "The reel symbols, by picture id."
+    }
+}
+
+json SlotgameInfoResp {
+    doc """
+    The Brave Slots definition ON THE WIRE, keyed C7J9hbmr
+    (SlotgameInfoResponse).
+
+    ⚠ TWO things about this shape are not guessable, and getting either wrong
+    leaves SlotgameStandInfo empty - which is silent, because the handler still
+    "succeeds":
+
+    1. THE ROOT KEY IS C7J9hbmr, NOT C38FmiUn.  GameResponseParser::
+       getResponseObject dispatches on C7J9hbmr; C38FmiUn is a FIELD inside it
+       and appears nowhere in that table.  Emitting the inner struct is the
+       handbook 6.11 wrapper trap, and it is what we shipped until 2026-08-21:
+       the client could not dispatch the reply at all, so the slot machine ran
+       on default data and RandallSlotActionScene::downloadFiles asked for no
+       sprites, because getSlotgameInfo()->getSlotImage() had nothing in it.
+
+    2. C38FmiUn IS A JSON STRING, not a nested object.  readParam @0x1447E5C
+       runs strlen() then picojson::parse() over the value and looks the inner
+       fields up in the resulting map, so the whole SlotGameInfo has to be
+       serialized and embedded as one string.
+    """
+
+    field game_info type=str {
+        key "C38FmiUn"
+        doc "SlotGameInfo serialized to JSON and embedded AS A STRING.  The client picojson-parses it (readParam @0x1447EA8)."
+    }
+
+    field pictures type="[SlotGamePictureInfo]" {
+        key "rY6j0Jvs"
+        doc "The reel symbols."
+    }
+
+    field reels type="[SlotGameReelInfo]" {
+        key "iW62Scdg"
+        doc "Reel definitions.  The third field SlotgameInfoResponse handles; we have no data for it yet, so it goes out empty."
+    }
+}
+
+json ControlCenterEnterResp {
+    doc """
+    ControlCenterEnter (uYF93Mhc) response.
+
+    Fired by LoginScene and RandallSummonScene - NOT by any Slots scene - but
+    it is what seeds SlotgameStandInfo, because getResponseObject is a global
+    key->class registry (handbook 7.12.4): any response carrying C7J9hbmr
+    populates the client's slot state regardless of which handler sent it.  So
+    the machine is configured at login, long before the tile is opened.
+    """
+
+    field slotgame type="SlotgameInfoResp" {
+        key "C7J9hbmr"
+        doc "The Brave Slots machine definition."
     }
 }
 
