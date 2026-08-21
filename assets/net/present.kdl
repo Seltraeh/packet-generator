@@ -206,3 +206,116 @@ json PresentReceiptResp {
         doc "Refreshed zel/karma/gem totals after the grant."
     }
 }
+
+json MysteryBoxInfo {
+    doc """
+    One Mystery Chest, keyed d0ajLeRi (MysteryBoxResponse).
+
+    Field map decoded 2026-08-21 from MysteryBoxResponse::readParam @0x1C6B11C.
+    Every setter on this class is an ordinary exported call, so the mapping is
+    direct evidence rather than slot arithmetic.
+
+    The response is a FULL REPLACE with no operation code: readParam calls
+    MysteryBoxList::removeAllObjects() on the first field of the first row and
+    addObject() at the end (handbook 6.20).  Sending the complete set is a clean
+    swap; an empty list is a truthful "no chests" and is what the screen already
+    renders, because MysteryChestScene::initConnect clears the list before it
+    sends.
+    """
+
+    field box_id type=str {
+        key "rEFRefr8"
+        doc "setMysteryBoxId.  This is the id MysteryBoxClaimRequest echoes back to claim the chest."
+    }
+
+    field reward_date type="i32::str" {
+        key "6HEchexu"
+        doc "setMysteryBoxRewardDate.  Unix epoch SECONDS, stored at +0x30."
+    }
+
+    field expiry_date type="i32::str" {
+        key "guHur3dr"
+        doc """
+        setMysteryBoxExpiryDate.  Unix epoch SECONDS, stored at +0x34.
+
+        This is the one the countdown reads: getPresentTimeLeftType @0x1CB30B4
+        computes (expiry - ServerTimeInfo::getCurrentServerTimeEpoch()) / 86400
+        and returns 0 once it goes non-positive, so a chest in the past renders
+        as expired.
+        """
+    }
+
+    field reward_date_str type=str {
+        key "peV7drec"
+        doc "setMysteryBoxRewardDateStr.  Preformatted display copy of reward_date; the int is the one that drives behaviour."
+    }
+
+    field expiry_date_str type=str {
+        key "PUgeth6p"
+        doc "setMysteryBoxExpiryDateStr.  Preformatted display copy of expiry_date."
+    }
+
+    field rank type=str {
+        key "swUtH8de"
+        doc "setMysteryBoxRank."
+    }
+
+    field skin type=str {
+        key "PUFr8swe"
+        doc "setMysteryBoxSkin.  Selects the chest artwork."
+    }
+
+    field box_type type=str {
+        key "4rUdradr"
+        doc "setMysteryBoxType."
+    }
+
+    field text type=str {
+        key "mejaw5Ca"
+        doc "setMysteryBoxText.  Body copy shown on the chest tile."
+    }
+
+    field name type=str {
+        key "s35idar9"
+        doc "setMysteryBoxName.  Title shown on the chest tile."
+    }
+}
+
+json MysteryBoxRewardInfo {
+    doc """
+    One prize from a claimed Mystery Chest, keyed CoAp2aph
+    (MysteryBoxRewardResponse::readParam @0x1C6B79C).
+
+    Also a full-replace list with no op code, over MysteryBoxRewardList.
+    """
+
+    field item_id type="i32::str" {
+        key "kixHbe54"
+        doc "setMysteryBoxRewardItemId.  Same key item_mst uses for its own id."
+    }
+
+    field present_type type="i32::str" {
+        key "30Kw4WBa"
+        doc """
+        setMysteryBoxRewardPresentType.  THE SHARED present_type hash - the same
+        one CampaignReceipt, the present box and daily_task.kdl dispatch on:
+        3 = zel, 8 = gem, 6 = unit, 4/5/7 = item/material/sphere.  Chest rewards
+        reuse that vocabulary; do not give them their own switch (handbook 7.13).
+        """
+    }
+
+    field target_id type="i32::str" {
+        key "TdDHf59J"
+        doc "setMysteryBoxRewardTargetId.  Rewarded entity, interpreted per present_type."
+    }
+
+    field target_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "setMysteryBoxRewardTargetCount.  Quantity."
+    }
+
+    field description type=str {
+        key "qp37xTDh"
+        doc "setMysteryBoxRewardDescription."
+    }
+}

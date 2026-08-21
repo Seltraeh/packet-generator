@@ -2191,6 +2191,91 @@ json UpdateInfoLightResp {
 // soft-locked the ritual screen, which is what established the rule.
 // ---------------------------------------------------------------------------
 
+json MysteryBoxListReq {
+    doc """
+    MysteryBoxList (pAJ2Xesw) request - opening the Mystery Chest screen.
+
+    loginInfo only: MysteryBoxListRequest::createBody @0x1C6B094 emits
+    createUserInfoTag + createSignalKeyTag and nothing else, not even a version
+    tag.  Fired from MysteryChestScene::initConnect @0x1E7A800, immediately
+    after MysteryBoxList::removeAllObjects().
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json MysteryBoxListResp {
+    doc """
+    MysteryBoxList (pAJ2Xesw) response - the player's chests.
+
+    A full replace with no operation code, so the complete set goes every time
+    and an empty list is a truthful "no chests".
+    """
+
+    field boxes type="[MysteryBoxInfo]" {
+        key "d0ajLeRi"
+        doc "Every chest the player currently holds: unclaimed and unexpired."
+    }
+}
+
+json MysteryBoxClaimEntry {
+    doc "The chest being claimed."
+
+    field box_id type=str {
+        key "rEFRefr8"
+        doc "Id of the chest to open, echoed from the list response."
+    }
+}
+
+json MysteryBoxClaimReq {
+    doc """
+    MysteryBoxClaim (2paswUpR) request - opening one chest.
+
+    From MysteryBoxClaimRequest::createBody @0x1C6AFB4: identity, version tag,
+    then "d0ajLeRi":[{ "rEFRefr8": "<box id>" }].  rEFRefr8 uses the STRING
+    overload of addParam, and the group key is the same one the list response
+    dispatches on.  Fired from MysteryRewardScene::initConnect @0x1D3CA6C.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field entries type="[MysteryBoxClaimEntry]" {
+        key "d0ajLeRi"
+        doc "The chest to open.  The client sends exactly one."
+    }
+}
+
+json MysteryBoxClaimResp {
+    doc """
+    MysteryBoxClaim (2paswUpR) response - what the chest paid.
+
+    Carries the reward list plus the refreshed chest list, so the claimed chest
+    disappears from the screen without a second round trip, and team_info so any
+    currency the chest granted shows immediately.
+    """
+
+    field rewards type="[MysteryBoxRewardInfo]" {
+        key "CoAp2aph"
+        doc "The prizes this chest paid."
+    }
+
+    field boxes type="[MysteryBoxInfo]" {
+        key "d0ajLeRi"
+        doc "The player's remaining chests, minus the one just opened."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Refreshed header so gem/zel/karma rewards land on screen at once."
+    }
+}
+
 json DailyLoginReq {
     doc """
     DailyLogin (4aClzokO) request - the Daily Spin's SPIN action.
