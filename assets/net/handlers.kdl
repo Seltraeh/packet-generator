@@ -2347,14 +2347,24 @@ json SlotgameResultInfo {
 json SlotActionEntry {
     doc "The pull being requested."
 
-    field slot_id type="i32::int" {
+    field slot_id type="i32::str" {
         key "zS45RFGb"
-        doc "Which machine.  1 is Brave Slots, matching brave_slots.json."
+        doc """
+        Which machine.  1 is Brave Slots, matching brave_slots.json.
+
+        QUOTED on the wire.  createBody uses JsonNode::addParam(const char*,
+        int), and an earlier revision typed this i32::int on the strength of
+        that - but the overload only says what the C++ SOURCE type is, not how
+        the value is encoded.  The captured request is
+        "kLz5ujP2":[{"zS45RFGb":"1","d04gRmkE":"1"}], and i32::int made the
+        whole request fail to parse with parse_number_failure (handbook 3.4:
+        int setter + quoted wire value -> i32::str).
+        """
     }
 
-    field draw_cnt type="i32::int" {
+    field draw_cnt type="i32::str" {
         key "d04gRmkE"
-        doc "How many pulls.  The client sends 1."
+        doc "How many pulls.  The client sends 1.  QUOTED, same as slot_id."
     }
 }
 
