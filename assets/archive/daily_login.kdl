@@ -2,9 +2,18 @@ json DailySpinSpace {
     doc """
     One space on the Daily Spin wheel.
 
-    The wheel has six colour-coded spaces and the archive stores them in the
-    Global wiki's column order: red, blue, green, yellow, gray, purple.
-    (https://bravefrontierglobal.fandom.com/wiki/Daily_Spin)
+    Stored in the Global wiki's column order
+    (https://bravefrontierglobal.fandom.com/wiki/Daily_Spin), which the wiki
+    labels red/blue/green/yellow/gray/purple.
+
+    ⚠ THOSE COLOUR NAMES ARE THE WIKI'S, NOT THE CLIENT'S WEDGE POSITIONS.
+    setupSpinWheelRewards @0xE52B40 assigns each row an angle by its index
+    within the group, from a 5-entry table at 0x230FDE4 - 60/120/180/240/300
+    degrees - and index 0 skips the load entirely, keeping the pre-zeroed 0
+    degrees.  So group index 0 is drawn at the POINTER (the top, which the
+    artwork colours blue), not at the wiki's red column.  What matters is that
+    this array is in the same ORDER as the client's group rows; the colours are
+    only a naming convention carried over from the source table.
 
     This table exists ONLY so the server can award the prize.  What the player
     SEES is drawn from the client's own F_SG_DAILYLOGIN_REWARDS_MST, which is
@@ -78,6 +87,10 @@ json DailySpinDay {
 
     field spaces type="[DailySpinSpace]" {
         key "spaces"
-        doc "The six spaces, in wiki column order: red, blue, green, yellow, gray, purple."
+        doc """
+        The six spaces, in the client's group-row order - which is the wiki's
+        column order, and NOT its colour layout.  Index 0 is whatever the wheel
+        draws under the pointer.  See DailySpinSpace for why the two differ.
+        """
     }
 }
