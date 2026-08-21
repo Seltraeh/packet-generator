@@ -17,6 +17,20 @@ json SlotGameInfo {
 
     field use_medal type="[str]::sep(at)" {
         key "b5yeVr61"
+        // ⚠ TWO fields, '@'-separated: "<medalId>@<costPerPull>".  Sending only
+        // one CRASHES the client, and not where you would look for it.
+        //
+        // RandallSlotActionScene::initialize @0x1A6D86C splits this and then
+        // reads BOTH elements without checking how many came back:
+        //     [0] -> string::assign into scene+0x360  (the id later handed to
+        //            UserBraveMedalInfoList::getObjectWithMedalID)
+        //     [1] -> add x0, x8, #0x18; StrToInt -> scene+0x378  (the cost)
+        // 0x18 is one std::string, so [1] is the SECOND element.  With a
+        // single-field value that read runs off the end of the vector and
+        // StrToInt faults inside msvcp120 on a garbage string object.
+        //
+        // "UseMedal" names the pair, not a count - the id half is what the
+        // medal lookup keys on.
         doc "TODO"
     }
 
