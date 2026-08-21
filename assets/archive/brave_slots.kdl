@@ -41,19 +41,34 @@ json BraveSlotPrize {
         """
     }
 
-    field prize_type type=str {
-        key "prize_type"
-        doc "Goes out as yT3NBME0 (setPrizeType)."
-    }
-
     field prize_rank type=str {
         key "prize_rank"
-        doc "Goes out as 3WZ7KTp8 (setPrizeRank).  Drives how loud the win presentation is."
+        doc """
+        Goes out as 3WZ7KTp8 (setPrizeRank) and picks the win animation tier:
+        RandallSlotResultScene::setPrizeData @0x1A74554 switches on it and
+        loads SlotSuperGekiReaGet.sam at 4, quieter bundles below.
+        """
     }
 
     field present_type type="u32::int" {
         key "present_type"
-        doc "Shared reward vocabulary: 3 = zel, 8 = gem, 6 = unit, 4/5/7 = item domains.  Zero means the pull pays nothing."
+        doc """
+        Shared reward vocabulary: 3 = zel, 8 = gem, 6 = unit, 4/5/7 = item
+        domains.  Zero means the pull pays nothing.
+
+        ⚠ THE PRIZE POPUP HAS ITS OWN, DIFFERENT VOCABULARY.  yT3NBME0
+        (setPrizeType) is a 1..5 slot-local code, resolved by
+        RandallSlotScene::createPrizeDrawInfo's jump table @0x1A757D8:
+
+            0 -> setPrizeData calls popScene()   (no popup at all)
+            1 -> UnitMstList     2,3 -> ItemMstList     5 -> MedalMstList
+            4 -> handled, draws nothing
+
+        The server derives it from present_type rather than storing it, so the
+        two cannot drift apart.  A prize whose present_type has no popup code -
+        zel and gem - would show NOTHING, so slot prizes are kept to units and
+        items.
+        """
     }
 
     field target_id type="u32::int" {
@@ -68,6 +83,15 @@ json BraveSlotPrize {
 
     field description type=str {
         key "description"
-        doc "Shown with the result; also goes out as CW1bko4F (setPrizeData)."
+        doc """
+        Human-readable, for logs only.
+
+        ⚠ It is NOT what goes out as CW1bko4F.  setPrizeData feeds that
+        straight to createPrizeDrawInfo, which looks it up with
+        UnitMstList/ItemMstList::getObject(STRING) - so it must be the TARGET
+        ID as a string.  Sending a description made that lookup return null,
+        the prize sprite was never created, and setLayoutControl then crashed
+        dereferencing it while positioning prize_detail_unit_image.
+        """
     }
 }
