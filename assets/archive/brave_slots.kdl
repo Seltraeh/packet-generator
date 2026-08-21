@@ -44,9 +44,19 @@ json BraveSlotPrize {
     field prize_rank type=str {
         key "prize_rank"
         doc """
-        Goes out as 3WZ7KTp8 (setPrizeRank) and picks the win animation tier:
-        RandallSlotResultScene::setPrizeData @0x1A74554 switches on it and
-        loads SlotSuperGekiReaGet.sam at 4, quieter bundles below.
+        Goes out as 3WZ7KTp8 (setPrizeRank) and picks the win ANIMATION tier -
+        it is not a payout scale and nothing reads it as one.
+
+        RandallSlotResultScene::setPrizeData @0x1A74554 switches on exactly
+        three values and defaults the rest:
+            2  SlotReaGet.sam          / SlotReaGetAdd.sam
+            3  SlotGekiReaGet.sam      / SlotGekiReaGetAdd.sam
+            4  SlotSuperGekiReaGet.sam / SlotSuperGekiReaGetAdd.sam
+            *  SlotGet.sam             / SlotGetAdd.sam      (b.ne @0x1A74578)
+
+        So 4 is the TOP tier, and a higher number is not a louder one: a 5 is
+        legal but falls through the default and plays the plainest animation,
+        which is how the jackpot row used to undersell itself.
         """
     }
 
