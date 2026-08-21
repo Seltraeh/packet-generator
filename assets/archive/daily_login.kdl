@@ -1,0 +1,83 @@
+json DailySpinSpace {
+    doc """
+    One space on the Daily Spin wheel.
+
+    The wheel has six colour-coded spaces and the archive stores them in the
+    Global wiki's column order: red, blue, green, yellow, gray, purple.
+    (https://bravefrontierglobal.fandom.com/wiki/Daily_Spin)
+
+    This table exists ONLY so the server can award the prize.  What the player
+    SEES is drawn from the client's own F_SG_DAILYLOGIN_REWARDS_MST, which is
+    loaded through DataMstManager and is not ours to send - see handbook 7.14.
+    So this must be kept in agreement with the client's table by observation,
+    not by assuming the two were generated from one source.
+    """
+
+    field kind type=str {
+        key "kind"
+        doc """
+        How to award this space: gem, karma, zel, ticket, item or unit.
+
+        These route onto the primitives the server already has rather than
+        introducing another reward switch (handbook 7.13): gem/karma/zel/ticket
+        are userinfo columns, item is gme::addUserItem and unit is
+        gme::addUserUnit.
+        """
+    }
+
+    field name type=str {
+        key "name"
+        doc "Human-readable prize name, straight from the wiki table.  Used in logs so a mis-set space is legible without resolving ids."
+    }
+
+    field id type="u32::int" {
+        key "id"
+        doc "item_mst or unit_mst id for kind=item / kind=unit.  Zero and ignored for the currency kinds, which carry their amount in count."
+    }
+
+    field count type="u32::int" {
+        key "count"
+        doc "Quantity awarded."
+    }
+
+    field available type="bool::bool" {
+        key "available"
+        doc """
+        False when the prize has no id in the MST tables we hold.
+
+        Nine of the wiki's rewards are in this state - the Mecha Gods, Burst
+        Emperor, Almighty Imp Arton and Crescent Dew - because the Daily Spin
+        shipped in 2019 and parts of its reward set postdate our MST dump.  The
+        grant path logs and skips these rather than awarding id 0.
+        """
+    }
+}
+
+json DailySpinDay {
+    doc """
+    One day of the Daily Spin reward cycle.
+
+    The live cycle runs 29 rows and then repeats the last one for every later
+    day, so day 29 is the resting row rather than the end of the table.
+    """
+
+    field day type="u32::int" {
+        key "day"
+        doc "Cycle day, 1-based."
+    }
+
+    field guaranteed_gem_on_first_spin type="bool::bool" {
+        key "guaranteed_gem_on_first_spin"
+        doc """
+        True on days 7, 14, 21 and 28, where the live game guaranteed 1 Gem on
+        the first spin of the day regardless of where the wheel stopped.
+
+        This is a rule layered on top of the six spaces, not a seventh space.
+        """
+    }
+
+    field spaces type="[DailySpinSpace]" {
+        key "spaces"
+        doc "The six spaces, in wiki column order: red, blue, green, yellow, gray, purple."
+    }
+}
