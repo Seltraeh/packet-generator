@@ -205,6 +205,22 @@ json PresentReceiptResp {
         key "fEi17cnx"
         doc "Refreshed zel/karma/gem totals after the grant."
     }
+
+    field medalInfo type="[UserBraveMedalInfo]" {
+        key "6C0kzwM5"
+        doc """
+        Refreshed medal balances after the grant — the same idea as teamInfo,
+        for the currency that does not live on the HUD.
+
+        Needed because present_type 12 pays MEDALS, and without this the
+        counter never updates: getResponseObject maps 6C0kzwM5 to
+        UserBraveMedalInfoResponse, whose readParam does removeAllObjects
+        (@0x13FD270) and rebuilds the list, but nothing sends that key on a
+        claim.  Claiming 120 medals therefore credited the account and left the
+        Brave Slots machine still showing the old number until some later call
+        happened to carry UserInfo.
+        """
+    }
 }
 
 json MysteryBoxInfo {
