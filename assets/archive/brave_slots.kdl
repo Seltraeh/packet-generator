@@ -12,9 +12,16 @@ json BraveSlotPrize {
     2 b_flog, 8 c_god, 6 pup_unit, 3 b_emperor, 18 sphere, 9 g_god, 80 m_god,
     13/12/15 item, 82 medal.
 
-    There is no source anywhere - wiki included - for what a given triple paid
-    in the live game, so this table is authored, like the Mystery Chest
-    contents.  Rewards deliberately reuse the shared present_type vocabulary.
+    ⚠ That claim used to read "no source anywhere - wiki included", and it was
+    wrong: https://bravefrontierglobal.fandom.com/wiki/Slots lists the real
+    payout table (Sphere Frog, Burst Emperor, Elemental Crystal, the sphere
+    list, Almighty Imp Arton, the imps, Elemental God, consumables, Jewel God,
+    1 Raid Medal, Jewel King).  What is true is that almost none of those
+    entities exist in this server's unit_mst/item_mst or the client's
+    text_local.csv, so the table stays AUTHORED - but by necessity, not for
+    lack of a source.  Check the wiki before assuming there is none.
+
+    Rewards deliberately reuse the shared present_type vocabulary.
     """
 
     field key type=str {

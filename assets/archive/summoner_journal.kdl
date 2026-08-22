@@ -1,0 +1,154 @@
+json SummonerJournalTask {
+    doc """
+    One Summoner's Journal mission, transcribed from the wiki:
+    https://bravefrontierglobal.fandom.com/wiki/Summoner%27s_Journal
+
+    All 45 are authored.  Their points sum to EXACTLY 1000, which is the top
+    milestone - an independent check that the transcription is complete, since
+    nothing in the table was chosen to make that come out.
+    """
+
+    field task_id type=str {
+        key "task_id"
+        doc "Goes out as 23DaiBpe, and is what a claim echoes back."
+    }
+
+    field key type=str {
+        key "key"
+        doc "Stable slug, used in logs so an odd row is legible without decoding ids."
+    }
+
+    field name type=str {
+        key "name"
+        doc "Mission title (s35idar9)."
+    }
+
+    field instructions type=str {
+        key "instructions"
+        doc "Body line shown under the title (H2Dnbr39)."
+    }
+
+    field points type="u32::int" {
+        key "points"
+        doc "What completing this mission adds to the Journal total."
+    }
+
+    field value type="u32::int" {
+        key "value"
+        doc """
+        How many of the thing the mission asks for - the 5 in 'Form a squad
+        with 5 units'.  Goes out as w3Di51bp, and also as pG2n1A28 on the MST
+        side, which reads as the target rather than the user's progress.
+        """
+    }
+
+    field tracked type="bool::bool" {
+        key "tracked"
+        doc """
+        ⚠ FALSE on every row today.  Nothing advances Journal progress yet, so
+        every mission displays at 0 and none can complete.  This is a deliberate
+        TODO rather than an oversight: the missions are authored first so the
+        screen is real, and each one gets wired to its counter as it is built.
+
+        When wiring one up, flip this and feed the user's progress into
+        SummonerJournalUserTaskInfo.progress.
+        """
+    }
+
+    field present_type type="u32::int" {
+        key "present_type"
+        doc """
+        The mission's own reward, in the shared vocabulary (3 zel, 6 unit,
+        8 gem, 4/5/7 item, 11 karma, 12 medal).
+
+        ⚠ 0 means THIS SERVER CANNOT PAY IT.  Most of the wiki's reward
+        entities - Metal Ghost, Metal King, Jewel Ghost, Summon Ticket, Green
+        Grass, High Cure, Revive - are absent from unit_mst, item_mst and the
+        client's text_local.csv, so inventing ids would hand out the wrong
+        thing.  0 falls through PresentReceipt's switch to 'not supported -
+        present left unclaimed', which LOGS rather than silently paying
+        nothing, and reward_note keeps the wiki's wording for whoever wires it.
+        """
+    }
+
+    field target_id type="u32::int" {
+        key "target_id"
+        doc "Rewarded entity id, interpreted per present_type. 0 for currency."
+    }
+
+    field target_cnt type="u32::int" {
+        key "target_cnt"
+        doc "How many."
+    }
+
+    field reward_note type=str {
+        key "reward_note"
+        doc "The wiki's reward text, verbatim. For logs and for whoever fills in present_type."
+    }
+}
+
+json SummonerJournalMilestone {
+    doc """
+    One rung of the points ladder: 200 / 400 / 600 / 750 / 1000.
+
+    The first three are 1 Gem each and are reproduced EXACTLY.  The last two
+    reward units this server does not have, so they carry substitutes and say
+    so in `substitution`.
+    """
+
+    field milestone_id type=str {
+        key "milestone_id"
+        doc "Goes out as Uiwd28Vq."
+    }
+
+    field points type="u32::int" {
+        key "points"
+        doc "Total Journal points needed to unlock this rung (9hH0neGa)."
+    }
+
+    field present_type type="u32::int" {
+        key "present_type"
+        doc "Shared reward vocabulary (30Kw4WBa)."
+    }
+
+    field target_id type="u32::int" {
+        key "target_id"
+        doc "Rewarded entity (TdDHf59J)."
+    }
+
+    field target_cnt type="u32::int" {
+        key "target_cnt"
+        doc "How many (wJsB35iH)."
+    }
+
+    field reward_note type=str {
+        key "reward_note"
+        doc "The wiki's reward text, verbatim."
+    }
+
+    field substitution type=str {
+        key "substitution"
+        doc "Set only where the wiki's reward does not exist here and something else is paid instead."
+        optional #true
+    }
+}
+
+json SummonerJournalArchive {
+    doc """
+    deploy/archive/summoner_journal.json - the whole authored Journal.
+
+    Regenerate rather than hand-edit: the table came from the wiki via a
+    transcription script, and the 1000-point total is the check that it is
+    still complete.
+    """
+
+    field tasks type="[SummonerJournalTask]" {
+        key "tasks"
+        doc "All 45 missions, in wiki order."
+    }
+
+    field milestones type="[SummonerJournalMilestone]" {
+        key "milestones"
+        doc "The five reward rungs."
+    }
+}

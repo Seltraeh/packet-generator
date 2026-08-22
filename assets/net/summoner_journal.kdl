@@ -63,3 +63,285 @@ json SummonerJournalUserInfo {
         // NOTE: not used in last version
     }
 }
+
+// -------------------------------------------------------------------------
+// The Summoner's Journal payload.
+//
+// Every field below came from disassembling each response class's readParam
+// and reading the SETTER NAME it feeds - evidence, not naming guesses.  The
+// audit lives in gimuserver/gme/handlers/SummonerJournal.cpp.
+//
+// Int fields are i32::int to match SummonerJournalUserInfo above and the
+// neighbouring responses that already ship bare ints successfully.  readParam
+// runs StrToInt over the value either way (it receives a const char*), so this
+// is not the 3.4 trap - but if a field misbehaves, try i32::str first.
+// -------------------------------------------------------------------------
+
+json SummonerJournalTaskMst {
+    doc """
+    One mission.  Keyed T38aBiw3 (SummonerJournalTaskMstResponse::readParam
+    @0xE3363C, 9 fields).
+    """
+
+    field task_id type="str" {
+        key "23DaiBpe"
+        doc "setTaskID.  Echoed back by SummonerJournalTaskRewardsRequest to claim."
+    }
+
+    field name type="str" {
+        key "s35idar9"
+        doc "setName - the mission title, e.g. Squad Up."
+    }
+
+    field instructions type="str" {
+        key "H2Dnbr39"
+        doc "setInstructions - the body line, e.g. Form a squad with 5 units."
+    }
+
+    field locked_level type="i32::int" {
+        key "v39D198k"
+        doc "setLockedLevel.  0 = never gated by Summoner level."
+    }
+
+    field unlock_type type="i32::int" {
+        key "xNd38t2u"
+        doc """
+        setUnlockType.  Vocabulary UNVERIFIED - no capture of a populated
+        journal exists, so 0 is sent and nothing is inferred from the name.
+        """
+    }
+
+    field unlock_value type="i32::int" {
+        key "Sd38Dbt3"
+        doc "setUnlockValue.  Pairs with unlock_type; 0 while that is 0."
+    }
+
+    field progress type="i32::int" {
+        key "pG2n1A28"
+        doc """
+        setProgress.  The SAME key carries the USER's current progress on
+        SummonerJournalUserTaskInfo, so on the MST side it reads as the TARGET
+        to reach.  Set equal to value until a real capture separates them.
+        """
+    }
+
+    field value type="i32::int" {
+        key "w3Di51bp"
+        doc "setValue - how many of the thing the mission asks for."
+    }
+
+    field target_screen type="i32::int" {
+        key "da36ky2E"
+        doc """
+        setTargetScreen - where the GO button jumps to.  Scene ids are
+        UNVERIFIED, so 0 is sent; the button should sit inert rather than jump
+        somewhere wrong.
+        """
+    }
+}
+
+json SummonerJournalMilestoneMst {
+    doc """
+    One rung of the points ladder.  Keyed ad52Diwq
+    (SummonerJournalMilestoneMstResponse::readParam @0xE33EE4, 8 fields).
+
+    Per the wiki: 200 / 400 / 600 / 750 / 1000 points.
+    """
+
+    field milestone_id type="str" {
+        key "Uiwd28Vq"
+        doc "setMilestoneID."
+    }
+
+    field present_id type="str" {
+        key "S1B82FHK"
+        doc "setPresentID."
+    }
+
+    field target_id type="str" {
+        key "TdDHf59J"
+        doc "setTargetID - the rewarded entity, shared reward vocabulary."
+    }
+
+    field target_param type="str" {
+        key "37moriMq"
+        doc "setTargetParam."
+    }
+
+    field message type="str" {
+        key "ZC0msu2L"
+        doc "setMessage - the note attached to the present."
+    }
+
+    field points type="i32::int" {
+        key "9hH0neGa"
+        doc "setPoints - the total needed to unlock this rung."
+    }
+
+    field present_type type="i32::int" {
+        key "30Kw4WBa"
+        doc """
+        setPresentType - the SHARED reward vocabulary (3 zel, 6 unit, 8 gem,
+        4/5/7 item, 11 karma, 12 medal), so the existing reward switch covers
+        it and no new one is needed.
+        """
+    }
+
+    field target_cnt type="i32::int" {
+        key "wJsB35iH"
+        doc "setTargetCnt - how many."
+    }
+}
+
+json SummonerJournalRewardsMst {
+    doc """
+    A mission's own reward, separate from the milestone ladder.  Keyed
+    b2DjiaXp (SummonerJournalRewardsMstResponse::readParam @0xE343AC).
+
+    SIX fields - there is NO target_id here, although MilestoneMst has one and
+    the two share most of their keys.  Do not assume a shared shape from shared
+    keys; the rewarded entity travels in present_id/target_param.
+    """
+
+    field task_id type="str" {
+        key "23DaiBpe"
+        doc "setTaskID - which mission this reward belongs to."
+    }
+
+    field present_id type="str" {
+        key "S1B82FHK"
+        doc "setPresentID."
+    }
+
+    field target_param type="str" {
+        key "37moriMq"
+        doc "setTargetParam."
+    }
+
+    field message type="str" {
+        key "ZC0msu2L"
+        doc "setMessage."
+    }
+
+    field present_type type="i32::int" {
+        key "30Kw4WBa"
+        doc "setPresentType - shared reward vocabulary."
+    }
+
+    field target_cnt type="i32::int" {
+        key "wJsB35iH"
+        doc "setTargetCnt."
+    }
+}
+
+json SummonerJournalUserTaskInfo {
+    doc """
+    This user's standing on one mission.  Keyed da38tRai
+    (SummonerJournalUserTaskInfoResponse::readParam @0xE33A40).
+
+    da38tRai is ALSO the group SummonerJournalTaskRewardsRequest posts when
+    claiming, so the request echoes the shape it will be answered in.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "ID of the user for this session."
+    }
+
+    field task_id type="str" {
+        key "23DaiBpe"
+        doc "setTaskID."
+    }
+
+    field progress type="i32::int" {
+        key "pG2n1A28"
+        doc "setProgress - how far along THIS user is."
+    }
+
+    field claim_status type="i32::int" {
+        key "2g6adYig"
+        doc "setClaimStatus - whether the reward has been taken."
+    }
+
+    field is_available type="i32::int" {
+        key "b638DwP8"
+        doc "setIsAvailable - whether the mission is offered at all."
+    }
+}
+
+json SummonerJournalUserMilestoneInfo {
+    doc """
+    This user's standing on one ladder rung.  Keyed r3D28bqW
+    (SummonerJournalUserMilestoneInfoResponse::readParam @0xE347A4).
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "ID of the user for this session."
+    }
+
+    field milestone_id type="str" {
+        key "Uiwd28Vq"
+        doc "setMilestoneID."
+    }
+
+    field claim_status type="i32::int" {
+        key "da365dB8"
+        doc """
+        setClaimStatus.
+
+        da365dB8 is summoner_journal_flag on SummonerJournalUserInfo and
+        claim_status HERE.  The hashes are per field NAME, not per meaning, so
+        a shared key is not a shared concept - resolve each against the class
+        that owns it.
+        """
+    }
+}
+
+json SummonerJournalInfoResp {
+    doc """
+    SummonerJournalInfo (32Gwida0) response - the whole screen in one reply.
+
+    The captured request (2026-08-22) carries NO journal parameters: identity,
+    signal key and the MST version manifest only, exactly as createBody
+    @0xE3794C predicted.  So everything the screen shows has to come back here.
+
+    Answering {} renders a valid empty journal (Journal Points : 0 / 0), which
+    is how it behaved before this was populated - the screen tolerates empty
+    lists, unlike the Slots result popup.
+    """
+
+    field tasks type="[SummonerJournalTaskMst]" {
+        key "T38aBiw3"
+        doc "The mission catalogue."
+    }
+
+    field milestones type="[SummonerJournalMilestoneMst]" {
+        key "ad52Diwq"
+        doc "The points ladder."
+    }
+
+    field rewards type="[SummonerJournalRewardsMst]" {
+        key "b2DjiaXp"
+        doc "Per-mission rewards, joined to tasks by task_id."
+    }
+
+    field user_info type="SummonerJournalUserInfo" {
+        key "M3dw18eB"
+        doc """
+        This user's points and the tile flag.  Also sent on UserInfo/Initialize,
+        because RewardsTopScene::loadMenuList needs the flag before this screen
+        can be opened at all.
+        """
+    }
+
+    field user_tasks type="[SummonerJournalUserTaskInfo]" {
+        key "da38tRai"
+        doc "Per-user mission progress."
+    }
+
+    field user_milestones type="[SummonerJournalUserMilestoneInfo]" {
+        key "r3D28bqW"
+        doc "Per-user milestone claim state."
+    }
+}

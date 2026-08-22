@@ -2504,3 +2504,20 @@ json HomeInfoResp {
         """
     }
 }
+
+json SummonerJournalInfoReq {
+    doc """
+    SummonerJournalInfo (32Gwida0) request.
+
+    Captured from a real client 2026-08-22 and it carries NO journal
+    parameters - identity, the signal key, and the 168-entry MST version
+    manifest, exactly as createBody @0xE3794C predicted.  Only the identity is
+    modelled; the handler reads with error_on_unknown_keys off, so the rest
+    passes through without needing to be described.
+    """
+
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
