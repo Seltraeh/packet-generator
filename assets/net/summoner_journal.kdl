@@ -1,5 +1,12 @@
 json SummonerJournalUserInfo {
-    doc "TODO"
+    doc """
+    Per-user Summoner's Journal state, keyed M3dw18eB
+    (SummonerJournalUserInfoResponse, readParam @0xE33D18).
+
+    Rides on UserInfo/Initialize rather than on the Journal's own request,
+    because the REWARDS MENU needs it before the screen can ever be opened -
+    see journal_flag.
+    """
 
     field user_id type="str" {
         key "h7eY3sAK"
@@ -8,12 +15,46 @@ json SummonerJournalUserInfo {
 
     field points type="i32::int" {
         key "9hH0neGa"
-        doc "TODO"
+        doc """
+        Points earned across completed missions; the milestone ladder pays out
+        at 200 / 400 / 600 / 750 / 1000.
+
+        readParam runs CommonUtils::StrToInt(const char*) over the value at
+        0xE33E10 before setPoints(int).  That is NOT by itself proof the wire
+        must quote it: readParam receives the value as a const char* whichever
+        way it was encoded, and other fields in these same responses go out as
+        bare ints and work (gKNfIZiA, Najhr8m6).  Left as authored; if the tile
+        misbehaves, 3.4 says try i32::str first.
+        """
     }
 
     field journal_flag type="i32::int" {
         key "da365dB8"
-        doc "TODO"
+        doc """
+        ⚠ THIS FLAG DECIDES WHETHER THE REWARDS TILE EXISTS AT ALL.
+
+        RewardsTopScene::loadMenuList @0xE42440 opens by calling
+        SummonerJournalUserInfo::getSummonerJournalFlag() and does
+        `cbz w0, 0xE425B8` at 0xE424B0 - zero skips the entire tile
+        construction, task_journal_btn1.png and all.  So the menu has EIGHT
+        tile code paths but renders SEVEN whenever this is 0, which is what an
+        earlier note here got wrong by counting paths instead of tiles.
+
+        Because loadMenuList reads it, it has to arrive BEFORE the menu opens -
+        hence UserInfo/Initialize, not the Journal's own 32Gwida0 response.
+        Nothing set it, so the tile could never appear, and the 32Gwida0 /
+        2y48D13d / 3a83iY3r probes could never capture a body: the screen they
+        belong to was unreachable.
+
+        Per the wiki the Journal is new-Summoner-only and vanishes once every
+        mission is done and every prize claimed, replaced by a red treasure
+        chest on Home - so 0 legitimately means "finished or not applicable",
+        and this is the switch that retires the feature.
+
+        Encoding: same StrToInt-on-const-char* situation as points
+        (@0xE33E40), so the int form is left alone until a capture says
+        otherwise.
+        """
     }
 
     field unk type="i32::int" {
