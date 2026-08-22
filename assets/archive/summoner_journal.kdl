@@ -33,12 +33,37 @@ json SummonerJournalTask {
         doc "What completing this mission adds to the Journal total."
     }
 
-    field value type="u32::int" {
-        key "value"
+    field target type="u32::int" {
+        key "target"
         doc """
-        How many of the thing the mission asks for - the 5 in 'Form a squad
-        with 5 units'.  Goes out as w3Di51bp, and also as pG2n1A28 on the MST
-        side, which reads as the target rather than the user's progress.
+        How many of the thing the mission asks for - the 50 in 'Clear 50
+        quests'.  Goes out as pG2n1A28, which is the [0/N] DENOMINATOR:
+        setSummonerJournalList @0xE3B4DC-E3B4E8 builds that label from
+        UserTaskInfo::getProgress() over TaskMst::getProgress().
+
+        ⚠ NOT w3Di51bp.  The setter names invite exactly the wrong mapping -
+        `value` sounds like the amount and `progress` like progress - and the
+        first cut swapped them, which showed 'Journal Point reward: 50' on a
+        20-point mission whose target happened to be 50.
+        """
+    }
+
+    field target_screen type="u32::int" {
+        key "target_screen"
+        doc """
+        Where the GO button sends the player (da36ky2E).
+
+        moveToTaskScene @0xE3DD00 accepts 1..9 and RETURNS for anything else,
+        so 0 is a safe inert button rather than a crash.  Decoded from the jump
+        table at 0x230EB90:
+
+            1 scene 310   2 scene 900   3 checkForDungeonScene
+            4 checkForSPDungeonScene    5 checkForArenaScene
+            6 scene 1300  7 checkForRaidScene
+            8 scene 600   9 scene 230
+
+        Only 3/4/5/7 are named unambiguously by the binary, so only those are
+        used; the numeric scene ids are not guessed and those missions keep 0.
         """
     }
 
@@ -61,13 +86,17 @@ json SummonerJournalTask {
         The mission's own reward, in the shared vocabulary (3 zel, 6 unit,
         8 gem, 4/5/7 item, 11 karma, 12 medal).
 
-        ⚠ 0 means THIS SERVER CANNOT PAY IT.  Most of the wiki's reward
-        entities - Metal Ghost, Metal King, Jewel Ghost, Summon Ticket, Green
-        Grass, High Cure, Revive - are absent from unit_mst, item_mst and the
-        client's text_local.csv, so inventing ids would hand out the wrong
-        thing.  0 falls through PresentReceipt's switch to 'not supported -
-        present left unclaimed', which LOGS rather than silently paying
-        nothing, and reward_note keeps the wiki's wording for whoever wires it.
+        ⚠ Most of the wiki's reward entities - Metal Ghost, Metal King, Jewel
+        Ghost, Summon Ticket, Green Grass, High Cure, Revive - are absent from
+        unit_mst, item_mst and the client's text_local.csv.  Those rows carry
+        the nearest available stand-in and set `substituted`.
+
+        The first cut used present_type 0 for them, which was honest but had a
+        visible cost: the row's ICON comes from the reward
+        (RewardsMst::getPresentType/getPresentID feed present_thum in
+        setSummonerJournalList), so an unpayable reward renders BLANK.  A
+        populated icon with reward_note recording what the wiki actually named
+        beats a blank row.
         """
     }
 
@@ -83,7 +112,12 @@ json SummonerJournalTask {
 
     field reward_note type=str {
         key "reward_note"
-        doc "The wiki's reward text, verbatim. For logs and for whoever fills in present_type."
+        doc "The wiki's reward text, verbatim - what this row SHOULD pay."
+    }
+
+    field substituted type="bool::bool" {
+        key "substituted"
+        doc "True where reward_note names something this server does not have and a stand-in is paid."
     }
 }
 
