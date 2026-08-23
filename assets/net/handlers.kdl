@@ -2521,3 +2521,38 @@ json SummonerJournalInfoReq {
         doc "Login info identifying the current user."
     }
 }
+
+json SummonerJournalTaskRewardsNode {
+    doc "One mission being claimed."
+
+    field task_id type="str" {
+        key "23DaiBpe"
+        doc """
+        Which mission.  Added via the std::string overload of
+        JsonNode::addParam (@0xE37898), not the int one, so §3.4's
+        quoted-int ambiguity does not apply - this really is a string.
+        """
+    }
+}
+
+json SummonerJournalTaskRewardsReq {
+    doc """
+    SummonerJournalTaskRewards (2y48D13d) - claiming one mission's reward.
+
+    Shape from createBody @0xE377A8: identity, signal key, version tag, then
+    a `da38tRai` group carrying `23DaiBpe`.
+
+    ⚠ da38tRai is ALSO the dispatch key of SummonerJournalUserTaskInfo, so the
+    request posts the same group shape it will be answered in.
+    """
+
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field entries type="[SummonerJournalTaskRewardsNode]" {
+        key "da38tRai"
+        doc "The mission(s) being claimed."
+    }
+}
