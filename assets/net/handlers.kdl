@@ -1517,6 +1517,22 @@ json MissionEndResp {
         key "GV81ctzR"
         doc "Unit dictionary rows for units awarded by this mission."
     }
+
+    field clear_mission_info type="[UserClearMissionInfo]" {
+        key "UT1SVg59"
+        doc """
+        The caller's cleared missions, refreshed after this clear.
+
+        Sent so the map marks the mission cleared IMMEDIATELY.  Without it the
+        client only learns on the next UserInfo, so a freshly beaten mission
+        kept its uncleared marker and whatever it unlocks stayed out of reach
+        until something else happened to refresh.
+
+        SAFE as a partial list: UserClearMissionInfoResponse::readParam
+        @0x13FD758 does getMissionID + addObject with NO removeAllObjects, so
+        entries MERGE into the client's list rather than replacing it (§6.20).
+        """
+    }
 }
 
 
