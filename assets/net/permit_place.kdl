@@ -41,25 +41,53 @@ json PermitReceipe {
 
   field recipe_id type="i32::str" {
     key "4HqhTf3a"
-    doc "setRecipeID — joins to ReceipeMst.id."
+    doc """
+    The JOIN KEY.  readParam feeds setRecipeID(string) @0x13E9C60;
+    PermitRecipeInfoList::getObjectWithRecipeID @0x126D840 matches it against
+    RecipeMst::getRecipeID.  Also read by MyTownItemListScene::setRecipeList
+    @0x18E957C / downloadFiles @0x18E8C5C, MyTownSphereListScene::setFilterRecipeList
+    @0x1906530, ItemMixScene::getRecipeList @0x1704F9C, and the NEW-badge flags
+    BadgeInfo::newFlagItemRecipe @0x11F1FA8 / newFlagSphereRecipe @0x11F2384 /
+    newFlagLSSphereRecipe @0x11F262C / newFlagRaidItem @0x11F31BC.
+    """
   }
 
   field craft_count type="i32::str" {
     key "H6k1LIxC"
-    doc "setCnt — how many times this recipe has already been crafted.  GameUtils::updatePermitRecipe (0x1177C28) bumps it client-side with setCnt(getCnt() + 1) after each craft, so the server reports the persisted total."
+    doc """
+    Crafts ALREADY PERFORMED — a tally, not a cap.  Confirmed by arithmetic,
+    not by the setter name:
+
+      * GameUtils::isMixSphereCnt @0x1177604 returns RecipeMst.vtbl[0x28]() >
+        getCnt() — the MST holds the cap, this holds the count.
+      * GameUtils::updatePermitRecipe @0x1177C8C does setCnt(getCnt() + 1)
+        after each craft, so the server reports the persisted total.
+      * MyTownItemListScene::setRecipeList @0x18E96C0 HIDES the recipe once
+        cap <= getCnt().
+
+    Two edge cases in isMixSphereCnt: a cap of -1 means unlimited @0x117761C,
+    and NO PermitRecipeInfo row at all returns 0 = uncraftable @0x1177614 —
+    which is why a missing 51yQrDBR renders an empty Synthesis facility.
+    """
   }
 
   field available_seconds type="i32::str" {
     key "VDKB0Y5h"
     doc """
-    setLimit — SECONDS REMAINING in this recipe's availability window, not a
-    craft cap.  setLimit (0x126D4A4) stores the value and stamps now();
-    getRemainingTime (0x126D4CC) returns -1 unchanged when it is negative,
-    otherwise max(0, limit - elapsed).
+    SECONDS REMAINING in this recipe's availability window, not a craft cap.
+    setLimit @0x126D4A4 stores the value and stamps CommonUtils::getNowUnitxTime();
+    getRemainingTime @0x126D4CC returns -1 unchanged when negative @0x126D4FC,
+    otherwise max(0, limit - elapsed) @0x126D4F4.
 
-    -1 therefore means "permanent" and is what the timeless recipes need
-    (ReceipeMst.availability_end is 9999-12-31 for those).  Sending 0 reads as
-    already-expired — the same epoch-zero trap as handbook 6.12.
+    -1 means "permanent" and is what the timeless recipes need
+    (ReceipeMst.availability_end is 9999-12-31 for those).  SENDING 0 HIDES
+    EVERY RECIPE: MyTownItemListScene::setRecipeList discriminates the two
+    explicitly — == -1 keeps the row @0x18E96CC, then < 1 skips it @0x18E96E0.
+    Same epoch-zero trap as handbook 6.12.
+
+    RecipeListBaseScene::setItemLimitTime @0x18FD1A8 draws the countdown label
+    only when >= 1.  The raw accessor getLimit @0x126D49C has ZERO call sites —
+    the value reaches the UI only through getRemainingTime.
     """
   }
 

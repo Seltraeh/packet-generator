@@ -1384,22 +1384,36 @@ json UserTownLocationDetail {
 
     field user_id type="str" {
         key "h7eY3sAK"
-        doc "ID of the user for this session."
+        doc "UNREAD.  setUserID @0x1404180 stores it; UserTownLocationDetail::getUserID @0x12ACE6C has ZERO call sites."
     }
 
     field location_id type="i32::str" {
         key "un80kW9Y"
-        doc "setLocationID.  Joins to TownLocationMst.id: 1 Mountain, 2 River, 3 Farm, 4 Forest."
+        doc "setLocationID @0x14041BC.  The lookup key: sole consumer is UserTownLocationDetailList::getObjectWithLocationID @0x12AD320, matched against TownLocationMst::getLocationID by collectItem @0x18F248C.  Joins to TownLocationMst.id: 1 Mountain, 2 River, 3 Farm, 4 Forest."
     }
 
     field start_date type="datetime" {
         key "qA7M9EjP"
-        doc "setStartdate — when the current harvest period began.  WRITE-ONLY as far as the client is concerned: getStartdate has zero callers in libgame.so, and no MyTownTopScene string references a countdown, so the refresh clock is entirely server-side.  Sent because the field is part of the struct the client parses."
+        doc "UNREAD.  setStartdate @0x1404250 stores it; UserTownLocationDetail::getStartdate @0x12ACEC0 has ZERO call sites in libgame.so, so the refresh clock is entirely server-side.  Sent because the field is part of the struct the client parses."
     }
 
     field tap_cnt type="i32::str" {
         key "mDaE3t6A"
-        doc "setTapCnt — taps REMAINING in this period, not taps taken.  The sparkle particle is drawn iff this is >= 1 (setLocationInfo 0x18F1574), and collectItem calls decTapCnt(1) per tap.  Rolled from TownLocationLvMst tap_cnt_start..tap_cnt_end at the start of each period."
+        doc """
+        Taps REMAINING in this period, not taps taken.  setTapCnt @0x140428C.
+
+        The sparkle particle is drawn iff this is >= 1 — MyTownTopScene::setLocationInfo
+        @0x18F1730 (cmp #1 / b.lt); the plist itself comes from
+        TownLocationMst::getEffectType, NOT from this field.  collectItem guards
+        >= 1 @0x18F24A8 and calls decTapCnt(1) @0x18F2A08 per tap, then fires a
+        TownUpdateRequest @0x18F2A78.
+
+        It also INDEXES eip3MS5L (element count - tap_cnt), so the two fields
+        must be kept consistent — see that field.
+
+        Rolled from TownLocationLvMst tap_cnt_start..tap_cnt_end at the start of
+        each period.
+        """
     }
 
     field drop_item_info type="str" {
@@ -1408,12 +1422,19 @@ json UserTownLocationDetail {
         setDropItemInfo — the whole period's loot, PRE-ROLLED BY THE SERVER, as
         "<itemId>:<zel>:<karma>,..." with one comma element per tap.
 
-        getCollectItemInfo (0x18F3868) picks element `count - tap_cnt`, so the
-        list is consumed front-to-back as tap_cnt counts down; collectItem
-        (0x18F244C) splits that element on ':' and applies incWarehouseItem(+1)
-        / incZel / incKarma locally.  An item id the ItemMst list does not
-        resolve (e.g. "0") simply grants no item that tap; zel and karma are
-        applied only when >= 1.
+        getCollectItemInfo @0x18F3868 splits on "," @0x18F38B8 and picks element
+        `count - tap_cnt` @0x18F38D8, so the list is consumed front-to-back as
+        tap_cnt counts down.  collectItem @0x18F244C splits that element on ":"
+        @0x18F24D8 and applies ItemMstList::getObject(e[0]) @0x18F2668 ->
+        incWarehouseItem @0x18F2698, incZel @0x18F291C, incKarma @0x18F2990.
+        An item id ItemMst does not resolve (e.g. "0") simply grants no item
+        that tap; zel and karma are applied only when >= 1 (@0x18F290C,
+        @0x18F2980).  A full warehouse routes to WAREHOUSE_OVER_ERROR @0x18F2748.
+
+        ⚠ INVARIANT: this must carry AT LEAST mDaE3t6A comma-separated elements.
+        The index feeds a madd @0x18F38E0 with NO bounds check, so a shorter
+        list reads outside the vector and hands collectItem a garbage
+        std::string to StrToInt and look up in ItemMstList.
 
         The client keeps no drop table of its own, which is why the tap report
         (TownUpdate 0mRaAo39) carries only tap counts — the server already knows

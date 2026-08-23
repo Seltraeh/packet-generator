@@ -61,27 +61,53 @@ json TownKarmaPayment {
 
     field karma type="i64::str" {
         key "HTVh8a65"
-        doc "Total karma injected across the batch (createBody's own local is named InjectionKarma).  This is what leaves the player's balance; the per-row HTVh8a65 values are where it landed."
+        doc """
+        Karma SPENT across this batch — and the client has ALREADY deducted it
+        from its own balance before sending.
+
+        createBody @0x13ACF4C reads UserState::getInjectionKarma.  The producer
+        is MyTownFacilityExtScene2::injectionFacility, which does
+        UserTeamInfo::setKarma(getKarma() - w) @0x18F6C5C and then
+        UserState::addInjectionKarma(w) @0x18F6C70 with the SAME w.
+
+        It is per-batch, not cumulative: UserState::clear("8v43tz7g") zeroes the
+        counter (strcmp @0x1246454, store @0x1246490) and GameResponseParser::parse
+        calls it @0x1391CE0 when OUR RESPONSE ARRIVES.  So deducting it once
+        server-side is correct and cannot double-charge two batches in a session.
+
+        The per-row HTVh8a65 values are where it landed.
+        """
     }
 }
 
 json TownFacilityUpdateEntry {
-    doc "One facility entry inside a TownFacilityUpdate request.  createBody (0x18F66D4 -> TownFacilityUpdateRequest::createBody) sends the post-injection state of every facility row."
+    doc """
+    One facility entry inside a TownFacilityUpdate request.
+    TownFacilityUpdateRequest::createBody @0x13ACEEC sends the post-injection
+    state of every facility row.
+
+    NOT DECLARED HERE: createBody also emits h7eY3sAK = UserInfo::getUserID()
+    @0x13AD030 as the FIRST param of every node.  The handler ignores it
+    (error_on_unknown_keys = false) and resolves the caller from IKqx1Cn9
+    instead, so it is deliberately absent rather than missed.
+    """
 
     field facility_id type="i32::str" {
         key "y9ET7Aub"
-        doc "MST facility id."
+        doc "MST facility id — UserTownFacilityInfo::getFacilityID @0x13ACFB4."
     }
 
     field lv type="i32::str" {
         key "D9wXQI2V"
-        doc "New level for this facility after the injection batch."
+        doc "POST-injection level — UserTownFacilityInfo::getLv @0x13ACFCC.  injectionFacility already applied the bump before the request is built."
     }
 
     field karma type="i32::str" {
         key "HTVh8a65"
         doc """
         Karma ACCUMULATED toward the next level — a progress bar, not a price.
+
+        Sent from UserTownFacilityInfo::getKarma @0x13ACFE4.
 
         MyTownFacilityExtScene2::injectionFacility (0x18F66D4) adds the injected
         karma to UserTownFacilityInfo::getKarma(), and when the running total
@@ -93,21 +119,26 @@ json TownFacilityUpdateEntry {
 }
 
 json TownLocationUpdateEntry {
-    doc "One location entry inside a TownFacilityUpdate request."
+    doc """
+    One location entry inside a TownFacilityUpdate request.
+
+    NOT DECLARED HERE: createBody also emits h7eY3sAK = UserInfo::getUserID()
+    @0x13AD134 as the first param of every node; the handler ignores it.
+    """
 
     field location_id type="i32::str" {
         key "un80kW9Y"
-        doc "MST location id."
+        doc "MST location id — UserTownLocationInfo::getLocationID @0x13AD0A8."
     }
 
     field lv type="i32::str" {
         key "D9wXQI2V"
-        doc "New level for this location after the injection batch."
+        doc "POST-injection level — UserTownLocationInfo::getLv @0x13AD0C0."
     }
 
     field karma type="i32::str" {
         key "HTVh8a65"
-        doc "Karma accumulated toward this location's next level — see TownFacilityUpdateEntry.karma."
+        doc "Karma accumulated toward this location's next level — UserTownLocationInfo::getKarma @0x13AD0D8.  See TownFacilityUpdateEntry.karma."
     }
 }
 
