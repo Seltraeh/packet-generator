@@ -1238,21 +1238,400 @@ json UserArenaInfo {
 }
 
 json UserTeamArchive {
-    doc "TODO"
+    doc """
+    THE TROPHY PROGRESS COUNTERS (lifetime, non-arena).
 
-    field mock type="str" {
-		key "INVALID"
-		doc "TODO"
+    Every live field is read by exactly one consumer:
+    PlayerInfoBattleResultScene::getActual @0x1791EEC, 32KB of
+    TrophyMst::getTrophyID() compares that answer one trophy id per field.  Each
+    doc below therefore cites the TROPHY the field satisfies rather than a
+    reading of the setter name.  All 62 ids across this class and
+    UserTeamArenaArchive exist in deploy/mst/trophy_mst.json, whose Japanese
+    labels match the getter names independently.
+
+    Reached from PlayerInfoBattleResultScene::setTrophyList,
+    ArenaArchiveScene::setArchiveInfo and ColosseumArchiveScene::setTrophyList.
+
+    ⚠ THE SERVER POPULATES NONE OF THIS.  There is no handler, DB column or
+    schema mapping for UserTeamArchive, so the wire carries "zI2tJB7R":[] and
+    every trophy reads 0.  Modelled here (it was a one-field `mock` stub) so the
+    achievements feature has a verified target; filling it is a feature build.
+
+    Full audit: tools/SERVER_COMPONENT_AUDIT.md.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "UNREAD.  setUserID @0x14020B4 stores it; no getter on this class reads it and getActual never asks for it."
     }
+
+    field login_cnt type="i32::str" {
+        key "dD64grYH"
+        doc "Answers TROPHY 100010 (ログイン日数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setLoginCnt @0x14020EC."
+    }
+
+    field serial_login_day type="i32::str" {
+        key "3w6YDS4z"
+        doc "Answers TROPHY 100020 (連続ログイン日数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSerialLoginDay @0x1402114."
+    }
+
+    field exp type="i32::str" {
+        key "d96tuT2E"
+        doc "UNREAD.  setExp @0x140213C stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field zel_get type="i64::str" {
+        key "pThS5FE3"
+        doc "Answers TROPHY 100030 (累計獲得ゼル).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setZelGet @0x14021D4."
+    }
+
+    field zel_use type="i64::str" {
+        key "mn5Tj3fz"
+        doc "Answers TROPHY 100040 (総合ゼル使用額).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setZelUse @0x140227C."
+    }
+
+    field zel_sale type="i64::str" {
+        key "jG91JRxN"
+        doc "UNREAD.  setZelSale @0x1402324 stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field zel_unit_sale type="i64::str" {
+        key "06phPeqv"
+        doc "Answers TROPHY 100050 (総合ユニット売却額).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setZelUnitSale @0x14023CC."
+    }
+
+    field zel_item_sale type="i64::str" {
+        key "Zq8ej5IN"
+        doc "Answers TROPHY 100060 (総合アイテム売却額).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setZelItemSale @0x1402474."
+    }
+
+    field karma_get type="i64::str" {
+        key "isRx41jy"
+        doc "Answers TROPHY 100070 (累計獲得カルマ).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setKarmaGet @0x140251C."
+    }
+
+    field karma_use type="i64::str" {
+        key "20qd9shE"
+        doc "Answers TROPHY 100080 (総合カルマ使用数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setKarmaUse @0x14025C4."
+    }
+
+    field friend_p_get type="i32::str" {
+        key "Sf95jez7"
+        doc "Answers TROPHY 100090 (累計絆所持pt).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setFriendPGet @0x14025FC."
+    }
+
+    field friend_p_use type="i32::str" {
+        key "I29Qgxot"
+        doc "Answers TROPHY 100100 (総合絆使用pt).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setFriendPUse @0x1402624."
+    }
+
+    field unit_mix_cnt type="i32::str" {
+        key "WMC6rNF1"
+        doc "Answers TROPHY 100220 (合成回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setUnitMixCnt @0x140264C."
+    }
+
+    field unit_mix_elem_cnt type="i32::str" {
+        key "Z93pUQhG"
+        doc "Answers TROPHY 100230 (合成ユニット素材使用数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setUnitMixElemCnt @0x1402674."
+    }
+
+    field unit_evo_cnt type="i32::str" {
+        key "Rc6St9h1"
+        doc "Answers TROPHY 100240 (進化回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setUnitEvoCnt @0x140269C."
+    }
+
+    field unit_sum_cnt type="i32::str" {
+        key "k5Sjn9Zq"
+        doc "Answers TROPHY 100190 (総合ユニット取得数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setUnitSumCnt @0x14026C4."
+    }
+
+    field item_mix_cnt type="i32::str" {
+        key "c3Bo97kI"
+        doc "Answers TROPHY 100250 (調合回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setItemMixCnt @0x14026EC."
+    }
+
+    field item_mix_elem_cnt type="i32::str" {
+        key "Gt2msFb1"
+        doc "Answers TROPHY 100260 (調合素材使用数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setItemMixElemCnt @0x1402714."
+    }
+
+    field sphere_mix_cnt type="i32::str" {
+        key "07HgoLtC"
+        doc "Answers TROPHY 100270 (スフィア作成数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSphereMixCnt @0x140273C."
+    }
+
+    field fight_cnt type="i32::str" {
+        key "AEz43gai"
+        doc "UNREAD.  setFightCnt @0x1402764 stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field win_cnt type="i32::str" {
+        key "8CEu9Kcm"
+        doc "UNREAD.  setWinCnt @0x140278C stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field town_harvest_cnt type="i32::str" {
+        key "3DBVLY8H"
+        doc "Answers TROPHY 100280 (村採取タッチ数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setTownHarvestCnt @0x14027B4."
+    }
+
+    field quest_challenge_cnt type="i32::str" {
+        key "c4im6B2v"
+        doc "Answers TROPHY 200010 (総合クエスト挑戦数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setQuestChallengeCnt @0x14027DC."
+    }
+
+    field quest_clear_cnt type="i32::str" {
+        key "UCN04WxE"
+        doc "Answers TROPHY 200020 (総合クエスト成功数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setQuestClearCnt @0x1402804."
+    }
+
+    field quest_win_cnt type="i32::str" {
+        key "ovFJ6Hp0"
+        doc "Answers TROPHY 200030 (総合戦闘勝利数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setQuestWinCnt @0x140282C."
+    }
+
+    field quest_mimic_cnt type="i32::str" {
+        key "TW1Mrtp5"
+        doc "Answers TROPHY 200040 (総合ミミック出現数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setQuestMimicCnt @0x1402854."
+    }
+
+    field turn_max_unit_damage type="i32::str" {
+        key "e6BKoYy9"
+        doc "Answers TROPHY 100325 (ユニット単体最大ダメージ数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setTurnMaxUnitDamage @0x140287C."
+    }
+
+    field battle_turn_max_damage type="i32::str" {
+        key "5NRJQ1LU"
+        doc "Answers TROPHY 100330 (戦闘1ターン最大ダメージ数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBattleTurnMaxDamage @0x14028A4."
+    }
+
+    field battle_turn_max_spark type="i32::str" {
+        key "XP06YWdT"
+        doc "Answers TROPHY 100340 (戦闘1ターン最大スパーク回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBattleTurnMaxSpark @0x14028CC."
+    }
+
+    field battle_spark_cnt type="i32::str" {
+        key "U8uZLA34"
+        doc "Answers TROPHY 100350 (累計スパーク回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBattleSparkCnt @0x14028F4."
+    }
+
+    field battle_skill_cnt type="i32::str" {
+        key "rZQJF5G9"
+        doc "Answers TROPHY 100360 (累計BB使用回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBattleSkillCnt @0x140291C."
+    }
+
+    field b_crystal_max type="i32::str" {
+        key "0LwvAF3H"
+        doc "Answers TROPHY 100290 (最大バトルクリスタル出現数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBCrystalMax @0x1402944."
+    }
+
+    field h_crystal_max type="i32::str" {
+        key "rQ3TAy6I"
+        doc "Answers TROPHY 100300 (最大ハートクリスタル出現数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setHCrystalMax @0x140296C."
+    }
+
+    field b_crystal type="i32::str" {
+        key "hoG2ieT5"
+        doc "Answers TROPHY 100310 (累計バトルクリスタル出現数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setBCrystal @0x1402994."
+    }
+
+    field h_crystal type="i32::str" {
+        key "6PLsn8xo"
+        doc "Answers TROPHY 100320 (累計ハートクリスタル出現数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setHCrystal @0x14029BC."
+    }
+
+    field gift_present_cnt type="i32::str" {
+        key "84BC2kXw"
+        doc "Answers TROPHY 100200 (総合ギフトプレゼント数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setGiftPresentCnt @0x14029E4."
+    }
+
+    field gift_receive_cnt type="i32::str" {
+        key "5pg7MYCQ"
+        doc "Answers TROPHY 100210 (総合ギフト受け取り数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setGiftReceiveCnt @0x1402A0C."
+    }
+
+    field arena_defeat_unit_cnt type="i32::str" {
+        key "mFID53JZ"
+        doc "UNREAD ON THIS CLASS.  setArenaDefeatUnitCnt @0x1402A34 stores it and nothing reads it here -- getActual answers trophy 300070 from the IDENTICALLY NAMED field on UserTeamArenaArchive instead.  Same key, same setter name, two classes, only one consumed (handbook 12.4)."
+    }
+
 }
 
 json UserTeamArenaArchive {
-    doc "TODO"
+    doc """
+    THE ARENA HALF OF THE TROPHY COUNTERS.  Same mechanism as UserTeamArchive:
+    PlayerInfoBattleResultScene::getActual @0x1791EEC answers one trophy id per
+    field.  Also never populated by the server -- the wire carries "PQ56vbkI":[].
+    Modelled here from readParam @0x1402AC8; it was a one-field `mock` stub.
 
-    field mock type="str" {
-		key "INVALID"
-		doc "TODO"
+    Full audit: tools/SERVER_COMPONENT_AUDIT.md.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "UNREAD.  setUserID @0x1402B8C stores it; no getter on this class reads it and getActual never asks for it."
     }
+
+    field arena_defeat_unit_cnt type="i32::str" {
+        key "mFID53JZ"
+        doc "Answers TROPHY 300070 (総合ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setArenaDefeatUnitCnt @0x1402BC4."
+    }
+
+    field atk_series_win_cnt type="i32::str" {
+        key "7sXWfE8j"
+        doc "The live attack win STREAK -- the ONLY field on either archive class with a consumer outside getActual: ArenaTopScene::setUserArenaInfo, ArenaResultRewardScene::initSet and VortexArenaResultRewardScene::initSet. Its max sibling KuZ6k5Vp is the trophy one (300030)."
+    }
+
+    field max_atk_series_win_cnt type="i32::str" {
+        key "KuZ6k5Vp"
+        doc "Answers TROPHY 300030 (攻撃戦最大連勝数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setMaxAtkSeriesWinCnt @0x1402C14."
+    }
+
+    field max_def_series_win_cnt type="i32::str" {
+        key "72sMkn1N"
+        doc "Answers TROPHY 300050 (防衛戦最大連勝数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setMaxDefSeriesWinCnt @0x1402C3C."
+    }
+
+    field max_turn_damage type="i32::str" {
+        key "0p8BtREA"
+        doc "Answers TROPHY 300250 (戦闘1ターン最大ダメージ数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setMaxTurnDamage @0x1402C64."
+    }
+
+    field max_turn_spark type="i32::str" {
+        key "R7eJ1Tfv"
+        doc "Answers TROPHY 300260 (戦闘1ターン最大スパーク回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setMaxTurnSpark @0x1402C8C."
+    }
+
+    field sum_b_crystal_cnt type="i32::str" {
+        key "8bAdgn37"
+        doc "UNREAD.  setSumBCrystalCnt @0x1402CB4 stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field sum_h_crystal_cnt type="i32::str" {
+        key "I5Uin24C"
+        doc "UNREAD.  setSumHCrystalCnt @0x1402CDC stores it; no getter on this class reads it and getActual never asks for it."
+    }
+
+    field sum_defeat_fire_unit_cnt type="i32::str" {
+        key "nRms5i9J"
+        doc "Answers TROPHY 300090 (炎属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatFireUnitCnt @0x1402D04."
+    }
+
+    field sum_defeat_water_unit_cnt type="i32::str" {
+        key "Cvp53GKJ"
+        doc "Answers TROPHY 300100 (水属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatWaterUnitCnt @0x1402D2C."
+    }
+
+    field sum_defeat_tree_unit_cnt type="i32::str" {
+        key "T2qI34Rm"
+        doc "Answers TROPHY 300110 (樹属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatTreeUnitCnt @0x1402D54."
+    }
+
+    field sum_defeat_thunder_unit_cnt type="i32::str" {
+        key "Ff6g3CNv"
+        doc "Answers TROPHY 300120 (雷属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatThunderUnitCnt @0x1402D7C."
+    }
+
+    field sum_defeat_saint_unit_cnt type="i32::str" {
+        key "3EmVG6Ts"
+        doc "Answers TROPHY 300130 (光属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatSaintUnitCnt @0x1402DA4."
+    }
+
+    field sum_defeat_dark_unit_cnt type="i32::str" {
+        key "3uUIPEj5"
+        doc "Answers TROPHY 300140 (闇属性ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatDarkUnitCnt @0x1402DCC."
+    }
+
+    field sum_defeat_rare1_unit_cnt type="i32::str" {
+        key "uXrLT17C"
+        doc "Answers TROPHY 300150 (★1ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare1UnitCnt @0x1402DF4."
+    }
+
+    field sum_defeat_rare2_unit_cnt type="i32::str" {
+        key "8dzSxWA2"
+        doc "Answers TROPHY 300160 (★2ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare2UnitCnt @0x1402E1C."
+    }
+
+    field sum_defeat_rare3_unit_cnt type="i32::str" {
+        key "8TL5Zmuw"
+        doc "Answers TROPHY 300170 (★3ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare3UnitCnt @0x1402E44."
+    }
+
+    field sum_defeat_rare4_unit_cnt type="i32::str" {
+        key "0XocvSM2"
+        doc "Answers TROPHY 300180 (★4ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare4UnitCnt @0x1402E6C."
+    }
+
+    field sum_defeat_rare5_unit_cnt type="i32::str" {
+        key "Ivk81jQh"
+        doc "Answers TROPHY 300190 (★5ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare5UnitCnt @0x1402E94."
+    }
+
+    field sum_defeat_rare6_unit_cnt type="i32::str" {
+        key "7Su2qZFv"
+        doc "Answers TROPHY 300191 (★6ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare6UnitCnt @0x1402EBC."
+    }
+
+    field sum_defeat_rare7_unit_cnt type="i32::str" {
+        key "mCDR82iQ"
+        doc "Answers TROPHY 300192 (★7ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare7UnitCnt @0x1402EE4."
+    }
+
+    field sum_defeat_rare8_unit_cnt type="i32::str" {
+        key "u9d8ye9H"
+        doc "Answers TROPHY 300193 (幻創進化ユニット撃破数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDefeatRare8UnitCnt @0x1402F0C."
+    }
+
+    field sum_all_knockdown_cnt type="i32::str" {
+        key "Gj4zJIB3"
+        doc "Answers TROPHY 300200 (オールノックダウン勝利数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumAllKnockdownCnt @0x1402F34."
+    }
+
+    field sum_timeout_win_cnt type="i32::str" {
+        key "Z0X7BVdF"
+        doc "Answers TROPHY 300210 (タイムアウト勝利数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumTimeoutWinCnt @0x1402F5C."
+    }
+
+    field sum_perfect_win_cnt type="i32::str" {
+        key "J7u8prxX"
+        doc "Answers TROPHY 300220 (パーフェクト勝利).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumPerfectWinCnt @0x1402F84."
+    }
+
+    field sum_bb_knockdown_cnt type="i32::str" {
+        key "Ut8sN0oM"
+        doc "Answers TROPHY 300230 (BBノックアウト数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumBBKnockdownCnt @0x1402FAC."
+    }
+
+    field sum_arena_point type="i32::str" {
+        key "T57M1AvV"
+        doc "Answers TROPHY 300080 (累計獲得ABP).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumArenaPoint @0x1402FD4."
+    }
+
+    field sum_damage type="str" {
+        key "hI68VzHu"
+        doc "Answers TROPHY 300270 (バトル総合与ダメージ量).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumDamage @0x1403064."
+    }
+
+    field sum_heal type="str" {
+        key "F32xJzsH"
+        doc "Answers TROPHY 300280 (バトル総合回復量).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumHeal @0x1403104."
+    }
+
+    field sum_overkill_attack_cnt type="i32::str" {
+        key "Wnc6A31E"
+        doc "Answers TROPHY 300240 (オーバーキルアタック数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumOverkillAttackCnt @0x140313C."
+    }
+
+    field sum_spark type="i32::str" {
+        key "kHbYZ9w1"
+        doc "Answers TROPHY 300290 (累計スパーク回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumSpark @0x1403164."
+    }
+
+    field sum_skill_cnt type="i32::str" {
+        key "4vx39EIB"
+        doc "Answers TROPHY 300300 (累計BB使用回数).  PlayerInfoBattleResultScene::getActual @0x1791EEC returns this counter for that id; setSumSkillCnt @0x140318C."
+    }
+
 }
 
 json UserSoundInfo {
