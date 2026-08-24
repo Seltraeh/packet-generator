@@ -24,97 +24,104 @@ str-enum GameLanguages {
 }
 
 json LoginInfoResp {
+    // AUDIT 2026-08-24: this struct serves BOTH DIRECTIONS.  UserInfoResponse::
+    // readParam @0x13FED80 reads 22 keys; BaseRequest::createUserInfoTag
+    // @0x13A04D8 sends 10.  A field missing from readParam is REQUEST-ONLY, not
+    // dead -- each is marked below.  createUserInfoTag also sends 236dItKo and
+    // aXf114Oz, which are NOT declared here (both real, both ignored by us).
+    // Three fields are fictional; see them.  Full audit in
+    // tools/SERVER_COMPONENT_AUDIT.md.
     doc "Main object that holds all the player information."
 
     field user_id type="str" {
         key "h7eY3sAK"
-        doc "ID of the user for this session."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setUserID @0x13FEE4C.  ID of the user for this session."
     }
 
     field handle_name type="str" {
         key "B5JQyV8j"
-        doc "Username shown in-game."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setHandleName @0x13FEEEC.  Username shown in-game."
     }
 
     field account_id type="str" {
         key "LZ2PfNm4"
-        doc "Account ID used in account transfering."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setAccountID @0x13FEF8C.  Account ID used in account transfering."
     }
 
     field password type="str" {
         key "4WSu1irc"
-        doc "Password used for account transfering."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setPassword @0x13FF02C.  Password used for account transfering."
     }
 
      // # TODO: this is UserSpecialScenarioInfoList we just dont have this yet
     field model_change_count type="i32::str" {
         key "nrg19RGe"
-        doc "How many times has the user transferred to a new device. May be used to avoid getting first time playing rewards twice."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setModelChangeCnt @0x13FF420 (also sent up by createUserInfoTag).  How many times has the user transferred to a new device. May be used to avoid getting first time playing rewards twice."
     }
 
     field code_expire_date type="i32::str" {
         key "iyJH5k6p"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setCodeExpireDate @0x13FF4B0."
     }
 
     field friend_id type="str" {
         key "98WfKiyA"
-        doc "Player ID that is used for the friend system."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setFriendID @0x13FF0CC.  Player ID that is used for the friend system."
     }
 
     field contact_id type="str" {
         key "90LWtVUN"
-        doc "ID of the player used in the ticketing system for player support."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setContactID @0x13FF16C (also sent up by createUserInfoTag @0x13A04D8).  ID of the player used in the ticketing system for player support."
     }
 
     field target_os type="GameTargetOs" {
         key "DFY3k6qp"
-        doc "Operative system which runs the game"
+        doc "REQUEST-ONLY -- BaseRequest::createUserInfoTag @0x13A04D8."
     }
 
     field device_name type="str" {
         key "iN7buP0j"
-        doc "Identifier of the device that the game is run on"
+        doc "REQUEST-ONLY -- BaseRequest::createUserInfoTag @0x13A04D8."
     }
 
     field device_id type="str" {
         key "Ma5GnU0H"
-        doc "Device advertisement ID (the same as vid in the gumi api login)"
+        doc "REQUEST-ONLY -- not in UserInfoResponse::readParam.  Sent by CreateUserRequest::createBody @0x13A2ABC, InitializeRequest @0x13A52E0, InitializeRequest2 @0x13A5800, TransferCodeCheck @0x13AD84C, TransferCodeIssue @0x13ADA4C, Transfer @0x13ADCA8, URLMst @0x13AE6FC."
     }
 
     field unk type="str" {
         key "dzhBs92A"
-        doc "TODO"
+        doc "REQUEST-ONLY -- CreateUserRequest::createBody @0x13A2AD8 and TransferRequest::createBody @0x13ADC1C.  Not read from any response."
     }
 
     field country_code type="str" {
         key "hceYTcAK"
-        doc "Country code"
+        doc "REQUEST-ONLY -- InitializeRequest::createBody @0x13A5328 and InitializeRequest2 @0x13A58FC only."
     }
 
     field current_language type="GameLanguages" {
         key "h7LYasNK"
-        doc "Current game language"
+        doc "REQUEST-ONLY -- InitializeRequest::createBody @0x13A5354 and InitializeRequest2 @0x13A5928 only."
     }
 
     field tutorial_status type="i32::str" {
         key "9sQM2XcN"
-        doc "Get the current tutorial script to execute."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setTutoChapterID @0x13FF244.  Get the current tutorial script to execute."
     }
 
     field tutorial_end_flag type="bool::str" {
         key "sv6BEI8X"
-        doc "Checks if the player has finished the tutorial or not."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setTutoEndFlg @0x13FF2A8.  Checks if the player has finished the tutorial or not."
     }
 
     field unk2 type="i32::str" {
         key "6W5Jbrse"
-        doc "TODO"
+        doc "FICTIONAL -- this key exists in NEITHER arm64 libgame.so NOR x86 BraveFrontier.Windows.exe (raw byte search, both binaries agree, so not a build difference).  Nothing can read it.  Inert and inherited from upstream, so left in place rather than forked."
     }
 
     field unk3 type="str" {
         key "iN7cCN9i"
-        doc "TODO"
+        doc "FICTIONAL -- this key exists in NEITHER arm64 libgame.so NOR x86 BraveFrontier.Windows.exe (raw byte search, both binaries agree, so not a build difference).  Nothing can read it.  Inert and inherited from upstream, so left in place rather than forked."
     }
 
     field early_bird_end type="i64::int" {
@@ -135,27 +142,27 @@ json LoginInfoResp {
 
     field first_desc type="str" {
         key "7oV00FeR"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setFirstDesc @0x13FF744 (also sent up by createUserInfoTag)."
     }
 
     field friend_invitation_flag type="i32::str" {
         key "y2v7Sd01"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setFriendInvitationFlg @0x13FF4E8."
     }
 
     field encrypt_iv type="str" {
         key "8kN1tgYU"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setEncryptIv @0x13FF604."
     }
 
     field encrypted_friend_id type="str" {
         key "PA0QwZs1"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setEncryptedFriendID @0x13FF6A4."
     }
 
     field debug_mode type="bool::int" {
         key "5MPcr0sp"
-        doc "Enables several debug features (like skipping summoning animation) on the account."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setDebugMode @0x13FF574.  Enables several debug features (like skipping summoning animation) on the account."
     }
 
     // Gumi live v1/v2 login api
@@ -176,12 +183,12 @@ json LoginInfoResp {
 
     field unk4 type="str" {
         key "k29akH2I"
-        doc "TODO"
+        doc "FICTIONAL -- this key exists in NEITHER arm64 libgame.so NOR x86 BraveFrontier.Windows.exe (raw byte search, both binaries agree, so not a build difference).  Nothing can read it.  Inert and inherited from upstream, so left in place rather than forked."
     }
 
     field build_platform_id type="str" {
         key "j2lk52Be"
-        doc "TODO"
+        doc "REQUEST-ONLY -- BaseRequest::createUserInfoTag @0x13A04D8."
     }
 
     field unk5 type="i32::int" {
@@ -191,12 +198,12 @@ json LoginInfoResp {
 
     field pointer_name type="str" {
         key "fKSzGDFb"
-        doc "TODO"
+        doc "REQUEST-ONLY -- BaseRequest::createUserInfoTag @0x13A04D8."
     }
 
     field feature_gate type="i32::int" {
         key "a37D29iJ"
-        doc "TODO"
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setFeatureGate @0x13FFA5C."
     }
 
     field unk6 type="str" {
@@ -206,7 +213,7 @@ json LoginInfoResp {
 
    /*field service_request_endpoint_param type="str" {
         key "ABh7acL2"
-        doc "Extra parameters that are passed to the DLS API server in the request object EXTRA_PARAMS."
+        doc "Read by UserInfoResponse::readParam @0x13FED80 -> setServiceRequestEndpointParam @0x13FFBB0.  Extra parameters that are passed to the DLS API server in the request object EXTRA_PARAMS."
         optional #true
     }*/
 

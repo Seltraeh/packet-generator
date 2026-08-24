@@ -870,6 +870,16 @@ json MissionStartReq {
 }
 
 json UserInfoResp {
+    // AUDIT 2026-08-24: 33 blocks, all structurally verified (dispatch, response
+    // class, and replace-vs-merge).  NO BLOCK ACCUMULATES: every list either
+    // calls removeAllObjects, does a selective clear (the PermitPlace trio), or
+    // dedupes per row before insert.  That matters because the client refetches
+    // this on every return to Home -- GetUserInfoRequest is built from 10 sites
+    // incl. HomeScene2::updateEvent, ~15 times in a logged session.
+    //
+    // 4ceMWH6k and qC2tJs4E are the SAME class with opposite ctor flags:
+    // UserUnitInfoResponse(true) @0x1392674 is full-replace, (false) @0x139269C
+    // is insert-if-absent.  Full audit in tools/SERVER_COMPONENT_AUDIT.md.
     doc "TODO"
 
     field loginInfo type="[LoginInfoResp]::size(1)" {
@@ -985,7 +995,7 @@ json UserInfoResp {
     }
     field settings type="[UserSettings]::size(1)" {
         key "4ZfpSQv1"
-        doc "TODO"
+        doc "FICTIONAL BLOCK KEY -- 4ZfpSQv1 is not dispatched by GameResponseParser::getResponseObject @0x1392568 and exists in NEITHER client binary (raw byte search over arm64 libgame.so and x86 BraveFrontier.Windows.exe).  The whole block is inert.  Inherited from upstream; left in place."
         // NOTE: not used in last version
     }
     field dungeonKeyInfo type="[UserDungeonKeyInfo]" {
