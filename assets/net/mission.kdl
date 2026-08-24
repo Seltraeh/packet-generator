@@ -514,14 +514,61 @@ json MissionBattleResultInfo {
 
     field battle_crystal_num type="i32::str" {
         key "hoG2ieT5"
-        doc "Battle crystal count collected during the mission."
+        doc "Battle crystals that appeared THIS BATTLE -- BattleLog::getBattleCrystalNum.  Archive setBCrystal, trophy 100310 累計バトルクリスタル出現数: CUMULATIVE, so the server sums it."
     }
 
     field heart_crystal_num type="i32::str" {
         key "6PLsn8xo"
-        doc "Heart crystal count collected during the mission."
+        doc "Heart crystals that appeared THIS BATTLE -- BattleLog::getHeartCrystalNum.  Archive setHCrystal, trophy 100320 累計ハートクリスタル出現数: CUMULATIVE."
+    }
+
+    // ---------------------------------------------------------------------
+    // TROPHY COUNTERS (added 2026-08-24 by the audit campaign).
+    //
+    // These six keys were already on the wire and already modelled on the
+    // parallel MissionEndReqBattleResult struct, which no handler references --
+    // so MissionEnd parsed rXvA1E5y through THIS struct and never saw them.
+    // Verified present with real values in a captured request
+    // (deploy/log/http_log_9TvyNR5H_20260823_165415.log).
+    //
+    // Every one is byte-identical with a UserTeamArchive setter key, and each
+    // comes from BattleLog -- i.e. THIS BATTLE's value, not a running total, so
+    // the server accumulates.  Whether a counter sums or maxes is taken from
+    // its trophy label in deploy/mst/trophy_mst.json, not from its name:
+    // 累計/総合 ("cumulative"/"total") sums, 最大 ("maximum") maxes.
+    // ---------------------------------------------------------------------
+
+    field max_turn_damage type="i32::str" {
+        key "5NRJQ1LU"
+        doc "Highest damage dealt in a single turn THIS BATTLE -- BattleLog::getMaxTurnDamage.  Archive setBattleTurnMaxDamage, trophy 100330 戦闘1ターン最大ダメージ数: a MAXIMUM, so the server keeps the greater of old and new."
+    }
+
+    field max_turn_spark_cnt type="i32::str" {
+        key "XP06YWdT"
+        doc "Highest spark count in a single turn THIS BATTLE -- BattleLog::getMaxTurnSparkCnt.  Archive setBattleTurnMaxSpark, trophy 100340 戦闘1ターン最大スパーク回数: a MAXIMUM."
+    }
+
+    field spark_cnt type="i32::str" {
+        key "U8uZLA34"
+        doc "Sparks this battle -- BattleLog::getSparkCnt.  Archive setBattleSparkCnt, trophy 100350 累計スパーク回数: CUMULATIVE, so the server sums it."
+    }
+
+    field skill_use_cnt type="i32::str" {
+        key "rZQJF5G9"
+        doc "Brave Bursts used this battle -- BattleLog::getSkillUseCnt.  Archive setBattleSkillCnt, trophy 100360 累計BB使用回数: CUMULATIVE."
+    }
+
+    field mimic_cnt type="i32::str" {
+        key "TW1Mrtp5"
+        doc "Mimics that appeared this battle -- BattleLog::getMimicCnt.  Archive setQuestMimicCnt, trophy 200040 総合ミミック出現数: CUMULATIVE."
+    }
+
+    field one_attack_damage type="i32::str" {
+        key "e6BKoYy9"
+        doc "Highest single-unit damage THIS BATTLE -- BattleLog::getOneAttackDamage.  Archive setTurnMaxUnitDamage, trophy 100325 ユニット単体最大ダメージ数: a MAXIMUM."
     }
 }
+
 
 json MissionRewardInfo {
     // AUDIT 2026-08-24: readParam @0x13E3C34, dispatch strcmp @0x139285C,
