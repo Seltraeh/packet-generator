@@ -1472,6 +1472,28 @@ json MissionStartResp {
 }
 
 json MissionEndReq {
+    // AUDIT 2026-08-24: createBody @0x13A78F8 is 5596 bytes over 64 keys; this
+    // models 56 of them.  The 8 undeclared ones cost nothing today (our handler
+    // reads only zel, karma, unit_rewards and item_rewards) but are recorded in
+    // tools/SERVER_COMPONENT_AUDIT.md because a future achievements or Frontier
+    // Hunter scoring feature needs exactly them:
+    //
+    //   ZYSWU9V1  group, emitted only when BattleState::isEp3TrialMode @0x13A82C4
+    //             or isPlayNormalChallengeMission @0x13A82D0
+    //   57YByKEt  group, only when isPlaySPChallengeMission @0x13A8860
+    //             both carry TPR79fyI getNote, 7cev0fzQ getTotalScore,
+    //             pG2n1A28 getClearBattleOrder, gUvjqu39 SaveData::getItemSetID
+    //   pJqG1B7b  BattleLog string @0x13A7C98
+    //   pgY9m2ne  BattleLog::getUnitUBBKoMonsterCntCsv @0x13A8138
+    //   0w47scoa  BattleLog::getUBBDefeatMonsterElemCsv @0x13A81D8
+    //
+    // pG2n1A28 means clearBattleOrder HERE.  It is the Summoner's Journal
+    // TARGET on its own class -- same hash, unrelated meanings (Rule Zero).
+    //
+    // 8 keys in battle_result are byte-identical with UserTeamArchive's trophy
+    // counters (hoG2ieT5 6PLsn8xo 5NRJQ1LU XP06YWdT U8uZLA34 rZQJF5G9 TW1Mrtp5
+    // e6BKoYy9).  The client reports them every mission; we discard them, which
+    // is why those trophies read 0.
     doc "Request payload sent after a mission battle ends."
 
     field loginInfo type="[LoginInfoReq]::size(1)" {

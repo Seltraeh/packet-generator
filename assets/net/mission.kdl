@@ -524,51 +524,80 @@ json MissionBattleResultInfo {
 }
 
 json MissionRewardInfo {
+    // AUDIT 2026-08-24: readParam @0x13E3C34, dispatch strcmp @0x139285C,
+    // singleton.  19 fields and this KDL matches the map exactly.  Two of them
+    // are UNREAD despite confident docs (wPb5uMR9, 0egM9p7I), and 92ms7J5M is a
+    // structured triple list rather than the "flags" it was documented as.
+    //
+    // getBeforeExp has 4 consumers but NO setter in readParam -- it is derived
+    // client-side.  Do not add it as a field.
+    //
+    // Full audit: tools/SERVER_COMPONENT_AUDIT.md.
     doc "Mission reward values consumed by the result scenes."
 
     field clear_bonus type="str" {
         key "92ms7J5M"
-        doc "Encoded clear bonus flags."
+        doc """
+        NOT FLAGS -- a DELIMITED LIST OF TRIPLES, "<type>:<a>:<b>" per element.
+
+        MissionResultBaseScene::getRewardBonusZel @0x18B9780 takes this as a
+        STRING, runs CommonUtils::parseList @0x18B9804, splits each element on
+        ":" @0x18B9850, requires exactly 3 parts @0x18B98A4, StrToInts them and
+        selects on the first field: cmp #3 @0x18B98C8.  Its siblings select
+        different constants -- getRewardBonusKaruma @0x18B9998 uses #0xb, and
+        getRewardBonusSp @0x18B9B80 uses #0x11.
+
+            type 3  = zel
+            type 11 = karma
+            type 17 = summoner SP
+
+        Those are the SAME numbers as the present box's 30Kw4WBa present_type
+        (3 zel, 11 karma, 17 summoner sp) -- a reward-entity enum shared across
+        subsystems.  Do not invent a private one.
+
+        We send this empty, which is correct: getRewardBonusZel early-outs on
+        the length check @0x18B97BC, so no bonus is displayed.
+        """
     }
 
     field lvlup_flag type="i32::str" {
         key "wPb5uMR9"
-        doc "Whether the mission caused a player level-up."
+        doc "UNREAD.  setLvupFlg @0x13E3D40 stores it and MissionRewardInfo::getLvupFlg has ZERO call sites.  (The previous doc claimed it signalled a player level-up; nothing reads it -- the result screen derives level-up from 81CsGAR9 setBeforeLv instead, which has 14 consumers.)"
     }
 
     field before_level type="i32::str" {
         key "81CsGAR9"
-        doc "Player level before applying mission experience."
+        doc "Player level BEFORE the mission.  setBeforeLv @0x13E3D6C; 14 consumers, top MissionResultScene::updateEvent and CampaignResultScene::main.  This is what the result screen uses to detect a level-up -- see wPb5uMR9, which is unread."
     }
 
     field inc_exp type="i32::str" {
         key "d96tuT2E"
-        doc "Experience earned from the mission."
+        doc "EXP gained by this mission.  setIncExp @0x13E3D98; 7 consumers incl. CampaignResultScene::getRewaedExe."
     }
 
     field reinforcement_request_state type="i32::str" {
         key "0egM9p7I"
-        doc "Friend/reinforcement request state shown after the mission."
+        doc "UNREAD.  setReinReqState @0x13E3DC4 stores it and getReinReqState has ZERO call sites.  (The previous doc claimed it was the friend/reinforcement request state shown after the mission.)"
     }
 
     field clear_dungeon_id type="str" {
         key "4sQ8vBXm"
-        doc "Dungeon id cleared by this mission result."
+        doc "setClearDungeonID @0x13E3E58; read by GameUtils::getAppearDungeon and MissionResultFriendRequestScene::changeNextScene."
     }
 
     field clear_area_id type="str" {
         key "NgPQbA46"
-        doc "Area id cleared by this mission result."
+        doc "setClearAreaID @0x13E3EFC; read by MissionResultFriendRequestScene::changeNextScene and CoopRaidResultScene::initialize."
     }
 
     field clear_mission_id type="u32::str" {
         key "mauD5qZ1"
-        doc "Mission id cleared by this mission result."
+        doc "setClearMissionID @0x13E3FA0; read by MissionResultFriendRequestScene::changeNextScene."
     }
 
     field reward_units type="str" {
         key "3MAT6quo"
-        doc "Encoded unit rewards."
+        doc "setRewardUnits @0x13E4044; read by MissionResultSummonerDropScene::setUnitList and the MissionResultUnitScene / CoopRaidResultUnitScene ctors."
     }
 
     field zel type="u32::str" {
@@ -583,45 +612,45 @@ json MissionRewardInfo {
 
     field exp_up_type type="str" {
         key "3vXLQFjt"
-        doc "Encoded experience bonus type."
+        doc "setExpUpType @0x13E4140; 3 consumers, all MissionResultScene::updateEvent."
         optional #true
     }
 
     field zel_up_type type="str" {
         key "k6MynZkg"
-        doc "Encoded zel bonus type."
+        doc "setZelUpType @0x13E41E4; 3 consumers, all MissionResultScene::updateEvent."
         optional #true
     }
 
     field karma_up_type type="str" {
         key "J1MwgxCL"
-        doc "Encoded karma bonus type."
+        doc "setKarmaUpType @0x13E4288; 3 consumers, all MissionResultScene::updateEvent."
         optional #true
     }
 
     field guild_exp type="i32::str" {
         key "b8D18b7e"
-        doc "Guild experience earned from the mission."
+        doc "setExpGuild @0x13E42C4; 5 consumers, MissionResultScene::updateEvent / guildBonusDraw."
     }
 
     field guild_karma type="i32::str" {
         key "7adBa819"
-        doc "Guild karma earned from the mission."
+        doc "setKarmaGuild @0x13E42F0; 7 consumers, MissionResultScene::guildBonusDraw."
     }
 
     field guild_zel type="i32::str" {
         key "gzs3Bw10"
-        doc "Guild zel earned from the mission."
+        doc "setZelGuild @0x13E431C; 7 consumers, MissionResultScene::guildBonusDraw."
     }
 
     field event_token type="i32::str" {
         key "03fFk30f"
-        doc "Event token count earned from the mission."
+        doc "setEToken @0x13E4348; read by MissionResultScene::scoreDraw."
     }
 
     field repeat_clear_bonus type="str" {
         key "S2ChOKo6"
-        doc "Encoded repeat-clear bonus."
+        doc "setRepeatClearBonus @0x13E43DC; read by MissionResultRepeatingBonusScene::initialize."
     }
 }
 
