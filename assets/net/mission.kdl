@@ -21,6 +21,11 @@
 // =============================================================================
 
 json MissionStartReqItem {
+    // AUDIT 2026-08-24: REFERENCED BY NOTHING -- MissionStartReq.start_info points
+    // at MissionStartInfo instead.  This models more of the 9Q1Lq5FS group (8
+    // fields vs 5) but names h7eY3sAK user_id, which is WRONG: createBody
+    // @0x13AAEC0 fills it from UserState::getReinforcementUserID, the helper.
+    // If these are ever consolidated, keep MissionStartInfo naming.
     doc "Inner item in MissionStart 9Q1Lq5FS array. Only mission_id and active_deck are server-meaningful; the other 6 are tutorial/event flags the server acknowledges but does not act on."
 
     field user_id type=str {
@@ -78,7 +83,7 @@ json MissionStartInfo {
 
     field reinforce_user_id type=str {
         key "h7eY3sAK"
-        doc "setReinforceUserID. Reinforcement friend user_id. Captured live data: \"n9ZMPC0t\". Currently hardcoded pending friend system. Per the IDA setter, this is specifically the REINFORCE user_id (not the player's own h7eY3sAK)."
+        doc "NOT the caller -- the HELPER whose unit is borrowed.  MissionStartRequest::createBody @0x13AAEC0 fills it from UserState::getReinforcementUserID; the callers own id travels in IKqx1Cn9.  Confirmed 2026-08-24 -- the unused MissionStartReqItem names this user_id, which is wrong.  Currently hardcoded pending a friend system."
     }
 
     field friend_point type="i32::str" {
@@ -911,7 +916,7 @@ json AIMst {
 
     field name type=str {
         key "L8PCsu0K"
-        doc "Human-readable AI action name."
+        doc "FICTIONAL -- absent from BOTH client binaries (raw byte search over arm64 libgame.so and x86 BraveFrontier.Windows.exe).  AIMstResponse::readParam reads 7 keys and this is not one of them.  Inert; left in place like the other eight dead keys."
     }
 
     field conditions type=str {
