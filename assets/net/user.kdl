@@ -266,7 +266,28 @@ json DeckEditTeamInfo {
 }
 
 json UserTeamInfo {
-    doc "TODO"
+    doc """
+    The shared HUD block, attached under fEi17cnx by ~16 handlers.
+
+    Dispatch: getResponseObject strcmp @0x1392618 -> UserTeamInfoResponse ctor
+    @0x1392630.  readParam @0x1403220 is a FLAT strcmp chain over the
+    UserTeamInfo::shared() singleton @0x1403250 -- no removeAllObjects, no
+    addObject, and an unmatched key falls through to `mov w0,#1; ret` @0x1403DF0.
+    Unknown keys are therefore INERT.
+
+    THE BASE+ADD PAIRS ARE SUMMED BY THE CLIENT.  Four fields have getters with
+    zero call sites and are still live, because a derived getter adds them:
+
+      getSumUnitCnt      @0x12AB380 = ouXxIY63 + Px1X7fcd
+      getSumFrdCnt       @0x12AB5B8 = 3u41PhR2 + 2rR5s6wn
+      getMaxWarehouseCnt @0x12ABBD8 = 5pjoGBC4 + iI7Wj6pM
+      getTotalGems       @0x12AC62C = d37CaiX1 + 92uj7oXB
+
+    The capacity the client enforces is always the PAIR, never the base alone.
+
+    Nine fields below (the unk* ones) are not in readParam at all -- see each.
+    Full audit: tools/SERVER_COMPONENT_AUDIT.md.
+    """
 
     field user_id type="str" {
         key "h7eY3sAK"
@@ -288,7 +309,7 @@ json UserTeamInfo {
 
     field max_action_point type="i32::str" {
         key "YnM14RIP"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setMaxActionPoint @0x140336C.  19 readers, top: GameScene::updateHeader, GameScene::setHeaderControl, AppDelegate::applicationDidEnterBackground."
     }
 
     field energy type="u32::str" {
@@ -298,7 +319,7 @@ json UserTeamInfo {
 
     field unk type="i32::str" {
         key "V0yJS7vZ"
-        doc "TODO"
+        doc "DEAD -- absent from readParam AND from both client binaries (arm64 libgame.so and x86 BraveFrontier.Windows.exe).  Inert: readParam falls through on unknown keys @0x1403DF0.  Inherited from upstream commit 4541706; left in place rather than forked."
     }
 
     field energy_full_seconds type="i32::str" {
@@ -308,77 +329,77 @@ json UserTeamInfo {
 
     field max_fight_point type="i32::str" {
         key "9m5FWR8q"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setMaxFightPoint @0x14033BC -- the Hunter Orb cap (see handbook 6.16: the client calls these fight points).  4 readers: GameScene::updateArenaLight, ShopHelFightScene::touchBegan, AppDelegate::applicationDidEnterBackground."
     }
 
     field fight_point type="i32::str" {
         key "YS2JG9no"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setFightPoint @0x14033E4 -- current Hunter Orbs.  14 readers, top: GameScene::updateArenaLight, ArenaTopScene::touchBegan."
     }
 
     field unk2 type="i32::str" {
         key "32HCWt51"
-        doc "TODO"
+        doc "DEAD on this class -- not in UserTeamInfoResponse::readParam.  The key is real but belongs to UserVortexArenaInfoResponse @0xEEAC94 (a shared key is not a shared concept).  Inert here."
     }
 
     field fight_rest_timer type="i32::str" {
         key "jp9s8IyY"
-        doc "TODO"
+        doc "setFightRestTimer @0x1403980 -> member 0x170.  Read by getFightRestTimer and by getFightRecoveryTime @0x12AC168, which consults DefineMst when the value is non-zero."
     }
 
     field max_unit_count type="i32::str" {
         key "ouXxIY63"
-        doc "TODO"
+        doc "Base unit-box capacity.  setMaxUnitCnt @0x140340C -> member 0x78.  NOT read alone: getSumUnitCnt @0x12AB380 adds Px1X7fcd, and Utils::canEnterMissions @0xF42F6C REFUSES MISSION ENTRY when that sum is below UserUnitInfoList::getCount() @0xF42F88."
     }
 
     field add_unit_count type="i32::str" {
         key "Px1X7fcd"
-        doc "TODO"
+        doc "Extra unit slots, ADDED to ouXxIY63.  setAddUnitCnt @0x1403434 -> member 0x84; getAddUnitCnt has zero call sites but getSumUnitCnt @0x12AB380 reads the offset.  gme::getTeamInfo hardcodes this to 100 while user_info.max_unit_count is 0, so it currently IS the whole capacity."
     }
 
     field deck_cost type="i32::str" {
         key "QYP4kId9"
-        doc "TODO"
+        doc "Squad cost cap.  setDeckCost @0x140345C.  Utils::canEnterMissions @0xF42FC4 refuses entry unless BasePartyInfoList::getCost() <= this."
     }
 
     field active_deck type="i32::str" {
         key "Z0Y4RoD7"
-        doc "TODO"
+        doc "TWO setters from one key: setActiveDeckNum @0x14039E8 (member 0x190, 40 readers incl. GameUtils::isCurrentDeckUnit) and setServerActiveDeckNum @0x14039FC (member 0x1ac, ZERO readers -- a mirror nothing consumes)."
     }
 
     field arena_deck_num type="i32::int" {
         key "gKNfIZiA"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setArenaDeckNum @0x1403AE0.  14 readers, top: UserPartyInfoList::getActiveDeck, PlayerParty::entry, VortexArenaSuggestEnemyScene::setTeamInfo."
     }
 
     field reinforcement_deck type="[i32::int]::sep(comma)" { // TODO(arves): Force array (size 3) with comma
         key "TwqMChon"
-        doc "TODO"
+        doc "THREE setters from one key, which is what makes it a 3-element comma array: setReinforcementDeckNum @0x1403BBC (0x19c), setReinforcementDeckEx1Num @0x1403BF0 (0x1a0), setReinforcementDeckEx2Num @0x1403C08 (0x1a4).  17/13/10 readers, mostly OptionTopScene and PartyEditTopScene2."
     }
 
     field max_friend_count type="i32::str" {
         key "3u41PhR2"
-        doc "TODO"
+        doc "Base friend capacity.  setMaxFrdCnt @0x14034AC -> member 0xa0; summed with 2rR5s6wn by getSumFrdCnt @0x12AB5B8 (18 readers, all friend-request scenes)."
     }
 
     field add_friend_count type="i32::str" {
         key "2rR5s6wn"
-        doc "TODO"
+        doc "Extra friend slots, ADDED to 3u41PhR2.  setAddFrdCnt @0x14034D4 -> member 0xac; getAddFrdCnt has zero call sites, getSumFrdCnt @0x12AB5B8 reads the offset."
     }
 
     field warehouse_count type="i32::str" {
         key "5pjoGBC4"
-        doc "TODO"
+        doc "Base item-box capacity.  setWarehouseCnt @0x14037F0 -> member 0x110.  Summed with iI7Wj6pM by getMaxWarehouseCnt @0x12ABBD8 (32 readers).  GameScene::checkOverItemBox @0x163BC14 returns max < activeCount, and Utils::canEnterMissions @0xF42FA0 BLOCKS MISSION ENTRY on it.  Server-side this maps to DB column max_warehouse_count, not warehouse_count."
     }
 
     field add_warehouse_count type="i32::str" {
         key "iI7Wj6pM"
-        doc "TODO"
+        doc "Purchased item-box expansions, ADDED to 5pjoGBC4.  setAddWarehouseCnt @0x1403818 -> member 0x11c; getAddWarehouseCnt has zero call sites, getMaxWarehouseCnt @0x12ABBD8 reads the offset."
     }
 
     field friend_point type="i32::str" {
         key "J3stQ7jd"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setFriendPoint @0x14034FC.  9 readers, top: GameScene::updateFooter, SummonsConfirmScene::setGachaInfo, SummonsDetailScene::setGachaInfo."
     }
 
     field zel type="u64::str" {
@@ -393,128 +414,145 @@ json UserTeamInfo {
 
     field brave_coin type="i32::int" {
         key "03UGMHxF"
-        doc "TODO"
+        doc """
+        THE GEM BALANCE.  setBraveCoin @0x140369C is a red herring -- all 118
+        readers are gem spending: GuildExchangeScene::setGems, ShopBuyCoinScene,
+        ShopHelFightScene, ColosseumTopScene::ticketShopDialog,
+        RaidSceneBase::raidHeartShopCheck.
+
+        Server-side this is deliberately mapped to the gems column
+        (PacketInterfaceSchemas.hpp).  Do NOT repoint it at a real brave-coin
+        column -- that zeroes the HUD and breaks gem spending.
+        """
     }
 
     field friend_message type="str" {
         key "bM7RLu5K"
-        doc "TODO"
+        doc "TWO setters from one key: setFriendMessage @0x140372C (4 readers, PlayerInfoScene2 / DeckEditRequest::createBody) and setFriendMessageOrg @0x14037B8, a pristine copy read once by StepScene::noticeOK."
     }
 
 
     field want_gift type="str" {
         key "s2WnRw9N"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setWantGift @0x14038A8.  4 readers: FixGiftInfoRequest::createBody, GiftRecieveListScene2::setWantGift, GiftRecieveScene2::getGiftMstList."
     }
 
     field present_count type="i32::str" {
         key "EfinBo65"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setPresentCnt @0x14038E0.  5 readers, top: AnotherHomeScene::setPresentCntBadge, RewardsTopScene::checkForBadgeAlert."
     }
 
     field friend_agree_count type="i32::str" {
         key "qVBx7g2c"
-        doc "TODO"
+        doc "UNREAD.  setFriendAgreeCnt @0x1403908 -> member 0x14c; getFriendAgreeCnt has ZERO call sites."
     }
 
     field gift_receive_count type="i32::str" {
         key "1RQT92uE"
-        doc "TODO"
+        doc "UNREAD.  setGiftRecieveCnt @0x1403930 -> member 0x158; getGiftRecieveCnt has ZERO call sites."
     }
 
     field unk3 type="i32::str" {
         key "kW5QuUz7"
-        doc "TODO"
+        doc "DEAD -- absent from readParam AND from both client binaries.  Inert.  Inherited from upstream commit 4541706."
     }
 
     field unk4 type="i32::str" {
         key "3w6YDS4z"
-        doc "TODO"
+        doc "DEAD on this class -- belongs to UserTeamArchiveResponse @0x14020F4.  Inert here."
     }
 
     field colosseum_ticket type="i32::str" {
         key "lKuj3Ier"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setColosseumTicket @0x1403AB8.  10 readers, top: ArenaBattleStartConnectScene::initialize, VortexArenaResultRewardScene::initSet."
     }
 
     field unk5 type="i32::str" {
         key "JmFn3g9t"
-        doc "TODO"
+        doc "DEAD on this class -- 19 readers, all arena / friend / raid / guild response classes.  Inert here."
     }
 
     field summon_ticket type="i32::str" {
         key "9r3aLmaB"
-        doc "TODO"
+        doc """
+        Summon ticket count.  setSummonTicket @0x12AC550 is strh -- A 16-BIT
+        STORE.  Anything above 65535 WRAPS, despite this field being i32 here.
+
+        It is one of four packed u16 counters (0x1c0 summon, 0x1c2 energy,
+        0x1c4 item-space, 0x1c6 inventory-space) that getTotalTickets @0x12AC590
+        sums.  The other three have no readParam entry, so the server cannot
+        set them by any key.
+        """
     }
 
     field brave_points_total type="i32::str" {
         key "bya9a67k"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setBravePointsTotal @0x1403CB0.  14 readers, top: DailyTaskMenuMileStoneScene::setClaimButton, PlayerInfoBattleResultScene::getActual."
     }
 
     field current_brave_points type="i32::str" {
         key "22rqpZTo"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setBravePointsCurrent @0x1403CD8.  21 readers, top: DailyTaskMenuRedeemPrizesScene::setClaimButton, ChallengeArenaResultScene::updateEvent."
     }
 
     field rainbow_coin type="i32::str" {
         key "KAZmxkgy"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setRainbowCoin @0x1403D00.  3 readers: SummonsDetailScene::setGachaInfo and ::touchBegan."
     }
 
     field unk6 type="i32::str" {
         key "AKP8t3xK"
-        doc "TODO"
+        doc "DEAD on this class -- belongs to ChallengeArenaUserInfoResponse @0xE61654.  Inert here."
     }
 
     field unk7 type="i32::str" {
         key "Nou5bCmm"
-        doc "TODO"
+        doc "DEAD on this class -- ChallengeArenaUserInfoResponse @0xE6162C / ChallengeArenaBattleEndRequest::createBody @0xE8956C.  Inert here."
     }
 
     field slot_game_flag type="i32::int" {
         key "s3uU4Lgb"
-        doc "TODO"
+        doc "Brave Slots gate.  setSlotgameFlg @0x1403C88 (bool).  BadgeInfo::newFlagControl @0x11F360C does tbz w0,#0 -- bit 0 clear skips the slots badge entirely -- then requires UserReleaseInfoList::isRelease(4).  Also gates RandallSummonScene::setLayout @0x1A2DBF8."
     }
 
     field completed_task_count type="i32::str" {
         key "3a8b9D8i"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setCompletedTaskCount @0x1403D28.  4 readers: RewardsTopScene::checkForBadgeAlert, AnotherHomeScene / HomeScene2 setLayoutControl."
     }
 
     field inbox_message_count type="i32::int" {
         key "7qncTHUJ"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setInboxMessagesCnt @0x1403D50.  11 readers, top: GameScene::updateFooter, FriendTop2Scene::setLayoutControl."
     }
 
     field unk8 type="i32::int" {
         key "38d7D18b"
-        doc "TODO"
+        doc "DEAD -- absent from readParam AND from both client binaries.  Inert.  Inherited from upstream commit 4541706."
     }
 
     field unk9 type="i32::int" {
         key "D38bda8B"
-        doc "TODO"
+        doc "DEAD -- absent from readParam AND from both client binaries.  Inert.  Inherited from upstream commit 4541706."
     }
 
     field mysterybox_count type="i32::int" {
         key "Qo9doUsp"
-        doc "TODO"
+        doc "ASSUMED (call site cited, consumer not yet read).  setMysteryBoxCount @0x1403D78.  2 readers: RewardsTopScene::checkForBadgeAlert, HomeScene2::setLayoutControl."
     }
 
     field paid_gems type="i32::int" {
         key "d37CaiX1"
-        doc "TODO"
+        doc "setPaidGems @0x1403DA0 -> member 0x1dc.  Summed with 92uj7oXB by getTotalGems @0x12AC62C; also UserPiadFreeGemsInfoScene::setLayoutControl."
     }
 
     field free_gems type="i32::int" {
         key "92uj7oXB"
-        doc "TODO"
+        doc "setFreeGems @0x1403DC8 -> member 0x1d8.  Summed with d37CaiX1 by getTotalGems @0x12AC62C."
     }
 
     field max_equip_slot_count type="i32::str" {
         key "gEX30r1b"
-        doc "TODO"
+        doc "UNREAD.  setMaxEqpSlotCnt @0x1403484 -> member 0x94; the only getter reading that offset is getMaxEqpSlotCnt, which has ZERO call sites."
     }
 
 }
