@@ -100,7 +100,27 @@ json UnitEvoElemEntry {
 }
 
 json UnitSellEntry {
-    doc "One user_unit being sold for zel in a UnitSell request."
+    doc """
+    One user_unit being sold for zel in a UnitSell request.
+
+    AUDIT 2026-08-24 -- UnitSellRequest::createBody @0x13AF5B4 sends TWO fields
+    per entry, not one.  mnZ5K4Ii precedes edy7fq3L and goes through the INT
+    overload with a constant (mov w2,#2 @0x13AF6CC), so it is a per-entry
+    discriminator, not an id.  Left undeclared: our handler does not read it and
+    Glaze tolerates it.  Its vocabulary is unknown -- as a request field the only
+    consumer is a server we wrote, so the meaning has to come from a capture
+    comparison or the legacy server, not from the client binary.
+
+    createBody also sends two groups this schema does not model at all:
+    60subGk3 (operation header, n7Pmh6ex = 1) and mCE3rUu5 -> Rs7bCE3t, the SELL
+    GOLD from GameUtils::getSellGold @0x13AF640.
+
+    Rs7bCE3t is CLIENT-COMPUTED and UnitSell.cpp deliberately ignores it,
+    summing UnitMst.sell_price server-side instead.  Do NOT wire the handler to
+    it -- it is player-controllable input.
+
+    Full audit: tools/SERVER_COMPONENT_AUDIT.md.
+    """
 
     field user_unit_id type="i32::str" {
         key "edy7fq3L"
@@ -113,7 +133,22 @@ json UnitSellEntry {
 // ---------------------------------------------------------------------------
 
 json UnitReinforceEntry {
-    doc "Reinforcement/level-up animation + stat payload under response key xZH6EIQ7.  Shared by UnitMix and UnitEvo — the client's animation and stat-display code expects this same shape after either operation (the two handlers previously carried byte-identical MixReinforceEntry/EvoReinforceEntry structs)."
+    doc """
+    AUDIT 2026-08-24: xZH6EIQ7 dispatches to ReinforcementInfoResponse (readParam
+    @0x13EB29C, REPLACE via removeAllObjects), which reads 48 KEYS -- 45 through
+    inlined setters, so a setter-call scan sees only three (setTeamLv @0x13EB77C,
+    setGuildID @0x13EB9AC, setFriendPoint @0x13EBB40).
+
+    The 20 fields below are ALL among those 48: a correct SUBSET, not a mismatch.
+    The other 28 are friend and guild fields (bM7RLu5K, 98WfKiyA, J3stQ7jd,
+    sD73jd20, zsiAn9P1, ...) that this server has no system for.
+
+    Note the class the client builds is the reinforcement HELPER record, shared
+    with the friend-slot path (handbook 8.33).  The name below describes how
+    UnitMix and UnitEvo use it, not what the class is.
+
+    Original note: Reinforcement/level-up animation + stat payload under response key xZH6EIQ7.  Shared by UnitMix and UnitEvo — the client's animation and stat-display code expects this same shape after either operation (the two handlers previously carried byte-identical MixReinforceEntry/EvoReinforceEntry structs).
+    """
 
     field handle_name type="str" {
         key "B5JQyV8j"
