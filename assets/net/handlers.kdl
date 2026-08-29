@@ -974,8 +974,7 @@ json UserInfoResp {
     }
     field achievementInfo type="UserAchievementInfo" {
         key "Bnc4LpM8"
-        doc "TODO"
-        optional #true
+        doc "Always emitted (was optional and never set, so it never reached the wire).  UserAchievementInfoResponse::readParam lazily constructs the client-side singleton @0x13FBB90; without this block that pointer stays null, which is the suspected cause of the Randall Achievement crash."
     }
     field townFacilityInfo type="[UserTownFacilityInfo]" {
         key "YRgx49WG"
