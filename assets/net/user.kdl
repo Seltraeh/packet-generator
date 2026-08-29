@@ -1676,7 +1676,21 @@ json UserBraveMedalInfo {
 }
 
 json UserAchievementInfo {
-    doc "TODO"
+    doc """
+    Bnc4LpM8 -> UserAchievementInfoResponse, readParam @0x13FBB58, singleton.
+    It reads THREE keys, all through inlined setters: idfCDG70, HjgTfx8A and
+    CjaJUSrs.
+
+    ⚠ THIS MODEL IS WRONG IN TWO WAYS and is left as-is pending a decision:
+      * LHQZuau1 below is FICTIONAL -- absent from both client binaries.
+      * HjgTfx8A, which readParam DOES read, is not declared at all.
+
+    The block is also `optional #true` on UserInfoResp and no handler sets it,
+    so we never send it.  That is a suspect in the 2026-08-29 Randall
+    Achievement crash (null layout element sp_subject_disp_count, fault
+    BraveFrontier.Windows.exe +0xB87F1D) -- unproven, see
+    tools/SERVER_COMPONENT_AUDIT.md.
+    """
 
     field id type="i32::str" {
         key "idfCDG70"
@@ -1685,7 +1699,7 @@ json UserAchievementInfo {
 
     field unk type="str" { // TODO(arves): This is an i32::str with omit as empty
         key "LHQZuau1"
-        doc "TODO"
+        doc "FICTIONAL -- absent from BOTH client binaries (raw byte search over arm64 libgame.so and x86 BraveFrontier.Windows.exe).  UserAchievementInfoResponse::readParam @0x13FBB58 reads idfCDG70, HjgTfx8A and CjaJUSrs; this is not one of them, and HjgTfx8A is missing from this struct.  The 10th fictional key found by the campaign."
         // NOTE: unused in last version
     }
 
