@@ -869,6 +869,46 @@ json MissionStartReq {
     }
 }
 
+json GetPlayerInfoReq {
+    doc """
+    GetPlayerInfo (vUQrAV65 / 7pW4xF9H) request.
+
+    GetPlayerInfoRequest::createBody @0x13A4E64 is 44 bytes and adds NOTHING
+    beyond the standard user-info / signal-key / version tags, so this carries
+    only the login block.  The whole contract is in the response.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Standard user-info tag; the only thing createBody emits."
+    }
+}
+
+json GetPlayerInfoResp {
+    doc """
+    What the Records / Archive screens need.
+
+    Sent by PlayerInfoBattleResultScene::initConnect, ArenaArchiveScene and
+    ColosseumArchiveScene -- the three scenes that call getActual @0x1791EEC,
+    the trophy-id chain that answers one trophy per UserTeamArchive counter.
+
+    getResponseObject is a global key -> class registry (handbook 7.12.4), so
+    these keys dispatch to their own response classes whichever handler carries
+    them.  Both archive blocks are singleton readParams with no list ops, so
+    re-sending on every visit is a clean overwrite.
+    """
+
+    field archive type="[UserTeamArchive]" {
+        key "zI2tJB7R"
+        doc "Lifetime trophy counters; 8 of 39 are fed from MissionEnd."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "HUD refresh -- these scenes draw the header like any other."
+    }
+}
+
 json UserInfoResp {
     // AUDIT 2026-08-24: 33 blocks, all structurally verified (dispatch, response
     // class, and replace-vs-merge).  NO BLOCK ACCUMULATES: every list either
