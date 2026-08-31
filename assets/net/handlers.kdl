@@ -912,6 +912,11 @@ json GetPlayerInfoResp {
         key "PQ56vbkI"
         doc "Sent as one all-zero row, never as [].  See UserInfoResp.arena_archive -- the class is a singleton readParam, so an empty array leaves it uninitialised and the Arena section renders garbage."
     }
+
+    field arena_info type="[UserArenaInfo]" {
+        key "8jBJ7uKR"
+        doc "Also one all-zero row, never [] -- another singleton readParam.  This one supplies Total Entries / Total Wins / Offense Wins / Defense Wins on the Arena Record."
+    }
 }
 
 json UserInfoResp {

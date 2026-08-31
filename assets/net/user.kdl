@@ -1229,12 +1229,71 @@ json UserItemDictionaryInfo {
 }
 
 json UserArenaInfo {
-	doc "TODO"
-	
-	field mock type="str" {
-		key "INVALID"
-		doc "TODO"
-	}
+    doc """
+    Per-user arena standing.  8jBJ7uKR -> UserArenaInfoResponse, readParam
+    @0x13FCDF0, and it is a SINGLETON parser.
+
+    ⚠ MUST CARRY ONE ROW EVEN WHEN EVERYTHING IS ZERO.  Every setter fires per
+    ROW, so an empty array never runs readParam and the client-side singleton is
+    never written -- it then draws whatever was in that memory.  With
+    "8jBJ7uKR":[] the Battle Record's Arena Record showed 9,765,061 Total
+    Entries, 14,614,711 Total Wins, 7,143,541 Offense Wins and 7,471,170 Defense
+    Wins.  Same trap as PQ56vbkI; see UserInfoResp.arena_archive.
+
+    Modelled 2026-08-31 from readParam (it was a one-field `mock` stub, the fifth
+    found).  Nothing instruments arena battles yet, so every counter is honestly
+    0 -- the point is that readParam runs.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "setUserID @0x13FCEB4."
+    }
+
+    field arena_rank_id type="str" {
+        key "JmFn3g9t"
+        doc "setArenaRankID @0x13FCF54, joins to ArenaRankMst.  NOTE this key is also declared on UserTeamInfo, where nothing reads it -- resolve it against the owning class (Rule Zero)."
+    }
+
+    field ranking_point type="i32::str" {
+        key "U4pMNjy0"
+        doc "setRankingPoint @0x13FCF8C."
+    }
+
+    field battle_cnt type="i32::str" {
+        key "69vnphig"
+        doc "setBattleCnt @0x13FCFB4 -- arena entries, NOT a stamina cost (a previously corrected misreading).  Renders as Total Entries."
+    }
+
+    field win_cnt type="i32::str" {
+        key "8CEu9Kcm"
+        doc "setWinCnt @0x13FCFDC -- renders as Total Wins.  Same key as UserTeamArchive.setWinCnt; different class, different counter."
+    }
+
+    field battle_cnt_accept type="i32::str" {
+        key "20iEWRCV"
+        doc "setBattleCntAccept @0x13FD004 -- defence side, battles accepted."
+    }
+
+    field win_cnt_accept type="i32::str" {
+        key "0rAkzg7L"
+        doc "setWinCntAccept @0x13FD02C -- defence side wins."
+    }
+
+    field max_arena_rank_id type="str" {
+        key "8uJ1XGwx"
+        doc "setMaxArenaRankID @0x13FD0BC -- highest rank ever held."
+    }
+
+    field current_position type="i32::str" {
+        key "2rqxaZ6K"
+        doc "setCurrentPosition @0x13FD0F4."
+    }
+
+    field battle_id type="str" {
+        key "xL0p2MkY"
+        doc "setBattleID @0x13FD184."
+    }
 }
 
 json UserTeamArchive {
