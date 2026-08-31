@@ -907,6 +907,11 @@ json GetPlayerInfoResp {
         key "fEi17cnx"
         doc "HUD refresh -- these scenes draw the header like any other."
     }
+
+    field arena_archive type="[UserTeamArenaArchive]" {
+        key "PQ56vbkI"
+        doc "Sent as one all-zero row, never as [].  See UserInfoResp.arena_archive -- the class is a singleton readParam, so an empty array leaves it uninitialised and the Arena section renders garbage."
+    }
 }
 
 json UserInfoResp {
@@ -974,7 +979,7 @@ json UserInfoResp {
     }
     field arena_archive type="[UserTeamArenaArchive]" {
         key "PQ56vbkI"
-        doc "TODO"
+        doc "⚠ MUST carry one row even when every counter is 0.  UserTeamArenaArchiveResponse::readParam @0x1402AC8 is a SINGLETON parser -- removeAllObjects/addObject fire per row, so a zero-row array never runs it and the client-side singleton is never written.  With \"PQ56vbkI\":[] the Battle Record drew uninitialised heap (9,765,061 arena entries, a defense streak of -1,191,182,337).  AN EMPTY LIST IS NOT A CLEAR for a singleton class."
     }
     field giftInfo type="[UserGiftInfo]" {
         key "30uygM9m"
