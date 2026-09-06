@@ -1,3 +1,105 @@
+json MonsterSkill {
+    doc """
+    One skill a mission monster can use in battle.
+
+    The wire carries these as MonsterMst.monster_skill_id (F4bQ7r8C), a single
+    packed string; this object is the authored form and MissionArchiver packs
+    it.  Format decoded from the parser itself,
+    BattleUnit::setUnitSkill(MonsterMst*) @0x1120CF0:
+
+        getMonsterSkillID()
+          -> CommonUtils::parseList(s, "@")     outer, one entry per skill
+          -> CommonUtils::parseList(entry, ":") inner, [0]=skill id, [1]=flag
+
+    The separators are not guessed -- they are SSO std::strings built from
+    immediates in that function (mov w8,#0x4002 -> '@' @0x1120CFC;
+    mov w8,#0x3a02 -> ':' @0x1120DA8).  An entry with a single element is
+    legal: the code guards the second parse with `cmp x8,#2 / b.lo` and
+    substitutes 0.
+    """
+
+    field skill_id type="u32::int" {
+        key "skill_id"
+        doc """
+        Joins to the ORDINARY skill table, not a monster-specific one.
+        setSkillParam @0x1120684 resolves it through UnitSkillMstList (and
+        UnitSkillLevelMstList for the level row) -- i.e. deploy/mst/skill_mst.json,
+        33 381 rows, the same table player units use.
+
+        ⚠ THERE IS NO MONSTER SKILL TABLE TO FILL.  MonsterSkillMst exists as a
+        class (MonsterSkillMstResponse::readParam @0x13E609C, wire block
+        m9Ada1PN, 15 keys: F4bQ7r8C skill_id, LC92Js8Z skill_name, 6E2fGPWT
+        range, moWQ30GH target_type, IZt73kLG target_area, eyUo6a8c
+        effect_frame, qYCx73y2 start_frame, 6Aou5M9r damage_frame, n9h7p02P
+        drop_check_cnt, 9pXSKmn1 wait, j5xF8PSy active_turn, 2JYTh84z
+        battle_crystal_cost, hjAy9St3 process_id, 2Smu5Mtq process_param,
+        qp37xTDh description) -- but MonsterSkillMstList::getObject has exactly
+        ONE caller, GameUtils::getMonsterCutinImage @0x117DCC4, and THAT has
+        zero callers.  The table is dead in this build.  Do not build an
+        m9Ada1PN emitter; nothing would ever read it.
+        """
+    }
+
+    field show_name type="bool::bool" {
+        key "show_name"
+        doc """
+        Whether the skill's name is announced on screen when it fires.  This is
+        inner element [1]: its StrToInt result feeds
+        BattleUnitSkill::setSkillNameDispFlg(bool) @0x1120F58 as `!= 0`.
+        Absent or 0 means the skill fires unnamed.
+        """
+    }
+}
+
+json AilmentResists {
+    doc """
+    Per-ailment resistance percentages for a monster, 0-100.
+
+    Packed by MissionArchiver into MonsterMst.bad_state_resists (CEeqs63b) as
+    six colon-separated values.  Named fields rather than a raw string on
+    purpose: the SLOT ORDER is the one part of this that is still unproven, so
+    it is spelled out in exactly one place and every authored mission inherits
+    a correction to it.
+
+    THE SIX AILMENTS ARE CERTAIN -- the client ships exactly six and no more
+    (DESC_BADSTATE_POISON "HP decreases every turn", _WEAK "Defense decreases",
+    _SICK "Recovery decreases", _INJURY "Attack decreases", _CURSE "BB gauge
+    stops charging", _PARA "Causes immobility for a fixed number of turns").
+
+    // UNVERIFIED: THE ORDER.  It is the order net/unit.kdl already documents
+    for the same hash on UnitMst, and F_UNIT_MST is nearly useless as a check:
+    of 2291 rows only four are not all-zero or all-100 -- Nice Burny (810212)
+    and Frosty (820212) at "0:0:0:0:0:100", and two rows carrying a literal
+    space in slot five.  A boss with known, PARTIAL immunities is what would
+    settle it.
+    """
+
+    field poison type="u32::int" {
+        key "poison"
+        doc "Slot 1."
+    }
+    field weak type="u32::int" {
+        key "weak"
+        doc "Slot 2 — defence down."
+    }
+    field sick type="u32::int" {
+        key "sick"
+        doc "Slot 3 — recovery down."
+    }
+    field injury type="u32::int" {
+        key "injury"
+        doc "Slot 4 — attack down."
+    }
+    field curse type="u32::int" {
+        key "curse"
+        doc "Slot 5 — BB gauge frozen."
+    }
+    field paralysis type="u32::int" {
+        key "paralysis"
+        doc "Slot 6 — immobility.  The only slot with any corroboration: it is the one Nice Burny and Frosty carry 100 in."
+    }
+}
+
 json TreasureDrop {
     doc "One possible treasure chest reward for a mission-local monster."
 
@@ -22,6 +124,155 @@ json TreasureDrop {
     }
 }
 
+json MonsterVisuals {
+    doc """
+    Everything a NON-OBTAINABLE monster needs in order to be drawn, supplied
+    inline instead of borrowed from a unit.
+
+    Presence of this object is the discriminator: an enemy that has it is a
+    special monster (a story boss like the Juggernaut), an enemy that omits it
+    is an ordinary re-skinned playable unit and takes its visuals from the
+    unit.json record named by `unit_id`.
+
+    That mirrors the only test the client makes.  GameScene::requestMonsterFiles
+    @0x160F648 (arm64 libgame.so) asks UnitMstList for the MonsterMst row's
+    unit_id and picks its asset root from the answer:
+
+      resolves -> /unit/,    filenames DERIVED as unit_anime_<unit_id>.png
+      misses   -> /monster/, filenames READ VERBATIM from the MonsterMst row
+
+    So an enemy carrying this object must ALSO leave `unit_id` at 0 (or at any
+    id absent from unit_mst).  Give it a real unit id and the client takes the
+    first branch, ignores every filename below, and cheerfully draws a Metal
+    Ghost with the boss's HP.
+
+    The fields fall into three groups: the two art filenames, the four
+    animation csvs, and the visual/movement values that would otherwise have
+    come from the unit record.
+    """
+
+    field img_a type=str {
+        key "img_a"
+        doc """
+        Sprite-sheet filename under content/monster/img/, e.g.
+        "monster_anime_0001.png" (the Juggernaut).  Emitted as MonsterMst
+        `2EF0d6ue`; read by GameUtils::getMonsterAnmImage @0x117DB00.
+        REQUIRED — an empty value here defeats the whole branch.
+        """
+    }
+
+    field anm_cgg type=str {
+        key "anm_cgg"
+        doc """
+        Frame-geometry filename under content/monster/cgg/, e.g.
+        "monster_cgg_0001.csv".  Emitted as MonsterMst `QqfI9mM4`; read by
+        GameUtils::getMonsterCgg @0x1EAFBF8.  REQUIRED.
+        """
+    }
+
+    field cgs_idle type=str {
+        key "cgs_idle"
+        doc """
+        Idle animation under content/monster/cgs/, e.g.
+        "monster_idle_cgs_0001.csv".  Becomes a MonsterCgsMst row with
+        cgs_type 1 in the 8hoyIF9Q block.  Leave empty to omit the row.
+        """
+    }
+
+    field cgs_move type=str {
+        key "cgs_move"
+        doc """
+        Move animation, cgs_type 2.  USUALLY EMPTY: content/monster/cgs holds
+        110 idle and 110 attack csvs against only 9 move csvs, so most special
+        monsters simply have no move art and the client copes.
+        """
+    }
+
+    field cgs_atk type=str {
+        key "cgs_atk"
+        doc """
+        Attack animation, cgs_type 3, e.g. "monster_atk_cgs_0001.csv".
+        """
+    }
+
+    field cgs_skill type=str {
+        key "cgs_skill"
+        doc """
+        Skill animation, cgs_type 4.  The unit-side table reuses the attack csv
+        for this slot on every single row ("...|3:unit_atk_cgs_N.csv|
+        4:unit_atk_cgs_N.csv"), so setting this to the same file as `cgs_atk`
+        is the faithful default.
+        """
+    }
+
+    field element type="u32::int" {
+        key "element"
+        doc "1 Fire, 2 Water, 3 Earth, 4 Thunder, 5 Light, 6 Dark.  MonsterMst iNy0ZU5M."
+    }
+
+    field effect_frame type=str {
+        key "effect_frame"
+        doc """
+        Attack effect timing, "frame:effect:layer" triples.  MonsterMst
+        eyUo6a8c.  MUST describe the chosen atlas, not a unit — this is the
+        field most likely to look subtly wrong if copied from a unit record.
+        """
+    }
+
+    field damage_frame type=str {
+        key "damage_frame"
+        doc "Damage timing, MonsterMst 6Aou5M9r.  Same caveat as effect_frame."
+    }
+
+    field drop_check_count type="u32::int" {
+        key "drop_check_count"
+        doc "Drop roll count.  MonsterMst n9h7p02P."
+    }
+
+    field move_speed type="i32::int" {
+        key "move_speed"
+        doc "MonsterMst J2hPXGo5."
+    }
+
+    field attack_move_type type="i32::int" {
+        key "attack_move_type"
+        doc "MonsterMst mv4o39Uz."
+    }
+
+    field back_move_type type="i32::int" {
+        key "back_move_type"
+        doc "MonsterMst h2L1YI90."
+    }
+
+    field after_image type="i32::int" {
+        key "after_image"
+        doc "MonsterMst D4Y5bWK7."
+    }
+
+    field skill_move_type type="i32::int" {
+        key "skill_move_type"
+        doc "MonsterMst XE7Yi5c3."
+    }
+
+    field cursor_disp_pos type=str {
+        key "cursor_disp_pos"
+        doc """
+        Targeting-cursor offset, "x,y".  MonsterMst Lkh6gYkT.  Every ordinary
+        enemy carries "0,0"; a boss sprite is several times unit size and is
+        expected to need a real offset.
+        """
+    }
+
+    field hp_disp_pos type=str {
+        key "hp_disp_pos"
+        doc """
+        HP-bar offset, "x,y".  MonsterMst 3BpHN6VD.  Empty on every captured
+        live row, for the same reason cursor_disp_pos is — no live mission we
+        captured contained a special monster.
+        """
+    }
+}
+
 json BattleMonster {
     doc """
     Logical monster entry for a mission stage.
@@ -43,7 +294,54 @@ json BattleMonster {
 
     field unit_id type="u32::int" {
         key "unit_id"
-        doc "Unit archive id backing this monster's visuals and stable MST data."
+        doc """
+        Unit archive id backing this monster's visuals and stable MST data.
+
+        Must resolve in unit.json UNLESS `visuals` is present, in which case it
+        must deliberately NOT resolve — set it to 0.  See MonsterVisuals.
+        """
+    }
+
+    field visuals type=MonsterVisuals {
+        key "visuals"
+        doc """
+        Present only for a non-obtainable special monster (a story boss).  When
+        set, this enemy supplies its own art and movement data and no unit
+        archive lookup is performed; when absent, the enemy is an ordinary
+        re-skinned unit and everything visual comes from `unit_id`.
+
+        Optional so that every mission authored before this field existed keeps
+        loading unchanged — Glaze leaves a missing key default-initialised.
+        """
+        optional #true
+    }
+
+    field skills type="[MonsterSkill]" {
+        key "skills"
+        doc """
+        Skills this monster can use, packed into MonsterMst.monster_skill_id.
+        Optional: a monster with no skills sends an empty string, which is what
+        every captured live row carries.
+
+        ⚠ THE SKILL LEVEL IS NOT AUTHORABLE.  setSkillParam is handed
+        MonsterMst::getSkillLevel() as its level argument, and
+        MonsterMst::setSkillLevel @0x1334D48 has ZERO callers -- no response
+        anywhere sets it -- so it stays at the value the constructor left in
+        member 0x190 for every monster in the game.  Skills therefore fire at
+        whatever level that default resolves to in UnitSkillLevelMstList.
+        """
+        optional #true
+    }
+
+    field ailment_resists type=AilmentResists {
+        key "ailment_resists"
+        doc """
+        Status-ailment immunities, packed into MonsterMst.bad_state_resists.
+        Omit it for an ordinary enemy: MissionArchiver then sends
+        "0:0:0:0:0:0", which is what every live row carries and what this
+        archiver hard-coded before bosses became authorable.
+        """
+        optional #true
     }
 
     field position type=str {

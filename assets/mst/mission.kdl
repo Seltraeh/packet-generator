@@ -97,9 +97,54 @@ json MissionMst {
         doc "Unknown float-string field"
     }
 
-    field unknown_SiYs27Cj type=str {
+    field clear_rewards type=str {
         key "SiYs27Cj"
-        doc "Unknown string field — usually empty"
+        doc """
+        FIRST-CLEAR rewards, comma-separated `type:id:amount:?:?` entries.
+
+        // RENAMED FROM: unknown_SiYs27Cj ("Unknown string field — usually
+        // empty").  Empty on 2646 of 3433 rows, which is why it read as noise;
+        // the 787 that carry it decode cleanly against the SHARED reward
+        // vocabulary this project already documents on the present box
+        // (30Kw4WBa) and CampaignReceipt:
+        //
+        //     3  zel        8  gem        11 karma      17 summoner SP
+        //     6  unit       4/5/7 item / material / sphere
+        //
+        // Verified by resolving every id in the column against the catalogues:
+        // type 6's 39 ids are ALL units (Burst Frog, Sphere Frog, Garrett) and
+        // types 4/5/7's 93 ids are all items (Frozen Fang, Dandelga).  The
+        // quantity-only types carry id 0.  The commonest value by far is
+        // "8:0:1:0:0" on 455 missions -- one Gem, the classic first-clear
+        // reward.
+        //
+        // TYPE 18 = SUMMONER ARM.  Identified from the client, not guessed:
+        // PresentCommon::createPresentName @0x11C37F4 dispatches
+        // (present_type - 2) through a jump table at 0x2328200, and index 16
+        // (= type 18) lands at 0x11C3E98, whose first call is
+        // SummonerArmMstList::shared().  All 18 ids in this column -- the
+        // multiples of ten from 30 to 190, plus the 8010 outlier -- are rows
+        // of summoner_arm_mst, which has exactly 23.  The same table also
+        // gives type 9 = DungeonKeyMstList (0x11C3EDC) and confirms 4/5/7/19
+        // as items (they share the ItemMstList handler at 0x11C3888).
+        //
+        // Type 18 IS CLAIMABLE as of 2026-09-04.  The subsystem was built:
+        // migration 04092026_CreateUserSummonerArmsTable creates
+        // user_summoner_arms, UserSummonerArmsInfo is filled from
+        // UserSummonerArmsInfoResponse::readParam @0x144E824 (wire dhMmbm5p,
+        // REPLACE semantics), PresentReceipt case 18 validates the id against
+        // SummonerArmMst before granting, and UserInfo emits the owned list.
+        //
+        // Types 17 (summoner SP) and 9 (dungeon key) are still parsed and
+        // queued but have NO PresentReceipt case -- those presents sit in the
+        // box until their subsystems exist.
+        //
+        // The trailing two fields are unread by anything we have found.
+        //
+        // NOTE this is the SOURCE data.  The result screen's own `clear_bonus`
+        // (92ms7J5M on MissionRewardInfo) is a DIFFERENT, narrower thing: a
+        // display-only triple list the client only reads types 3/11/17 out of.
+        """
     }
 
     field repeat_clear_bonus type=str {

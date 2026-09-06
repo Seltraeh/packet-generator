@@ -1187,6 +1187,43 @@ json UserInfoResp {
         banner rail is what the tutorial's forced scene change needs present.
         """
     }
+
+    field areaMst type="[AreaMst]" {
+        key "3SG2wX0R"
+        doc """
+        The whole world-area table, curated — this is what draws the Vortex
+        tile list.
+
+        ⚠ THIS KEY IS A FULL REPLACE, NOT AN ADDITION.
+        AreaMstResponse::readParam @0x13CBB48 opens with
+            if (field != 0) goto set_field;
+            if (row   != 0) goto new_row;
+            AreaMstList::shared(); AreaMstList::removeAllObjects();
+        so row 0 / field 0 wipes the client's entire AreaMstList before the
+        rows are rebuilt.  Whatever is sent here IS the client's area table:
+        every area omitted stops existing, Grand Gaia's included.  Send the
+        complete table or nothing at all.  (AreaMstList::addObject @0x13096B4
+        is a bare retain+push_back with no dedupe, so this clear is the only
+        thing keeping a second send from doubling every area.)
+
+        Why send it at all: the client otherwise uses the copy it downloaded
+        from our own CDN (deploy/game_content/mst/Ver669_vj6fEsg7.dat, which
+        decodes to the F_AREA_MST_Ver669 our deploy/mst/area_mst.json is
+        byte-identical to), and that copy carries 88 Vortex areas — 10 with no
+        dungeon behind them, 34 named in Japanese or mojibake, and 13 that are
+        another area's tile a second time.  Sending a curated table is what
+        removes those tiles; see ServerCache::clientAreaMst.
+
+        Order matters here too, and it is this field that decides it.
+        ⚠ THE VORTEX LIST IS DESCENDING — HIGHEST display_order IS THE TOP TILE.
+        AreaSPSelectScene::setDungeonList builds its own
+        pair<dispOrder, AreaMst*> vector and sorts it at 0x183F2D4 with
+        std::__sort<std::greater<...>>.  AreaMstList::getActiveList @0x1309EDC
+        sorts the same pair type with std::__less and is ASCENDING, but it is a
+        DIFFERENT consumer and citing it here is what put Parade Garden at the
+        bottom of the list on the first attempt.  Cite the scene, not the list.
+        """
+    }
 }
 
 // ReinforcementInfo is defined in net/reinforcement_info.kdl (xZH6EIQ7 â€” 47
@@ -1502,6 +1539,23 @@ json MissionStartResp {
     field monsters type="[MonsterMst]" {
         key "U0v5IeJo"
         doc "Mission-local monster MST rows."
+    }
+
+    field monster_cgs type="[MonsterCgsMst]" {
+        key "8hoyIF9Q"
+        doc """
+        Per-animation-state sprite sheets for monsters with NO backing unit —
+        i.e. non-obtainable bosses.  See MonsterCgsMst in net/mission.kdl.
+
+        OPTIONAL ON PURPOSE.  MonsterCgsMstResponse::readParam @0x13E4E20 opens
+        with MonsterCgsMstList::removeAllObjects, so emitting this block always
+        would clear the client's cached list on every mission start — including
+        for the ordinary missions that have nothing to put back.  Leaving it
+        nullopt makes Glaze drop the key entirely (the same omission behaviour
+        verified for the GachaInfoMst extras in handbook 7.11.6), so a mission
+        with no special monsters sends exactly what the live captures show.
+        """
+        optional #true
     }
 
     field ais type="[AIMst]" {
