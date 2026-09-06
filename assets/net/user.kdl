@@ -625,14 +625,31 @@ json UserUnitInfo {
 
     field add_hp type="i32::str" {
         key "cuIWp89g"
-        doc "TODO"
+        doc """
+        A stat bonus that folds SILENTLY into the displayed total.
+        setAddHp, vtable-dispatched from readParam.
+
+        ⚠ NOT THE IMP BUCKET -- that is ext_hp.  Probed in-client
+        2026-09-05 with distinct values in both buckets on one unit:
+        the card drew "HP 5365 [111]" from base 5243 + add 11 +
+        ext 111, so the big stat is base+add+ext and the small orange
+        figure beside it is ext_* ALONE.
+
+        // UNVERIFIED: what actually feeds this.  Nothing on this
+        server writes it, and nothing should until its source is known.
+        """
     }
 
     field ext_hp type="u32::str" {
         key "TokWs1B3"
         doc """
-        Imp/stat-up HP bucket.
-        We should cap this against the unit's HP stat-up limit from MST data.
+        THE IMP BUCKET, and the small orange number the unit card draws
+        beside the HP stat.  CONFIRMED in-client 2026-09-05 by probing
+        add_* and ext_* with distinct values: the card showed
+        "HP 5365 [111]" for base 5243 + add 11 + ext 111.
+
+        Written by UnitMix, clamped to UnitMst.param_max (imQJdg64) for
+        this stat -- the cap the orange figure is measured against.
         """
     }
 
@@ -651,14 +668,31 @@ json UserUnitInfo {
 
     field add_atk type="i32::str" {
         key "RT4CtH5d"
-        doc "TODO"
+        doc """
+        A stat bonus that folds SILENTLY into the displayed total.
+        setAddAtk, vtable-dispatched from readParam.
+
+        ⚠ NOT THE IMP BUCKET -- that is ext_atk.  Probed in-client
+        2026-09-05 with distinct values in both buckets on one unit:
+        the card drew "HP 5365 [111]" from base 5243 + add 11 +
+        ext 111, so the big stat is base+add+ext and the small orange
+        figure beside it is ext_* ALONE.
+
+        // UNVERIFIED: what actually feeds this.  Nothing on this
+        server writes it, and nothing should until its source is known.
+        """
     }
 
     field ext_atk type="u32::str" {
         key "t4m1RH6Y"
         doc """
-        Imp/stat-up ATK bucket.
-        We should cap this against the unit's ATK stat-up limit from MST data.
+        THE IMP BUCKET, and the small orange number the unit card draws
+        beside the ATK stat.  CONFIRMED in-client 2026-09-05 by probing
+        add_* and ext_* with distinct values: the card showed
+        "HP 5365 [111]" for base 5243 + add 11 + ext 111.
+
+        Written by UnitMix, clamped to UnitMst.param_max (imQJdg64) for
+        this stat -- the cap the orange figure is measured against.
         """
     }
 
@@ -677,14 +711,31 @@ json UserUnitInfo {
 
     field add_def type="i32::str" {
         key "GcMD0hy6"
-        doc "TODO"
+        doc """
+        A stat bonus that folds SILENTLY into the displayed total.
+        setAddDef, vtable-dispatched from readParam.
+
+        ⚠ NOT THE IMP BUCKET -- that is ext_def.  Probed in-client
+        2026-09-05 with distinct values in both buckets on one unit:
+        the card drew "HP 5365 [111]" from base 5243 + add 11 +
+        ext 111, so the big stat is base+add+ext and the small orange
+        figure beside it is ext_* ALONE.
+
+        // UNVERIFIED: what actually feeds this.  Nothing on this
+        server writes it, and nothing should until its source is known.
+        """
     }
 
     field ext_def type="u32::str" {
         key "e6mY8Z0k"
         doc """
-        Imp/stat-up DEF bucket.
-        We should cap this against the unit's DEF stat-up limit from MST data.
+        THE IMP BUCKET, and the small orange number the unit card draws
+        beside the DEF stat.  CONFIRMED in-client 2026-09-05 by probing
+        add_* and ext_* with distinct values: the card showed
+        "HP 5365 [111]" for base 5243 + add 11 + ext 111.
+
+        Written by UnitMix, clamped to UnitMst.param_max (imQJdg64) for
+        this stat -- the cap the orange figure is measured against.
         """
     }
 
@@ -703,14 +754,31 @@ json UserUnitInfo {
 
     field add_rec type="i32::str" {
         key "C1HZr3pb"
-        doc "TODO"
+        doc """
+        A stat bonus that folds SILENTLY into the displayed total.
+        setAddHeal, vtable-dispatched from readParam.
+
+        ⚠ NOT THE IMP BUCKET -- that is ext_rec.  Probed in-client
+        2026-09-05 with distinct values in both buckets on one unit:
+        the card drew "HP 5365 [111]" from base 5243 + add 11 +
+        ext 111, so the big stat is base+add+ext and the small orange
+        figure beside it is ext_* ALONE.
+
+        // UNVERIFIED: what actually feeds this.  Nothing on this
+        server writes it, and nothing should until its source is known.
+        """
     }
 
     field ext_rec type="u32::str" {
         key "X6jf8DUw"
         doc """
-        Imp/stat-up REC bucket.
-        We should cap this against the unit's REC stat-up limit from MST data.
+        THE IMP BUCKET, and the small orange number the unit card draws
+        beside the REC stat.  CONFIRMED in-client 2026-09-05 by probing
+        add_* and ext_* with distinct values: the card showed
+        "HP 5365 [111]" for base 5243 + add 11 + ext 111.
+
+        Written by UnitMix, clamped to UnitMst.param_max (imQJdg64) for
+        this stat -- the cap the orange figure is measured against.
         """
     }
 
@@ -769,7 +837,34 @@ json UserUnitInfo {
 
     field equipitem_frame_id2 type="i32::str" {
         key "RXfC31FA"
-        doc "TODO"
+        doc """
+        SLOT 2's SPHERE FRAME **AND** THE UNIT'S SPHERE CAPACITY.  Three-valued:
+
+            -1     no second slot -- the client does not draw it at all
+             0     slot present, empty
+          1..14    slot present, holding a sphere of that ItemMst.sphere_type
+
+        A unit is born with ONE slot; the second is granted only by fusing a
+        Sphere Frog (unit 20302), which moves this field -1 -> 0.
+
+        CONFIRMED IN-CLIENT 2026-09-05.  UnitMixMainScene::mixUnitDoubleSphereCheck
+        @0x1C118F8 walks the fusion material list, calls
+        UserUnitInfoBase::getEquipItemFrameID2 (vtable+0x1f0) and compares the
+        result against the literal string "-1" (mov w22, #0x312d); any material
+        that is NOT "-1" raises UNIT_MIX_CONFIRM_SPHERE, "A Unit with max Sphere
+        capacity has been selected as an Ingredient.  *Max Sphere capacity will
+        not be passed down."  UnitDetailUserUnitScene tests the same sentinel in
+        14 places.  Probing one unit at -1 against another left at 0 drew one
+        slot on the first and two on the second.
+
+        // WE SENT 0 FOR EVERY UNIT, so every unit showed both slots and the
+        // Sphere Frog had nothing to grant.  See the ext_count note below for
+        // why the earlier search missed this.
+
+        Related: unit.kdl before_eqp_frame_id2 / after_eqp_frame_id2 report the
+        change across a fusion, which is how the frog's effect is shown on the
+        result screen.
+        """
     }
 
     field equipitem_id2 type="i32::str" {
@@ -829,7 +924,51 @@ json UserUnitInfo {
 
     field ext_count type="i32::int" {
         key "5gXxT7LZ"
-        doc "TODO"
+        doc """
+        The SPHERE FROG bit: 1 if this unit has been given a second sphere
+        slot, 0 otherwise.  Backed by user_units.sphere_ext.
+
+        // RENAMED FROM: "TODO", and never populated -- the server sent 0 for
+        // every unit.  setExtCnt @0x12B4CA8; the pair getExtCnt @0x12B4D44
+        // reads member 0x364 XORed with the byte at 0x368, one of the client's
+        // obfuscated fields, so this is a value it expects to be tamper-worthy.
+
+        The MECHANIC is not inferred -- it is the game's own help text,
+        MST_HELP_SUBTOPIC_100_8 "Sphere Capacity Increase": fusing the unit
+        "Sphere Frog" (20302) raises the base unit's sphere capacity, one
+        extra slot per unit and no more, inherited through evolution, and
+        granted by nothing else.  UNIT_DETAIL_SPHERE_EXT ("Fuse to get another
+        Sphere slot!") is the label the frog's own detail page shows.
+
+        // RESOLVED 2026-09-05 -- THIS KEY IS *NOT* THE CARRIER, BUT THE
+        // MECHANIC IS REAL.  Sphere capacity lives in equipitem_frame_id2
+        // (RXfC31FA) as a "-1" sentinel, documented above.  Read sites for
+        // getExtCnt really are only ChallengeArena party copies, so the client
+        // does not appear to read THIS field -- that observation was correct.
+        //
+        // // THE CONCLUSION DRAWN FROM IT WAS NOT.  An earlier pass took the
+        // // dead read sites, plus "no capacity symbol in libgame.so", plus
+        // // unit_mst having no slot column, plus setEquipSphereIcon drawing
+        // // both icons unconditionally, and concluded this build had DROPPED
+        // // sphere capacity entirely -- every unit simply has two slots, and
+        // // MST_HELP_SUBTOPIC_100_8 is legacy text.  ItemSphereEqp's gate was
+        // // removed on the strength of that.  All of it was wrong:
+        // //
+        // //   * it hunted for a slot COUNT.  The capacity is not a count, it
+        // //     is a sentinel value inside the frame id, which no search for
+        // //     "SphereSlot"/"EqpCnt"/capacity columns could ever surface;
+        // //   * several steps were xref-absence arguments over VIRTUAL getters
+        // //     (getEquipItemFrameID2 is vtable+0x1f0, reached by blr x8).
+        // //     so_xref cannot see virtual calls; absence proves nothing.
+        // //
+        // // What actually solved it was the game telling us: the fusion screen
+        // // warns that material units with max Sphere capacity do not pass it
+        // // down, and that warning string led straight to the check.
+        //
+        // Kept as the server-side boolean record of "a frog was fused", and as
+        // the thing ItemSphereEqp gates on.  The invariant every write site
+        // maintains is  eqip_item_frame_id2 == -1  <=>  sphere_ext == 0.
+        """
     }
 
     field fe_bp type="i32::str" {
@@ -1202,21 +1341,233 @@ json UserGiftInfo {
 }
 
 json UserSummonerInfo {
-    doc "TODO"
-	
-	field mock type="str" {
-		key "INVALID"
-		doc "TODO"
-	}
+    doc """
+    The player's Summoner (the avatar behind the squad) — level, element
+    mastery, SP, equipment and derived stats.
+
+    Wire block `n5mdIUqj` -> UserSummonerInfoResponse::readParam @0x144EAD0,
+    33 keys into 32 setters.
+
+    ⚠ SINGLETON, NOT A LIST.  readParam opens with UserSummonerInfo::shared()
+    followed by init() (@0x144EB10/0x144EB14) before the first strcmp, so the
+    whole object is reset and refilled from one node.  Send exactly one row —
+    an empty array never runs readParam at all, which is what made reward
+    type 17 (Summoner SP) impossible to show.
+
+    // WAS A STUB: a single `mock` field keyed \"INVALID\".
+
+    ⚠ WE ONLY MODEL `sp`.  Every other field is emitted at the value
+    UserSummonerInfo::init() @0x127E9E8 already assigns, read out of the
+    binary rather than guessed — string fields \"\" except summoner_arm_id
+    \"10\", sex 1, element 1, exp/level pairs (0,1) six times over, sp 0,
+    friend point 0, hp/atk/def/hel 1, summon_limit 1, deck 0.  So sending
+    this block is a no-op for everything the summoner subsystem has not been
+    built for yet, and the one field we do own is truthful.
+
+    The exception is hp/atk/def/hel: init()'s 1/1/1/1 is a placeholder the
+    server is meant to overwrite, so we send SummonerLevelMst's row for the
+    level we send (level 1 = 4000/1500/1500/1500) instead of repeating it.
+
+    SP is earned per summoner level (SummonerLevelMst.get_sp, the same
+    iIDqD50O hash) and spent in SummonerAbilityListScene on
+    SummonerAbilityLevelMst.need_sp.  Cap: DefineMst.max_summoner_sp = 99999.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "Owning user.  setUserID @0x127EBC0, member +0x18."
+    }
+
+    field sex type="i32::str" {
+        key "9i2xhMaJ"
+        doc "Summoner appearance sex.  setSex, member +0x30.  init() default 1."
+    }
+
+    field element type="i32::str" {
+        key "iNy0ZU5M"
+        doc "Summoner element.  setElement, member +0x34.  init() default 1."
+    }
+
+    field summoner_arm_id type="str" {
+        key "RVVgyuor"
+        doc "EQUIPPED arm id, member +0x38 — init() seeds it \"10\", the first of DefineMst.init_summoner_arm_id \"10,20\".  Same hash as UserSummonerArmsInfo.summoner_arm_id, which is the OWNED list; this is the one in hand."
+    }
+
+    field summoner_hair_id type="str" {
+        key "btZizNep"
+        doc "Hairstyle id, member +0x50.  init() default empty."
+    }
+
+    field exp type="i32::str" {
+        key "d96tuT2E"
+        doc "Summoner EXP, member +0x68."
+    }
+
+    field level type="i32::str" {
+        key "D9wXQI2V"
+        doc "Summoner level, member +0x6c.  init() default 1 — never send 0, SummonerLevelMst starts at 1."
+    }
+
+    field exp1 type="i32::str" {
+        key "FTTADDzF"
+        doc "Element 1 mastery EXP.  setExp1, member +0x70."
+    }
+
+    field level1 type="i32::str" {
+        key "Gbe7pD2H"
+        doc "Element 1 mastery level.  setLevel1, member +0x74.  init() default 1."
+    }
+
+    field exp2 type="i32::str" {
+        key "8VhOXCti"
+        doc "Element 2 mastery EXP.  setExp2, member +0x78."
+    }
+
+    field level2 type="i32::str" {
+        key "l7C3nzdE"
+        doc "Element 2 mastery level.  setLevel2, member +0x7c.  init() default 1."
+    }
+
+    field exp3 type="i32::str" {
+        key "MYFUzcTo"
+        doc "Element 3 mastery EXP.  setExp3, member +0x80."
+    }
+
+    field level3 type="i32::str" {
+        key "6PuPnB04"
+        doc "Element 3 mastery level.  setLevel3, member +0x84.  init() default 1."
+    }
+
+    field exp4 type="i32::str" {
+        key "0eIAr87V"
+        doc "Element 4 mastery EXP.  setExp4, member +0x88."
+    }
+
+    field level4 type="i32::str" {
+        key "gTPezJiG"
+        doc "Element 4 mastery level.  setLevel4, member +0x8c.  init() default 1."
+    }
+
+    field exp5 type="i32::str" {
+        key "bWfWAyCs"
+        doc "Element 5 mastery EXP.  setExp5, member +0x90."
+    }
+
+    field level5 type="i32::str" {
+        key "aqtX45n3"
+        doc "Element 5 mastery level.  setLevel5, member +0x94.  init() default 1."
+    }
+
+    field exp6 type="i32::str" {
+        key "tIHDv3Gk"
+        doc "Element 6 mastery EXP.  setExp6, member +0x98."
+    }
+
+    field level6 type="i32::str" {
+        key "Rt80vCfs"
+        doc "Element 6 mastery level.  setLevel6, member +0x9c.  init() default 1."
+    }
+
+    field sp type="i32::str" {
+        key "iIDqD50O"
+        doc "SUMMONER SP — the currency reward type 18’s sibling, type 17, pays.  setSp, member +0xa0.  Granted by SummonerLevelMst.get_sp (same hash), spent on SummonerAbilityLevelMst.need_sp.  Read by SummonerAbilityListScene, MissionResultSummonerTopScene and SummonerUnitStatusInfo."
+    }
+
+    field summoner_friend_point type="i32::str" {
+        key "J3stQ7jd"
+        doc "Summoner friend points, member +0xa4.  Same hash as the UserTeamInfo field of that name."
+    }
+
+    field hp type="i32::str" {
+        key "e7DK0FQT"
+        doc "Summoner HP, member +0xa8.  Derived: SummonerLevelMst.base_hp for `level` (4000 at 1).  init() leaves 1 as a placeholder."
+    }
+
+    field atk type="i32::str" {
+        key "67CApcti"
+        doc "Summoner ATK, member +0xac.  SummonerLevelMst.base_atk (1500 at level 1)."
+    }
+
+    field def type="i32::str" {
+        key "q08xLEsy"
+        doc "Summoner DEF, member +0xb0.  SummonerLevelMst.base_def (1500 at level 1)."
+    }
+
+    field hel type="i32::str" {
+        key "PWXu25cg"
+        doc "Summoner REC, member +0xb4.  SummonerLevelMst.base_rec (1500 at level 1).  \"hel\" is the client’s own spelling."
+    }
+
+    field summon_limit type="i32::str" {
+        key "SWfnWyuQ"
+        doc "setSummonLimit, member +0xb8.  init() default 1.  // UNVERIFIED: what it limits."
+    }
+
+    field ep3_current_deck_no type="i32::str" {
+        key "K8U410zY"
+        doc "setEp3CurrentDeckNo, member +0xbc.  init() default 0.  Episode-3 deck selection."
+    }
+
+    field summoner_ability_info type="str" {
+        key "mgNdrCEe"
+        doc "Purchased summoner abilities, packed string.  setSummonerAbilityInfo, member +0xc0.  ⚠ The key `kbOUiuPq` reaches the SAME setter (@0x144F224 vs @0x144F17C) — an alias we do not send; sending both would just overwrite one with the other."
+    }
+
+    field eqp_item_frame_id type="str" {
+        key "0R3qTPK9"
+        doc "Equipped frame item, member +0xd8."
+    }
+
+    field eqp_item_id type="str" {
+        key "Ge8Yo32T"
+        doc "Equipped item, member +0xf0."
+    }
+
+    field extra_passive_skill_id type="str" {
+        key "cP83zNsv"
+        doc "Extra passive skill, member +0x108.  Same hash as SummonerLevelMst.extra_passive_skill_id."
+    }
+
+    field extra_passive_skill_id2 type="str" {
+        key "LjY4DfRg"
+        doc "Second extra passive skill, member +0x120."
+    }
 }
 
 json UserSummonerArmsInfo {
-    doc "TODO"
-	
-	field mock type="str" {
-		key "INVALID"
-		doc "TODO"
-	}
+    doc """
+    One Summoner Arm the player owns, with its progress.
+
+    Wire block `dhMmbm5p` -> UserSummonerArmsInfoResponse::readParam @0x144E824
+    (arm64 libgame.so), 4 keys, list is a FULL REPLACE via removeAllObjects.
+
+    // WAS A STUB: a single `mock` field keyed "INVALID", so the server sent an
+    // empty array and nothing could own an arm.  That is what made reward type
+    // 18 (Summoner Arm -- see mst/mission.kdl clear_rewards) unclaimable.
+
+    The arm id indexes SummonerArmMst (JuBeb6YR, 23 rows: 10-190 by tens, plus
+    7011/8010/9010/9020).
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "Owning user.  setUserID @0x144E8B8."
+    }
+
+    field summoner_arm_id type="str" {
+        key "RVVgyuor"
+        doc "Which arm, indexing SummonerArmMst.  setSummonerArmID @0x144E95C."
+    }
+
+    field exp type="i32::str" {
+        key "d96tuT2E"
+        doc "Arm EXP.  setExp @0x144E998."
+    }
+
+    field level type="i32::str" {
+        key "D9wXQI2V"
+        doc "Arm level.  setLevel @0x144E9C4."
+    }
 }
 
 json UserItemDictionaryInfo {

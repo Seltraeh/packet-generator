@@ -96,7 +96,18 @@ json ItemSphereEqpNode {
 }
 
 json ItemSphereEqpReq {
-    doc "Equip/unequip spheres on units.  Wire root key wx1ZLFj9 (ItemSphereEqpRequest::createBody).  Server updates user_units.eqip_item_id[2] + eqip_item_frame_id[2] (frame = ItemMst.sphere_type) and adjusts user_items counts.  Response is an empty ack (legacy-verified)."
+    doc """
+    Equip/unequip spheres on units.  Wire root key wx1ZLFj9
+    (ItemSphereEqpRequest::createBody).  Server updates user_units.eqip_item_id[2]
+    + eqip_item_frame_id[2] (frame = ItemMst.sphere_type) and adjusts user_items
+    counts.  Response is an empty ack (legacy-verified).
+
+    SLOT 2 IS GATED on the unit having earned it from a Sphere Frog: the handler
+    refuses an equip there and holds eqip_item_frame_id2 at the -1 "no slot"
+    sentinel (UserUnitInfo.equipitem_frame_id2).  The gate matters less for the
+    refusal — the client hides the slot anyway — than for NOT writing 0 into that
+    field while equipping slot 1, which used to hand out the slot by accident.
+    """
 
     field loginInfo type="[LoginInfoReq]::size(1)" {
         key "IKqx1Cn9"

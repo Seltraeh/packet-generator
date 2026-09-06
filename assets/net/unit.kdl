@@ -447,12 +447,19 @@ json UnitOpeResult {
 
     field before_eqp_frame_id2 type="i32::str" {
         key "1wme6kJz"
-        doc "setBeforeEqpFrameID2 — sphere frame in slot 2 before."
+        doc """
+        setBeforeEqpFrameID2 — sphere frame in slot 2 before.
+
+        NOT INERT, unlike the slot-1 pair: -1 here means the unit had no second
+        slot at all, and a Sphere Frog in this fusion moves it to 0.  That
+        transition is the frog's entire visible effect, so before and after must
+        carry the real values (see UserUnitInfo.equipitem_frame_id2).
+        """
     }
 
     field after_eqp_frame_id2 type="i32::str" {
         key "m0fq76GY"
-        doc "setAfterEqpFrameID2 — sphere frame in slot 2 after."
+        doc "setAfterEqpFrameID2 — sphere frame in slot 2 after.  0 once a Sphere Frog has opened the slot; see before_eqp_frame_id2."
     }
 
     field before_fe_bp type="i32::str" {

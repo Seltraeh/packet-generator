@@ -94,7 +94,15 @@ json UnitMst {
 
     field param_max  type="[i32::str]::sep(colon)" {
         key "imQJdg64"
-        doc "IMP parameter caps per stat (HP:ATK:DEF:REC), colon-separated"
+        doc """
+        IMP parameter caps per stat (HP:ATK:DEF:REC), colon-separated.
+
+        Per-UNIT, not a global constant -- the wiki's own note says the limit
+        "varies from unit to unit", and the data agrees: 147 distinct values,
+        from "0:0:0:0" (fodder, which cannot be imped) through "400:160:80:80"
+        (Fencer Vargas) to "1500:600:600:600".  Read by the UnitMix handler to
+        clamp an imp fusion.
+        """
     }
 
     field arousal  type="i32::str" {
@@ -277,9 +285,21 @@ json UnitMst {
         doc "Unit category"
     }
 
-    field skill_up_adjust  type="i32::str" {
+    field burst_level_boost  type="i32::str" {
         key "PXD4v2KY"
-        doc "Skill level-up adjustment rate"
+        doc """
+        How many BB/SBB levels this unit grants when fused INTO another -- a
+        property of the FODDER, not the recipient.
+
+        // RENAMED FROM: skill_up_adjust ("Skill level-up adjustment rate").
+        // That reading does not survive the data: the column is 0 on 2287 of
+        // 2291 units, and the four that carry it are exactly the burst frogs,
+        // with values matching the wiki's description of each:
+        //     10312 Burst Frog +1   10522 Lawson Frog   +2
+        //     10313 Burst Emperor +5  750004 Burst Queen +20
+        // A skill-up rate would not be zero for every ordinary unit.
+        // The friendly decode of F_UNIT_MST names it unitAdditionalBurstLevelBoost.
+        """
     }
 
     field character_voice  type=str {
