@@ -336,12 +336,12 @@ json UserTeamInfo {
 
     field max_fight_point type="i32::str" {
         key "9m5FWR8q"
-        doc "ASSUMED (call site cited, consumer not yet read).  setMaxFightPoint @0x14033BC -- the Hunter Orb cap (see handbook 6.16: the client calls these fight points).  4 readers: GameScene::updateArenaLight, ShopHelFightScene::touchBegan, AppDelegate::applicationDidEnterBackground."
+        doc "The ARENA Orb cap.  setMaxFightPoint @0x14033BC.  4 readers: GameScene::updateArenaLight, ShopHelFightScene::touchBegan (the shop's Arena Orbs restore, SHOP_HEL_FIGHT_TITLE 'Arena Orbs' — ShopUse type 4), AppDelegate::applicationDidEnterBackground.  Not the Hunter Orbs: those are ChallengeHeaderInfo Aube (see ChallengeBase)."
     }
 
     field fight_point type="i32::str" {
         key "YS2JG9no"
-        doc "ASSUMED (call site cited, consumer not yet read).  setFightPoint @0x14033E4 -- current Hunter Orbs.  14 readers, top: GameScene::updateArenaLight, ArenaTopScene::touchBegan."
+        doc "Current ARENA Orbs.  setFightPoint @0x14033E4.  14 readers, top: GameScene::updateArenaLight, ArenaTopScene::touchBegan, ShopHelFightScene::touchBegan (refuses the restore when this equals 9m5FWR8q).  The client regenerates it locally (UserTeamInfo::decFightRestTimer, DefineMst recover_time_fight 3600s)."
     }
 
     field unk2 type="i32::str" {
@@ -361,7 +361,7 @@ json UserTeamInfo {
 
     field add_unit_count type="i32::str" {
         key "Px1X7fcd"
-        doc "Extra unit slots, ADDED to ouXxIY63.  setAddUnitCnt @0x1403434 -> member 0x84; getAddUnitCnt has zero call sites but getSumUnitCnt @0x12AB380 reads the offset.  gme::getTeamInfo hardcodes this to 100 while user_info.max_unit_count is 0, so it currently IS the whole capacity."
+        doc "Extra unit slots, ADDED to ouXxIY63.  setAddUnitCnt @0x1403434 -> member 0x84; getAddUnitCnt has zero call sites but getSumUnitCnt @0x12AB380 reads the offset.  gme::getTeamInfo sends the starting 100 here (kBaseUnitBoxSlots) while ouXxIY63 carries user_info.max_unit_count — the slots bought with gems through ShopUse type 2.  Only the sum matters: GameUtils::isUnitFull / isUserUnitFull are the lone readers of ouXxIY63 and have no callers."
     }
 
     field deck_cost type="i32::str" {
@@ -386,12 +386,12 @@ json UserTeamInfo {
 
     field max_friend_count type="i32::str" {
         key "3u41PhR2"
-        doc "Base friend capacity.  setMaxFrdCnt @0x14034AC -> member 0xa0; summed with 2rR5s6wn by getSumFrdCnt @0x12AB5B8 (18 readers, all friend-request scenes)."
+        doc "Base friend capacity: the level's UserLevelMst friend_count (10 at lv 1, 50 from lv 81).  setMaxFrdCnt @0x14034AC -> member 0xa0; summed with 2rR5s6wn by getSumFrdCnt @0x12AB5B8 (18 readers, all friend-request scenes)."
     }
 
     field add_friend_count type="i32::str" {
         key "2rR5s6wn"
-        doc "Extra friend slots, ADDED to 3u41PhR2.  setAddFrdCnt @0x14034D4 -> member 0xac; getAddFrdCnt has zero call sites, getSumFrdCnt @0x12AB5B8 reads the offset."
+        doc "Friend slots BOUGHT with gems (ShopUse type 7, 5 per step), ADDED to 3u41PhR2.  setAddFrdCnt @0x14034D4 -> member 0xac; getAddFrdCnt has zero call sites, getSumFrdCnt @0x12AB5B8 reads the offset.  ShopFriendExtScene::touchBegan stops selling once getSumFrdCnt reaches UserLevelMst::getSumFriendCnt (friend_count + add_friend_count), so the level MST's add_friend_count is the most that can be bought — sending it here gave the slots away and made the purchase unreachable.  Server: user_info.max_friend_count holds the bought slots; gme::getTeamInfo sends min(bought, the level's add_friend_count)."
     }
 
     field warehouse_count type="i32::str" {
@@ -446,7 +446,7 @@ json UserTeamInfo {
 
     field present_count type="i32::str" {
         key "EfinBo65"
-        doc "ASSUMED (call site cited, consumer not yet read).  setPresentCnt @0x14038E0.  5 readers, top: AnotherHomeScene::setPresentCntBadge, RewardsTopScene::checkForBadgeAlert."
+        doc "CONFIRMED consumer: the Rewards badges.  setPresentCnt @0x14038E0.  HomeScene2::setLayoutControl lights the Rewards button when getPresentCnt() > 0 (cmp @0x16EDCA0); RewardsTopScene::checkForBadgeAlert badges the Presents tile; AnotherHomeScene::setPresentCntBadge draws the count.  The client never counts presents itself, so gme::getTeamInfo sends the number of unclaimed user_presents rows — every reply carrying team_info refreshes it."
     }
 
     field friend_agree_count type="i32::str" {
@@ -544,7 +544,7 @@ json UserTeamInfo {
 
     field mysterybox_count type="i32::int" {
         key "Qo9doUsp"
-        doc "ASSUMED (call site cited, consumer not yet read).  setMysteryBoxCount @0x1403D78.  2 readers: RewardsTopScene::checkForBadgeAlert, HomeScene2::setLayoutControl."
+        doc "CONFIRMED consumer: the Mystery Chest badges.  setMysteryBoxCount @0x1403D78.  HomeScene2::setLayoutControl (+0xe44) badges the Rewards button and RewardsTopScene::checkForBadgeAlert (+0xfc) the Mystery Chest tile from getMysteryBoxCount.  gme::getTeamInfo sends the number of unclaimed, unexpired user_mystery_boxes rows."
     }
 
     field paid_gems type="i32::int" {
@@ -1139,9 +1139,28 @@ json UserUnitDictionary {
 	doc """
     Discovered unit entries used by the client unit dictionary.
 
-    Every time the client reads this response, it adds/de-dupes these rows by
-    unit id in its runtime dictionary, and also rebuilds a response-local
-    reference list used by result screens.
+    UserUnitDictionaryResponse::readParam @0x1404ABC feeds TWO lists:
+
+      UserUnitDictionaryList           MERGE.  Each row replaces any entry with
+                                       the same unit id (getObjectWithUnitID,
+                                       erase, addObject).  The Unit Guide
+                                       (UnitDictionaryScene::setUnitDictionary)
+                                       and unit asset loading read this one.
+      UserUnitDictionaryReferenceList  REPLACED BY EVERY RESPONSE: row 0 /
+                                       field 0 calls removeAllObjects, then
+                                       every row is added.  Its only reader is
+                                       the summon lineup — SummonsListScene's
+                                       ctor stores existUnitID's answer per
+                                       unit (@0x16D4200 -> [entry+0x30]).
+
+    So ALWAYS SEND THE WHOLE DICTIONARY.  Only the newly obtained species is
+    harmless to the Unit Guide but leaves the lineup knowing just those
+    species until the next UserInfo.  The scene loads question_frame beside
+    unit_thum, which is presumably how it draws a unit it does not know
+    (UNVERIFIED in-client).
+
+    // WAS: "a response-local reference list used by result screens".  The
+    // xrefs show no result-screen reader; the lineup is the only one.
     """
 
 	field user_id type="str" {
@@ -1156,7 +1175,27 @@ json UserUnitDictionary {
 
 	field img_type_flag type="i32::str" {
 		key "2pAyFjmZ"
-		doc "Unit dictionary image/display variant flag."
+		doc """
+		ALTERNATE ART, and the only thing that unlocks it.
+
+		readParam @0x1404D60 sends this key straight to
+		UserUnitDictionary::setImgTypeFlg (+0x48), and
+		UserUnitDictionaryList::isUnitImgType @0x12B1D80 -- the test behind the
+		art-swap arrow on the unit page, the Unit Guide, the summon lineup and
+		the event-token shop's "already owned" check -- is exactly
+		`getImgTypeFlg() == 1`.  Nothing else writes that member.
+
+		WHICH illustration is showing does not travel: unitImgTypeSet stores it
+		in a second member (+0x4c) that readParam never touches, and
+		UserUnitDictionaryList::unitImgTypeSave / unitImgTypeLoad persist it on
+		the device.  getUnitImgType() returns that member only while this flag
+		is 1, which is how one server bit gates a purely local preference, and
+		GameUtils::getUnitCutinImage @0x117D694 appends "_<n>" for n >= 2 --
+		unit_ills_full_<id>_2.png, which ships with the client for 60 species.
+
+		1 for a species whose alternate art this player has bought (Merit shop
+		reward type 15), 0 otherwise; see gme::loadUnitDictionary.
+		"""
 	}
 }
 
@@ -1175,7 +1214,12 @@ json UserFavorite {
 
 	field unit_img_type type="i32::str" {
 		key "2pAyFjmZ"
-		doc "Cosmetic unit-image frame id (mirrors UnitFavoriteEntry.unit_img_type; server sends 0)."
+		doc """
+		The same hash the unit dictionary carries, on a per-UNIT row rather than
+		per-species.  Sent 0: the alternate-art unlock is species-wide and rides
+		the dictionary (see UserUnitDictionary.img_type_flag), and the favourite
+		list's copy has no traced reader.
+		"""
 	}
 }
 
@@ -2520,11 +2564,37 @@ json UserEquipItemInfo {
 }
 
 json UserEquipBoostItemInfo {
-    doc "TODO"
-    
-    field unk1 type="i32::str" {
-        key "Kn51uR4Y"
-        doc "TODO"
+    doc """
+    One BONUS-item slot of the quest-prep loadout (wrapper nAligJSQ).
+
+    The prep screen has two item bars: the battle items (71U5wzhI,
+    UserEquipItemInfo) and these bonus slots, which the client carries into the
+    fight as well -- MissionStartRequest::createBody @0x13AB3C4 reads the same
+    UserEquipBonusItemInfoList, and GameUtils::createUserWarehouseInfoList
+    subtracts them from the warehouse listing so an equipped item is not offered
+    twice.
+
+    Field map from UserEquipBoostItemInfoResponse::readParam @0x13FE0D8, which
+    fills UserEquipBonusItemInfoList (yes: the response class says Boost and the
+    list says Bonus) and calls removeAllObjects() first -- a FULL REPLACE.
+
+    // REVERTED FROM a single `unk1` keyed Kn51uR4Y: that is the signal-key hash
+    // and appears nowhere in this class; the real fields are the three below.
+    """
+
+    field item_id type="i32::str" {
+        key "kixHbe54"
+        doc "setItemID.  ItemMst id in this slot."
+    }
+
+    field disp_order type="i32::str" {
+        key "XuJL4pc5"
+        doc "setDispOrder.  Slot number, stored verbatim (ItemEdit writes a second run at slot+100, the same convention as the battle-item bar)."
+    }
+
+    field item_num type="i32::str" {
+        key "wgV86x1q"
+        doc "setItemNum.  How many of it are in the slot."
     }
 }
 
@@ -2548,33 +2618,164 @@ json UserPurchaseInfo {
 }
 
 json UserUnitDbbInfo {
-    doc "TODO"
+    doc """
+    One Dual Brave Burst bond: two of this player's units paired so they share
+    a DBB (wrapper `sxorQ3Mb`, UserUnitDbbInfoResponse::readParam @0x1C75104).
 
-    field unk type="str" {
-        doc "TODO"
-        key "INVALID"
+    ⚠ REPLACE: readParam calls UserUnitDbbInfoList::removeAllObjects() before
+    its first row, and an empty array never reaches readParam at all — so a
+    player who has just UNBONDED everything still needs the key, with an empty
+    list, or the client keeps the bond it already drew.
+
+    ⚠ ONE ROW PER BOND, not two.  The list is a dictionary keyed by
+    `edy7fq3L`, but addObject @0x1CC3374 also builds a second map from the
+    BONDED id back to the main one, which is how the sub unit answers
+    `isUnitBondedToAnotherUnit` without a row of its own.  Sending the mirror
+    row as well would make each unit claim the other as its sub.
+
+    The bond LEVEL is not here: UserUnitDbbInfo::getBondLevel() @0x1CC2DDC
+    resolves both user units to their species, asks
+    DbbMstList::getDbbMstByUnitIdsCombo which DBB that pair is, and looks the
+    level up by that id in the `tR4katob` list.
+    """
+
+    field user_unit_id type="i32::str" {
+        key "edy7fq3L"
+        doc "setUserUnitId — the MAIN unit of the pair, and the dictionary key."
+    }
+
+    field bonded_user_unit_id type="str" {
+        key "hDFXueWP"
+        doc """
+        setDbbBondedUserUnitId — the unit it is bonded to.
+
+        A STRING rather than an id, because the empty one is meaningful: an
+        empty list never reaches readParam (so removeAllObjects never runs, so
+        an unbond cannot be expressed by sending nothing), and a row naming the
+        released unit with an empty partner is how the client is told.  That is
+        also the value its own constructor leaves here.
+        """
     }
 }
 
 json UserUnitDbbLevelInfo {
-    doc "TODO"
+    doc """
+    How far one DBB pairing has been raised (wrapper `tR4katob`,
+    UserUnitDbbLevelInfoResponse::readParam @0x1C7535C).  REPLACE, same rule as
+    UserUnitDbbInfo.
 
-    field unk type="str" {
-        doc "TODO"
-        key "INVALID"
+    Keyed by DBB id, not by unit: getBondLevel() finds the DbbMst row for the
+    pair and then looks up THAT id here.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "setUserId."
+    }
+
+    field dbb_id type="str" {
+        key "sp3Xi9hu"
+        doc "setDbbId — DbbMst.id, the row that pairs these two species."
+    }
+
+    field main_unit_id type="str" {
+        key "pn16CNah"
+        doc "setMainUnitId — the SPECIES id of the pair's main unit (this hash is the species id everywhere else, not a user_unit_id)."
+    }
+
+    field bond_level type="i32::str" {
+        key "M81OjLwr"
+        doc "setBondLevel — 1 on a fresh bond; DbbBondRecipeMst prices 2..6."
     }
 }
 
 json SummonTicketV2UserInfo {
-    doc "TODO"
+    doc """
+    How many of one V2 summon-ticket TYPE the player holds (wrapper a3d5d12i).
+
+    Joined to SummonTicketV2Mst by id; that row says which gate the ticket
+    redeems on (target_gacha) and how many it costs per pull (required_tickets,
+    absent on every shipped row = 1).
+
+    SummonTicketV2UserInfoResponse::readParam @0x1C6EBB4 calls
+    SummonTicketV2UserInfoList::removeAllObjects() before its first row, so
+    sending this key REPLACES the whole list -- and an empty array never runs
+    readParam at all, so a type spent down to nothing has to keep reporting
+    itself at 0.
+
+    Load-bearing, not decoration: SummonsDetailScene::touchBegan @0x16A7FA8
+    sums the amounts of the types whose MST row targets the open gate and
+    refuses the pull when the total is 0, so a ticket paid into the present box
+    could not be spent while this list was absent.
+    """
 
     field id type="i32::str" {
-        doc "TODO"
+        doc "setSummonTicketV2Id.  Ticket TYPE id, joins SummonTicketV2Mst.id."
         key "b0D2iq2d"
     }
 
     field amount type="i32::str" {
-        doc "TODO"
+        doc "setAmount.  How many of this type are held; 0 is meaningful (see the struct doc)."
         key "Rs7bCE3t"
+    }
+}
+
+json UnitSelectorGachaUserInfo {
+    doc """
+    One Unit Selector ticket the user holds, response key CGHaOZda (the same
+    hash as the UnitSelectorGachaTicket request group, a different class).
+    Decoded 2026-09-11 from UnitSelectorGachaUserInfoResponse::readParam
+    @0x1CCB500.
+
+    A FULL REPLACE: row 0 / param 0 destroys the whole
+    UnitSelectorGachaUserInfoList before the first row is read, so every send
+    must carry the complete inventory.  An empty list never reaches readParam
+    and so clears nothing -- a ticket spent down to zero has to go out with
+    count 0, which is why the server sends every catalog ticket, held or not
+    (gme::loadSelectorTickets).  No client code changes these counts locally.
+
+    Readers: SummonsScrlItem::addObject @0x16DA238 (the banner's pull count,
+    count / required_tickets summed over the selectors of that gate),
+    SummonsDetailScene::setGachaInfo @0x16A3A9C (the held count) and
+    UnitSelectorGachaUnitSelectScene::initialize @0x1D95E54.  They match the
+    row to the selector by the MST's ticket id.  required_tickets (MST
+    JRqU2bS6) defaults to 1 and readParam clamps it to at least 1, so the
+    division cannot be by zero.
+    """
+
+    field ticket_id type="str" {
+        key "XIvaD6Jp"
+        doc "setTicketId -- the UnitSelectorGachaMst ticket id (the same XIvaD6Jp the MST row is keyed by, and the target_id of a type-8005 present)."
+    }
+
+    field count type="i32::str" {
+        key "H6k1LIxC"
+        doc "setTicketCount (StrToInt).  Tickets held."
+    }
+}
+
+json UserTrophyGradeInfo {
+    doc """
+    One trophy GRADE the player has attained (wrapper H18CjPKI).
+
+    The Records screen does not work this out for itself:
+    PlayerInfoBattleResultScene::getTrophyGrade @0x1799F34 walks the trophy's
+    TrophyGradeMst rows and asks UserTrophyGradeInfoList::exist(gradeId) for
+    each, taking the highest that is present -- so an absent list means every
+    trophy shows grade 0 however high its counter has run.
+
+    Field map from UserTrophyGradeInfoResponse::readParam @0x1404870, which
+    clears the list on its first row (a FULL REPLACE) and adds one object per
+    row.  Two fields only.
+    """
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "setUserID."
+    }
+
+    field grade_id type="i32::str" {
+        key "ARn3u96q"
+        doc "setTrophyGradeID -- TrophyGradeMst.id, not the grade NUMBER: that table keys (trophy_id, grade, clear_cond) by its own id."
     }
 }

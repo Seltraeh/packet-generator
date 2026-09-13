@@ -411,30 +411,35 @@ json SummonTicketV2Mst {
 }
 
 json UnitSelectorGachaMst {
-    doc "Unit Selector Gacha (Burst Hero Selector) catalog.  Wrapper key JukkSeNA.  Loaded from deploy/system/unit_selector_gacha_ticket_mst.json (16 rows via port_mst.py, from F_UNIT_SELECTOR_GACHA_TICKET_MST_Ver106).  Each row is one selector door: the gacha it belongs to, display name, icon, and the pool of unit ids a player may pick from when redeeming a matching V2 ticket.  Consumed by the UnitSelectorGachaTicket handler (k57TdKDj) to validate the picked unit."
+    doc "Unit Selector Gacha (Burst Hero Selector) catalog.  Wrapper key JukkSeNA.  Loaded from deploy/mst/unit_selector_gacha_ticket_mst.json (16 rows via port_mst.py, from F_UNIT_SELECTOR_GACHA_TICKET_MST_Ver106).  Each row is one selector ticket: the gacha door it opens, the ticket's name and icon, and the pool of unit ids a player may pick from.  Selector tickets are their own inventory (user_selector_tickets, sent as UnitSelectorGachaUserInfo), not V2 summon tickets.  Consumed by the UnitSelectorGachaTicket handler (k57TdKDj), which spends one ticket and validates the picked unit."
+
+    // Setter names from UnitSelectorGachaMstResponse::readParam @0x1CCAD3C
+    // (decoded 2026-09-11).  A sixth key, JRqU2bS6 setRequiredTickets, is not
+    // in this data: the constructor defaults it to 1 and readParam clamps it to
+    // at least 1, so one ticket buys one pick.
 
     field selector_id type="i32::str" {
         key "XIvaD6Jp"
-        doc "Selector id.  Echoed back in UnitSelectorGachaUserInfo (also XIvaD6Jp)."
+        doc "setTicketId — the TICKET id, and the key UnitSelectorGachaMstList indexes the rows by (addObject @0x1CCA140).  The same id keys the user's inventory (UnitSelectorGachaUserInfo.ticket_id) and is the target_id of a type-8005 present."
     }
 
     field gacha_id type="i32::str" {
         key "7Ffmi96v"
-        doc "Gacha door id this selector belongs to (joins to GachaInfoMst.id)."
+        doc "setGachaGateId — the gacha door this selector belongs to (joins to GachaInfoMst.id)."
     }
 
     field name type="str" {
         key "s35idar9"
-        doc "Display name, e.g. \"Brave Burst Heroes Selector Ticket\"."
+        doc "setTicketName — e.g. \"Brave Burst Heroes Selector Ticket\"; the present box names a type-8005 present \"<count> <ticket name>\"."
     }
 
     field image type="str" {
         key "TAFzS4j3"
-        doc "Icon filename served from /content/, e.g. \"unit_selector_ticket.png\"."
+        doc "setTicketImage — icon filename served from /content/, e.g. \"unit_selector_ticket.png\"."
     }
 
     field unit_pool type="[i32::str]::sep(comma)" {
         key "r7MSYD2c"
-        doc "Comma-separated unit ids the player may pick from, e.g. \"810658,820658,830658,840658,850658,860658\"."
+        doc "setUnitList (split on ',') — the unit ids the player may pick from, e.g. \"810658,820658,830658,840658,850658,860658\"."
     }
 }

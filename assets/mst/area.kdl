@@ -106,9 +106,32 @@ json AreaMst {
         doc "Area name — \"Mistral\", \"Atro\", \"Bounties\"; blank on the sentinel row.  Free text containing commas, hence a plain string."
     }
 
-    field unk2 type="i32::str" {
+    field area_type type="i32::str" {
         key "3v1qg7Uj"
-        doc "// UNVERIFIED: 0..10."
+        doc """
+        setAreaType @0x1309088 -- and it decides WHICH PERMIT CHANNEL an area's
+        unlocks can be cleared on, which makes it load-bearing rather than
+        decorative.
+
+        AreaMst::isSpecial @0x1309278 is `(type | 2) == 3`, i.e. type 1 or 3.
+        AreaMst::isML @0x1309364 is `type == 10`.  PermitPlaceInfoList then
+        keeps three disjoint partitions and each permit response clears only
+        its own at row 0:
+
+          yXNM8kL3 PermitPlace   -> removeNormalObjects   @0x126C9B0
+          Y73tHKS8 PermitPlaceSp -> removeSpecialObjects  @0x126C744
+          Y73mHKS8 PermitPlaceML -> removeMLObjects
+
+        Each remover resolves a row to its AreaMst -- directly for an area row,
+        through DungeonMst/MissionMst for the others -- and skips the rows that
+        are not its own.  A row whose area does not resolve at all (a land or
+        gate row, or an area the client was never sent) is skipped by ALL
+        THREE and can never be removed.
+
+        In this data 340 areas are type 1, 3 are type 3 and 35 are type 10, so
+        only 33 of 411 are "normal": sending a special area's permits on
+        yXNM8kL3 means they are appended and never cleared.
+        """
     }
 
     field land_id type="i32::str" {

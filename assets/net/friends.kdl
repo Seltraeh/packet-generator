@@ -9,16 +9,51 @@ json FriendGetReq {
 }
 
 json FriendPointInfo {
-    doc "TODO"
+    doc """
+    How much Honor ("Friend Point") one borrowed Summoner Helper is worth, as
+    the global pair the helper cards read.  Wrapper 6e4b7sQt,
+    FriendPointInfoResponse::readParam @0x13DA7CC.
 
-    field unk type="str" {
+    A SINGLETON, not a list: readParam writes straight into
+    FriendPointInfo::shared() with no row-0 clear, so one full row must be
+    sent -- the same discipline as n5mdIUqj.  The ctor @0x1260DD8 assigns BOTH
+    strings the literal "0", which is why every helper card read "Honor +0"
+    until this block was emitted.
+
+    ReinforcementInfo::getFriendPoint @0x126DDA8 is the only reader:
+      1. it returns 0 outright unless that ROW's own friend_point is >= 1
+         (stored XOR-obfuscated -- setFriendPoint @0x126DEE4 keeps rand at
+         +0x30c and value^rand at +0x308, and the getter re-XORs them), then
+      2. it asks FriendInfoList::existTypeOK(row.user_id) whether the helper is
+         on the player's friend list, and returns getFriendPointNum() when it
+         is, getNormalPointNum() when it is not.
+    So the row gates and THIS block gives the amount.  Consumers:
+    FriendListUtils::setFriendPoint (draws REINFORCEMENT_SELECT_FRIEND_POINT,
+    "Honor +<param=num>"), MissionCheckScene::setPreparation / updateEvent,
+    MissionBattleUnitInfoScene::updateEvent and
+    MissionResultRepeatCheckScene::resetFriendUnit.
+    """
+
+    field friend_point_num type="str" {
         key "4vamo28W"
-        doc "TODO"
+        doc """
+        setFriendPointNum -- Honor earned when the helper IS on the player's
+        friend list.  The client help text says as much: "You can get more
+        Honor Pts when you hire a friend as a Summoner Helper"
+        (MST_HELP_SUBTOPIC_300_1_DESCRIPTION).
+
+        A COMMA-SEPARATED LIST, not a number.  getFriendPointNum(int i)
+        @0x1261020 splits on "," and takes element i, falling back to element 0
+        when the list is shorter; the no-arg overload the helper cards use is
+        index 0.  SummonerReinforcementInfo::getFriendPoint is the one caller
+        that passes a real index.  `str` because the setter takes the whole
+        std::string and the split happens on read.
+        """
     }
 
-    field unk2 type="str" {
+    field normal_point_num type="str" {
         key "KgbM81wd"
-        doc "TODO"
+        doc "setNormalPointNum -- the same comma-separated list for a helper who is NOT a friend.  Same grammar and same index-0 read as friend_point_num."
     }
 }
 
@@ -62,7 +97,7 @@ json FriendInfo {
 
     field friend_type type="i32::str" {
         key "96Nxs2WQ"
-        doc "setFriendType.  Friend relation type. // UNVERIFIED enum; likely 0=stranger, 1=friend, 2=guild-only, etc."
+        doc "setFriendType.  Friend relation type.  1 is CONFIRMED to be the value that counts as \"a friend\": FriendInfoList::existTypeOK @0x12607CC scans this list for a matching user id and returns true only when that row's getFriendType() == 1 exactly -- any other value keeps scanning.  That is the test ReinforcementInfo::getFriendPoint uses to choose between FriendPointInfo's friend and normal Honor amounts.  The rest of the enum is still // UNVERIFIED."
     }
 
     field last_login_date type="i32::str" {

@@ -1,8 +1,82 @@
 json EventTokenInfo {
-    doc "TODO"
+    doc """
+    One event-token balance (wrapper l234vdKs, EventTokenInfoResponse).
 
-    field mock type="str" {
-        key "INVALID"
-        doc "TODO"
+    Event tokens are the per-event currencies — "Rift Token" (id 8) is the
+    Frontier Gate's, and F_FROGATE_REWARD_MST pays it as present type 8004 on
+    505 rows.  The client can name a token by itself (PresentCommon::
+    createPresentName @0x11C3AF8 formats `EVENT_TOKEN_%04d_NAME`, which its own
+    sgtext_Exchange_Token table resolves), so `name` here is the display copy
+    for the token screens rather than the only source.
+
+    Field map decoded 2026-09-12 from EventTokenInfoResponse::readParam
+    @0x1C49274.  The class's setters are inlined string assignments, so the
+    mapping comes from each key's conversion and the one call that survived:
+    `fE2d6ivS` goes through CommonUtils::StrToLong straight into
+    EventTokenInfo::setTimeleft @0x1C7E504, which fixes the numeric pair, and
+    the remaining keys follow the class's own setter order (eventTokenID, name,
+    desciption, amount, dungeonsId, unitsIds).
+
+    readParam calls EventTokenInfoList::removeAllObjects() before its first
+    row, so sending this key is a FULL REPLACE.
+    """
+
+    field token_id type="i32::str" {
+        key "Slkc395l"
+        doc "setEventTokenID.  Read with StrToInt then IntToString, so \"0008\" and \"8\" are the same token; our own tables use the short form."
+    }
+
+    field name type="str" {
+        key "s35idar9"
+        doc "setName.  Display name (\"Rift Token\").  Same hash the summon-ticket and selector tables use for a name."
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "setDesciption (sic).  Long copy for the token screens; empty is accepted."
+    }
+
+    field amount type="i32::str" {
+        key "lDk4hv20"
+        doc "setAmount.  How many the player holds."
+    }
+
+    field timeleft type="i64::str" {
+        key "fE2d6ivS"
+        doc "setTimeleft.  Seconds until the token expires; 0 for one that does not."
+    }
+
+    field dungeon_ids type="str" {
+        key "0Dk4fc81"
+        doc "setDungeonsId.  Comma-separated dungeons that pay this token, for the \"where do I farm it\" link."
+    }
+
+    field unit_ids type="str" {
+        key "pn16CNah"
+        doc "setUnitsIds.  Comma-separated units the token's exchange offers."
+    }
+}
+
+json EventTokenInfoReq {
+    doc """
+    Request for the player's event-token balances (GroupId f49als4D, key
+    94lDsgh4).
+
+    Bare: EventTokenInfoRequest::createBody @0x1C491EC is 44 bytes and adds
+    nothing past the identity envelope.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json EventTokenInfoResp {
+    doc "The player's event-token balances.  A full replace -- see EventTokenInfo."
+
+    field event_token_info type="[EventTokenInfo]" {
+        key "l234vdKs"
+        doc "One row per token the player has a record of, zeros included."
     }
 }

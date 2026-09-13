@@ -125,3 +125,71 @@ json FrontierGateSupportMst {
         doc "Support blurb — Japanese only, e.g. \"回復力・最大ＨＰを２０％アップ\"."
     }
 }
+
+json FrontierGateRewardMst {
+    doc """
+    F_FROGATE_REWARD_MST — one reward a Frontier Gate pays, and what earns it.
+    1452 rows, ported 2026-09-11 to deploy/mst/frontier_gate_reward_mst.json
+    from F_FROGATE_REWARD_MST_Ver315.
+
+    NO WIRE KEY.  FrontierGateRewardMstResponse is absent from
+    GameResponseParser::getResponseObject: the client loads the table from its
+    own MST store (DataMstManager::loadFrogateRewardMst) and never receives it,
+    so the file's wrapper, "F_FROGATE_REWARD_MST", is server-side only.
+
+    Setter names from FrontierGateRewardMstResponse::readParam @0x1430C24,
+    whose setters are virtual (vtable +0x30..+0xA0 in key order) and match the
+    class's own set* symbols one for one.
+
+    ONE-TIME PER GATE.  FrontierGateRewardScene::setList @0x15F5A54 draws the
+    "obtained" mark (challeng_get.png) on a row whose getRewardID is in the
+    user's FrontierGateInfo.reward_info_list (JQ23rIvk), and hides the
+    cond_type 8001 rows, which belong to FG+.
+    """
+
+    field frogate_id type="i32::str" {
+        key "hBNPQAU0"
+        doc "setFrogateID — the gate (FrontierGateMst.id).  84 gates carry rows."
+    }
+
+    field reward_id type="i32::str" {
+        key "N1b6SUW4"
+        doc "setRewardID — kept as a string on the client and listed in reward_info_list once obtained.  Unique per gate (1..9017 on the halls, 105113.. on the event gates)."
+    }
+
+    field cond_type type="i32::str" {
+        key "Ga6qSJr0"
+        doc """
+        setCondType.  1 = floor clear: FrontierGateResultScene::rewardLabel
+        @0x15F41A8 prints CHALLENGE_FLOOR_CLEAR "Stage<floor> Cleared!!" for it.
+        2 = score: the same function prints CHALLENGE_EVALUATION_BONUS
+        "Esteem Reward".  8001 = FG+ only (filtered out of the normal gate's
+        list).  660 / 240 / 552 rows.
+        """
+    }
+
+    field cond_param type="i32::str" {
+        key "q7Nit8JW"
+        doc "setCondParam — the floor for cond_type 1 (a gate's floor rewards stop at the total of its missions' battleCount: gate 1 = 6 missions x 5 = 30), the score for cond_type 2 (100000 .. 35000000)."
+    }
+
+    field present_type type="i32::str" {
+        key "30Kw4WBa"
+        doc "setPresentType — the shared present vocabulary.  Floor and score rows use 6 unit, 4 item, 8004 event token, 3 zel, 7 sphere, 8 gem, 5 material, 8000/8001 summon tickets, 9 dungeon key."
+    }
+
+    field target_id type="str" {
+        key "TdDHf59J"
+        doc "setTargetID."
+    }
+
+    field target_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "setTargetCnt."
+    }
+
+    field target_param type="str" {
+        key "37moriMq"
+        doc "setTargetParam (StrToInt on the client).  Kept a string: the data holds \"0\", \"1:0\", \"1:0:0\", \"1:1:1029000\", the same packed form a present's target_param carries."
+    }
+}

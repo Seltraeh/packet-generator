@@ -107,12 +107,29 @@ json ReinforcementInfo {
 
     field friend_point type="i32::str" {
         key "J3stQ7jd"
-        doc "Friend-point cost to borrow this reinforce.  Same key as MissionStartInfo.friend_point."
+        doc """
+        setFriendPoint @0x126DEE4.  NOT a cost -- this is the Honor the player
+        EARNS for borrowing this helper, and on this row it works as a GATE
+        rather than as the number shown.
+
+        ReinforcementInfo::getFriendPoint @0x126DDA8 returns 0 whenever this is
+        < 1, and otherwise ignores it and returns the global FriendPointInfo
+        (6e4b7sQt) amount -- friend_point_num when FriendInfoList::existTypeOK
+        says the helper is a friend, normal_point_num when it is not.  So any
+        value >= 1 opens the gate and the amount comes from that block; leaving
+        it 0, as this server did until 2026-09-13, pinned every helper card to
+        "Honor +0" no matter what else was sent.
+
+        The client stores it obfuscated: the setter draws a random byte r in
+        [2,254] into +0x30c and writes value^r to +0x308, keeping the plaintext
+        at +0x310; the getter re-XORs the pair.  Same key as
+        MissionStartInfo.friend_point, whose getter has zero callers.
+        """
     }
 
     field normal_friend_point type="i32::str" {
         key "w28VsQ7h"
-        doc "setNormalFriendPoint (per IDA audit). Friend-point cost for the normal (non-reinforce) borrow operation."
+        doc "setNormalFriendPoint @0x126DF80 -- a plain store to +0x314 with no obfuscation and, unlike friend_point, no reader in this build.  Kept in step with friend_point so the row is self-consistent."
     }
 
     field skill_id type="i32::str" {

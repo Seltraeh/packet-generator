@@ -18,7 +18,7 @@ json PermitPlace {
 
     readParam is called once per (row, field), so an object carrying all five
     would fire setType/setPlaceID five times and THE LAST KEY WOULD WIN.  One
-    entry = exactly one id key.  That is why gimuserver/gme/handlers/UserInfo.cpp
+    entry = exactly one id key.  That is why gimuserver/gme/common/PermitPlace.cpp
     hand-assembles this block as raw JSON and splices it over a "yXNM8kL3":[]
     placeholder instead of serializing a struct.
 
@@ -32,6 +32,16 @@ json PermitPlace {
                                     [x19,#0x78] @0x126B3BC).  Sending "0" LOCKS
                                     the place; isEnterable @0x126B660 has 35
                                     consumers incl. two isLockDungeon predicates.
+                                    ⚠ NEVER lock a KEY-GATED dungeon (a Vortex
+                                    parade) to mean "closed".  In
+                                    AreaSPSelectScene::touchEnded a locked
+                                    dungeon goes to MissionFlgConfirmScene
+                                    (+0x848, "Opening Conditions" — it lists
+                                    need_mission_id quests only) BEFORE the key
+                                    branch at +0xa1c, which reads
+                                    getRemainingTime (+0xa68): >= 1 enters, < 1
+                                    opens the key prompt (+0xce8).  A closed
+                                    parade is enterable with no qY49LBjw.
         s2gM3deu setPeriodText, nA95Bdj6 setQuestBonusType,
         5Z1LNoyH setQuestBonusRate (StrToFloat), 5ry19G4Y setQuestBonusTimeLimit
                                  -- campaign bonus display; we send none, and 0 /
@@ -46,7 +56,7 @@ json PermitPlace {
 
     field mock type="str" {
       key "INVALID"
-      doc "Placeholder so the struct parses.  Nothing populates it -- see the struct doc: this block is hand-assembled in UserInfo.cpp because its entries are discriminated variants."
+      doc "Placeholder so the struct parses.  Nothing populates it -- see the struct doc: this block is hand-assembled in common/PermitPlace.cpp because its entries are discriminated variants."
     }
 }
 
@@ -70,9 +80,9 @@ json PermitPlaceML {
 
     readParam is called once per (row, field), so an object carrying all five
     would fire setType/setPlaceID five times and THE LAST KEY WOULD WIN.  One
-    entry = exactly one id key.  That is why gimuserver/gme/handlers/UserInfo.cpp
-    hand-assembles this block as raw JSON and splices it over a "Y73mHKS8":[]
-    placeholder instead of serializing a struct.
+    entry = exactly one id key. This slice currently emits no rows.
+    common/PermitPlace.cpp builds only the normal yXNM8kL3 slice; adding this
+    slice requires its own complete snapshot under the correct outer key.
 
     The six non-id keys, all optional:
         qY49LBjw setTimeLimit    -- DEFAULTS TO 0, and getRemainingTime
@@ -98,7 +108,7 @@ json PermitPlaceML {
 
     field mock type="str" {
       key "INVALID"
-      doc "Placeholder so the struct parses.  Nothing populates it -- see the struct doc: this block is hand-assembled in UserInfo.cpp because its entries are discriminated variants."
+      doc "Placeholder so the struct parses. Nothing currently populates this slice; its entries must be discriminated variants."
     }
 }
 
@@ -126,9 +136,9 @@ json PermitPlaceSP {
 
     readParam is called once per (row, field), so an object carrying all five
     would fire setType/setPlaceID five times and THE LAST KEY WOULD WIN.  One
-    entry = exactly one id key.  That is why gimuserver/gme/handlers/UserInfo.cpp
-    hand-assembles this block as raw JSON and splices it over a "Y73tHKS8":[]
-    placeholder instead of serializing a struct.
+    entry = exactly one id key. This slice currently emits no rows.
+    common/PermitPlace.cpp builds only the normal yXNM8kL3 slice; adding this
+    slice requires its own complete snapshot under the correct outer key.
 
     The six non-id keys, all optional:
         qY49LBjw setTimeLimit    -- DEFAULTS TO 0, and getRemainingTime
@@ -154,7 +164,7 @@ json PermitPlaceSP {
 
     field mock type="str" {
       key "INVALID"
-      doc "Placeholder so the struct parses.  Nothing populates it -- see the struct doc: this block is hand-assembled in UserInfo.cpp because its entries are discriminated variants."
+      doc "Placeholder so the struct parses. Nothing currently populates this slice; its entries must be discriminated variants."
     }
 }
 

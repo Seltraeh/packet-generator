@@ -193,7 +193,20 @@ json PresentReceiptReq {
 json PresentReceiptResp {
     doc """
     Result of a claim: the refreshed present box plus the updated HUD currency,
-    so the client re-renders the list and the header in one pass.
+    so the client re-renders the list and the header in one pass — and, for
+    whatever the claim actually paid, the client cache that payout changed.
+
+    The present scenes have no local apply path.  Nothing reachable from
+    PresentTopScene / PresentReceiptScene calls a warehouse mutator
+    (GameUtils::incWarehouseItem, UserWarehouseInfo::setItemNum,
+    UserWarehouseInfoList::addObject) or adds a unit, and HomeInfo (NiYWKdzs)
+    rebuilds only the header and the roster.  So any block below that is not
+    sent leaves its screen stale until the next UserInfo — a relaunch, in
+    practice.
+
+    The optional blocks are sent only when a claim in THIS request changed
+    that state, and each is the complete current list (or singleton), because
+    every one of their readers replaces rather than merges.
     """
 
     field presents type="[UserPresentInfo]" {
@@ -220,6 +233,70 @@ json PresentReceiptResp {
         Brave Slots machine still showing the old number until some later call
         happened to carry UserInfo.
         """
+    }
+
+    field unit_info type="[UserUnitInfo]" {
+        key "qC2tJs4E"
+        doc """
+        Units created by unit presents (type 6) in this claim, as returned by
+        gme::addUserUnit.  qC2tJs4E is insert-if-absent (see UnitMixResp),
+        which is exactly right for brand-new user_unit_ids.
+        """
+        optional #true
+    }
+
+    field unit_dictionary type="[UserUnitDictionary]" {
+        key "GV81ctzR"
+        doc "The COMPLETE unit dictionary whenever a unit present was paid, never a partial list: this response rebuilds the reference list the summon lineup reads.  See UserUnitDictionary."
+        optional #true
+    }
+
+    field warehouse_info type="[UserWarehouseInfo]" {
+        key "9wjrh74P"
+        doc "Complete positive inventory after an item/material/sphere present (types 4/5/7).  UserWarehouseInfoResponse::readParam @0x14060E0 clears before adding, so this is always the whole warehouse."
+        optional #true
+    }
+
+    field item_dictionary_info type="[UserItemDictionaryInfo]" {
+        key "bd5Rj6pN"
+        doc "Every item species ever stacked, sent with warehouse_info.  A full resend is safe: readParam @0x13FFCBC never clears, and UserItemDictionaryList::addObject @0x12979D0 skips an id that getObjectWithItemID already finds."
+        optional #true
+    }
+
+    field dungeon_key_info type="[UserDungeonKeyInfo]" {
+        key "eFU7Qtb0"
+        doc "Key inventory after a dungeon-key present (type 9).  UserDungeonKeyInfoResponse::readParam @0x13FDD00 opens with removeAllObjects, so every row goes out, built by gme::dungeonKeyState exactly as UserInfo builds it."
+        optional #true
+    }
+
+    field summoner_info type="[UserSummonerInfo]" {
+        key "n5mdIUqj"
+        doc "The Summoner singleton after a Summoner SP present (type 17).  readParam @0x144EAD0 init()s the object before reading, so this is the one full row UserInfo sends, from the same builder."
+        optional #true
+    }
+
+    field summoner_arm_info type="[UserSummonerArmsInfo]" {
+        key "dhMmbm5p"
+        doc "Every owned arm after a Summoner Arm present (type 18).  readParam @0x144E824 calls removeAllObjects first, so this is the full list."
+        optional #true
+    }
+
+    field selector_ticket_info type="[UnitSelectorGachaUserInfo]" {
+        key "CGHaOZda"
+        doc "The selector inventory after a Unit Selector ticket present (type 8005; PresentCommon::createPresentName @0x11C37F4 matches its target_id to UnitSelectorGachaMst::getTicketId).  A full replace, so every catalog ticket goes out with its count; see UnitSelectorGachaUserInfo."
+        optional #true
+    }
+
+    field summon_ticket_v2_user type="[SummonTicketV2UserInfo]" {
+        key "a3d5d12i"
+        doc "The V2 summon-ticket inventory after a summon-ticket present (type 8001; createPresentName @0x11C3A2C names it from SummonTicketV2MstList).  A full replace -- see SummonTicketV2UserInfo, and note the plain ticket (type 8000) needs nothing here because it rides team_info."
+        optional #true
+    }
+
+    field event_token_info type="[EventTokenInfo]" {
+        key "l234vdKs"
+        doc "The event-token balances after a token present (type 8004; createPresentName @0x11C3AF8 formats target_id into EVENT_TOKEN_%04d_NAME).  A full replace -- see EventTokenInfo."
+        optional #true
     }
 }
 

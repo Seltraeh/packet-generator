@@ -196,4 +196,10 @@ json TownFacilityUpdateResp {
         key "s8TCo2MS"
         doc "Complete harvest state for every tile, re-rolled where a level change invalidated the pre-rolled drops."
     }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "The header after the upgrade.  KARMA IS SERVER-AUTHORITATIVE here -- the handler deducts the batch's cost with MAX(0, karma-cost), so the client's optimistic number can be wrong (it has no clamp) and, either way, nothing else on this screen refreshes the header."
+        optional #true
+    }
 }

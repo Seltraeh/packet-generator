@@ -47,6 +47,22 @@ json GachaRecord {
         optional #true
     }
 
+    field banner type=str {
+        key "banner"
+        doc """
+        Small banner (600x150) for the rail tile that opens this gate, used
+        when the server adds this gate to the rail on its own rather than from
+        gacha_category_mst -- which is how selector gates appear, since their
+        banner belongs on the rail only while the player holds the ticket.
+
+        This is NOT a GachaInfoMst field: the rail is GachaCategoryMst
+        (IBs49NiH, art In7lGGLn) and the gate is GachaInfoMst (1IR86sAv, art
+        1Dg0vUX3).  It lives on the gate record because that is where the rest
+        of a gate's art already lives.
+        """
+        optional #true
+    }
+
     field caption_msg type=str {
         key "caption_msg"
         doc "Long formatted gate caption/body text."

@@ -344,10 +344,39 @@ json UnitOpeResult {
     field success_type type="i32::str" {
         key "6hMI5xeF"
         doc """
-        setSuccessType — great/super success tier.
-        // UNVERIFIED: the value set.  BF fusion has normal / Great Success /
-        Super Success outcomes and this is the only field that could carry it;
-        0 is sent for a normal result until a capture shows the other values.
+        setSuccessType — the fusion result tier.
+
+        // CONFIRMED 2026-09-07 from the client, values and all.
+        // UnitMixPlayScene::ConvSuccessSet @0x1C200A4 branches straight off
+        // UnitOpeResult::getSuccessType and picks the animation:
+        //
+        //     ldr  w8, [x0, #0x400]
+        //     cmp  w8, #2  -> "ConvSuccessSuper.sam"   Super Success
+        //     cmp  w8, #1  -> "ConvSuccessBig.sam"     Great Success
+        //     cbnz w8      -> "ConvSuccess.sam"        normal
+        //
+        // All three .sam files ship in game_content, and
+        // SummonerWeaponMixPlayScene::ConvSuccessSet reads the same three values,
+        // so the vocabulary is shared with summoner-arm fusion.
+        //
+        //   0 = normal, 1 = Great Success, 2 = Super Success
+        //
+        // // SUPERSEDES "UNVERIFIED: the value set ... 0 is sent for a normal
+        // // result until a capture shows the other values."  The server pinned
+        // // this to 0, so no player could ever see a Great or Super Success no
+        // // matter what rate the fusion screen advertised.
+        //
+        // The EXP MULTIPLIERS are MST data, not a server invention:
+        // DefineMst.unit_mix_great_exp_rate (2inP0tCg) = 1.5 and
+        // unit_mix_super_exp_rate (zn65EXYF) = 2.0.  UnitMix applies whichever
+        // matches the rolled tier.
+        //
+        // // STILL UNVERIFIED: the CHANCE.  defines_mst carries the two
+        // multipliers and no probability, and no other MST names one, so the
+        // original server owned the roll.  Ours is 10% great / 2% super,
+        // doubled when every material matches the base unit's element — the one
+        // condition the game itself states improves a fusion.  Tunable in
+        // UnitMix.cpp; no capture backs the figures.
         """
     }
 

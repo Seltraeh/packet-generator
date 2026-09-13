@@ -453,11 +453,40 @@ json MissionReward {
 }
 
 // =============================================================================
-//  MissionBreak  (pause/resume mid-mission)
+//  MissionBreak  (an interrupted battle, and the offer to resume it)
 // =============================================================================
+//
+// The whole subsystem, end to end:
+//
+//  1. A squad wipes.  MissionGameOverScene offers CONTINUE for DefineMst
+//     continu_dia_cnt (QW3HiNv8, 1 gem), and initContinue @0x17FB3C0 fires
+//     MissionContinue -- tracked as the analytics event "Revival in Quest" /
+//     "Gems", which is what pins down what this request IS.  It carries the
+//     battle's freshly built suspend blob.
+//  2. If the player instead quits, or the client dies, the server record of
+//     that blob is the only thing that remembers the battle happened.
+//  3. At the NEXT LOGIN the server sends this block.  LoginScene::
+//     changeNextScene @0x174C544 reads getState(): zero means nothing pending
+//     and login proceeds normally; NON-ZERO calls SaveData::setLoginState(5),
+//     checks DataMstManager::existBattleMstFiles for the serial, and changes to
+//     scene 0x53 -- MissionRestartScene -- when the battle assets are still
+//     cached (0x3b6 mid-tutorial, Home otherwise).
+//  4. MissionRestartScene::initialize @0x17FC7A8 then reads the blob back out
+//     of its OWN SaveData (existMissionSuspendData / decodeMissionSuspendData),
+//     feeds THAT to setMissionBreakInfo, and fires MissionRestart.
+//
+// So the battle state is CLIENT-AUTHORITATIVE, exactly like Grand Quest's
+// campaignEncodeSuspendData: the server stores and echoes the blob but the
+// client reloads its own copy.  What the server owns is the TRIGGER -- without
+// a non-zero state at login the resume screen is never reached at all.
+//
+// The client degrades gracefully when the two disagree: no local suspend data
+// means UserState::setMissionRestartFlg(false) and the scene carries on without
+// restarting, so a stale record costs a wasted screen rather than a wedged
+// login.
 
 json MissionBreakInfo {
-    doc "MissionBreakInfoResponse (response key 5PR2VmH1). Pause-mid-mission resume state. All 3 fields decoded from MissionBreakInfo::readParam in libgame.so via a private IDA audit of the handler at func_addr 0x13E20B4."
+    doc "MissionBreakInfoResponse (response key 5PR2VmH1), readParam @0x13E20B4 -- a SINGLETON (MissionBreakInfo::shared(), no list operations), so send one full row.  The interrupted battle the client should be offered at login."
 
     field mission_serial_id type=str {
         key "k9cxD7Ba"
@@ -466,12 +495,120 @@ json MissionBreakInfo {
 
     field state type="i32::str" {
         key "j0Uszek2"
-        doc "setState. 0=paused, 1=cleared (inferred from value range; setter signature is int)."
+        doc """
+        setState -- the RESUME TRIGGER, and the earlier "0=paused, 1=cleared"
+        reading was backwards.
+
+        CONFIRMED at both readers: LoginScene::changeNextScene @0x174C548
+        branches on `cbz w0` -- zero means nothing is pending and login goes to
+        Home, anything non-zero diverts to the restart screen.
+        MissionBreakInfo::isMissionBreak @0x1265FB4 is literally `state != 0`,
+        and MissionScene::isRestart @0x180B300 ands the same test with
+        UserState::getMissionRestartFlg.
+
+        Nothing compares it against a specific value, so what goes back is the
+        MissionStatus the interruption carried: MissionContinueRequest sends 4
+        normally and 6 under Quest Repeat's auto-continue, MissionRestartRequest
+        sends 5.  0 is this server's "no open battle".
+        """
     }
 
     field mission_break_info type=str {
         key "K2gIYm0h"
-        doc "setMissionBreakInfo. Free-form break-state blob the client builds to resume mid-battle. Server passes through unchanged."
+        doc "setMissionBreakInfo. The opaque blob MissionScene::createSuspendData builds; the server stores and echoes it unchanged and never parses it.  Its only visible grammar constraint is MissionBreakInfo::isEnableBreakInfo @0x1265FC4, which asks whether the string contains an '@' that is neither its first nor its last character -- so an empty blob is not a resumable one.  The client prefers its own SaveData copy anyway (see the note above)."
+    }
+}
+
+// MissionContinue (p8B2i9rJ / G3FwvQfy5hcxHMen) -- "Revival in Quest".
+//
+// createBody @0x13A7528 sends two groups: Kz7qfSs5 with the serial and a
+// MissionStatus of 4 (or 6 when Quest Repeat auto-continue is on), and
+// 5PR2VmH1 with the serial and the suspend blob.
+//
+// No MissionContinueResponse class exists in the binary, so this is an
+// acknowledge-and-refresh reply in the ShopUse mould: MissionGameOverScene::
+// loopContinue @0x17FB474 waits only for the request flag to clear, then calls
+// MissionScene::requestContinue and pops the scene.  Nothing client-side
+// deducts the gem -- UserTeamInfo has no setDia/decDia caller anywhere in the
+// binary -- so the charge is the server's, and team_info is the only way the
+// HUD learns about it.
+
+json MissionContinueReq {
+    doc "MissionContinue (p8B2i9rJ) request -- the revival tap, carrying the battle to be remembered."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key request block."
+    }
+
+    field mission_num type="[MissionNumInfo]::size(1)" {
+        key "Kz7qfSs5"
+        doc "The serial being continued and the MissionStatus for it -- 4, or 6 under auto-continue."
+    }
+
+    field mission_break type="[MissionBreakInfo]::size(1)" {
+        key "5PR2VmH1"
+        doc "The suspend blob for that battle.  Sent up here and handed back at the next login; see MissionBreakInfo."
+    }
+}
+
+json MissionContinueResp {
+    doc "MissionContinue response.  No response class exists for it, so this carries only the refreshed header -- the gem the revival cost has already left the balance and team_info is the client's only way to see that."
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key echoed back."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Post-charge header state."
+    }
+}
+
+// MissionRestart (IP96ys7T / 0Zy3G9eD) -- the resume screen's own request.
+//
+// createBody @0x13AABF8 sends one group, Kz7qfSs5, with the serial taken out of
+// MissionBreakInfo and a MissionStatus of 5.  The battle itself is rebuilt from
+// the client's local suspend data, so there is nothing for the reply to carry;
+// MissionRestartScene::checkConnectResult @0x17FEAF8 only looks for an error
+// and offers RETRY_CONTINUE_MISSION when it finds one.
+
+json MissionRestartReq {
+    doc "MissionRestart (IP96ys7T) request -- resume the battle named by the login's MissionBreakInfo."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key request block."
+    }
+
+    field mission_num type="[MissionNumInfo]::size(1)" {
+        key "Kz7qfSs5"
+        doc "The serial being resumed, with MissionStatus 5."
+    }
+}
+
+json MissionRestartResp {
+    doc "MissionRestart response -- an acknowledgement.  Carries the signal key and the header so the resumed battle starts from a current HUD."
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key echoed back."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "Current header state."
     }
 }
 
@@ -485,7 +622,26 @@ json MissionNumInfo {
 
     field drop_info type="str" {
         key "LE6JkUp7"
-        doc "Encoded mission drop info."
+        doc """
+        Packed waves: battleOrder|unitDrops|treasureDrops, separated by '@'.
+        Treasure entries split on '-' then '/' @0x1266644:
+        monsterOrder/chestType/params. isMimic @0x12699DC is chestType != 1;
+        the emitter uses 1 for ordinary rewards and 2 for Mimics.
+        Mimic params split on ':' in BattleTreasure::create @0x10E7AAC.
+        [0] is BattleMonsterGroupMst group id. A single token is valid and
+        leaves capture unset. If more than one token is present, the client
+        unconditionally reads [3] unit id, [4] level, [5] type: lengths 2-5
+        are unsafe. Slots [1]/[2] are not read there; [6] is optional extra skill.
+        MonsterParty::entryMimic @0x10C218C enters this group separately from
+        the ordered waves and flags its first monster as a Mimic.
+        Server emits six tokens only on a successful capture roll, otherwise one. Slots 1/2 are authored zero placeholders, unused by this consumer. APPX spawn/warning confirmed; capture still requires client confirmation.
+        """
+    }
+
+    field mission_status type="i32::str" {
+        key "j3g5P4cq"
+        doc "REQUEST ONLY (MissionEnd, createBody @0x13A7998): UserState::getMissionState — 2 when the battle was won.  A Frontier Gate battle ends with MissionEnd win or lose (FrontierGateBattleEndScene), so this is how the server tells a floor cleared from a run lost."
+        optional #true
     }
 }
 
@@ -509,12 +665,12 @@ json MissionBattleResultInfo {
 
     field item_rewards type="str" {
         key "4T0Q2Bh5"
-        doc "Encoded item rewards."
+        doc "APK BattleRewardList::getItemCsv @0x10DFA24: comma-separated itemId:count. MissionEndRequest sends it under 4T0Q2Bh5 @0x13A7AE4."
     }
 
     field unit_rewards type="str" {
         key "3MAT6quo"
-        doc "Encoded unit rewards."
+        doc "APK BattleRewardList::getUnitCsv @0x10DFBA4: comma-separated unitId:level:type, optionally followed by extra skill. MissionEndRequest emits 3MAT6quo @0x13A7B18. Mimic capture attaches BattleDropUnit @0x10C2314; initDead forwards that attachment through BattleItemList::setUnit @0x10FD514. Current Mimic emitter leaves extra skill unset."
     }
 
     field battle_crystal_num type="i32::str" {

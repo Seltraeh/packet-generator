@@ -1,34 +1,57 @@
 json BadgeInfo {
-    doc "TODO"
+    doc """
+    The badge singleton, response key h23iRjGN (BadgeInfoResponse::readParam
+    @0x13CDCB8, dispatched from getResponseObject +0x1e00).  NO RESET: readParam
+    calls one setter per key it finds, so a reply may carry only the fields it
+    means to change — see BadgeKeyCount.  Of the six, only dungeon_key_num and
+    badge_data have getter call sites in this build.
+    """
 
     field scenario_num type="i32::str" {
         key "u7Htm9P4"
-        doc "TODO"
+        doc "setScenarioNum @0x13CDD18.  No getScenarioNum call site in this build; sent 0."
     }
 
     field unit_dict_num type="i32::str" {
         key "yCLEs28F"
-        doc "TODO"
+        doc "setUnitDictNum @0x13CDD48.  No getter call site in this build; sent 0."
     }
 
     field item_dict_num type="i32::str" {
         key "iakSd6m8"
-        doc "TODO"
+        doc "setItemDictNum @0x13CDD78.  No getter call site in this build; sent 0."
     }
 
     field new_frohun type="i32::str" {
         key "4AjsNu0m"
-        doc "TODO"
+        doc "setNewFrohun @0x13CDDA8.  No getter call site in this build; sent 0."
     }
 
     field dungeon_key_num type="i32::str" {
         key "dD40xrsh"
-        doc "TODO"
+        doc """
+        CONFIRMED consumer: the "key ready" badge.  setDungeonKeyNum @0x13CDDD8
+        is its ONLY writer — nothing clears it after a claim — and
+        getDungeonKeyNum > 0 lights the Home Rewards button
+        (HomeScene2::setLayoutControl +0xe2c), the Keys tile
+        (RewardsTopScene::checkForBadgeAlert +0x170) and the Administration
+        Office in the Summoners' Hall (RandallSummonScene/2/3::setLayout).
+        gme::claimableKeyCount sends the number of key types whose receipt is
+        possible today, and every key reply re-sends it (DungeonKeyInfoResp).
+        """
     }
 
     field badge_data type="str" {
         key "dUujjBBK"
-        doc "TODO"
+        doc "setHttpGet @0x13CDEAC; read by RandallTownScene::update +0x24.  // UNVERIFIED what it carries; sent empty, as it always has been."
     }
 }
 
+json BadgeKeyCount {
+    doc "Just BadgeInfo's key-ready count, under the same key (h23iRjGN).  readParam has no reset, so this updates the key badge and leaves the other five fields as they were."
+
+    field dungeon_key_num type="i32::str" {
+        key "dD40xrsh"
+        doc "Key types claimable today; see BadgeInfo.dungeon_key_num."
+    }
+}

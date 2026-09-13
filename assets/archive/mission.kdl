@@ -462,6 +462,61 @@ json MissionStage {
     }
 }
 
+json MissionMimicChest {
+    doc """
+    Server-authored chest encounter, separate from the ordered mission waves.
+    MissionDropInfo::parseTreasureBoxDropInfo @0x1266644 links the chest to a
+    zero-based monster order. BattleTreasure::create @0x10E7AAC reads the
+    referenced group; MonsterParty::entryMimic @0x10C218C enters its first monster.
+    No capture roll emits one group-id token. A successful unit_drop_chance roll
+    emits group:0:0:unitId:level:type (six tokens); never emit lengths 2-5.
+    Capture must reference the side enemy's own species. Keep treasure_chest_chance
+    zero and treasure_drops empty to prevent nested chests.
+    Currency combat drops still use the monster's usual MST fields.
+    """
+    field stage type="u32::int" {
+        key "stage"
+        doc "One-based host wave, matching MissionDropInfo battle order @0x10C1FB0."
+    }
+    field monster_order type="u32::int" {
+        key "monster_order"
+        doc "Zero-based host enemy receiving the chest @0x10C20C4."
+    }
+    field chance type="u32::int" {
+        key "chance"
+        doc "Server policy: 0-100 percent chance to emit a Mimic chest. 100 guarantees it. Replaces the host enemy's ordinary treasure roll."
+    }
+    field monster type=BattleMonster {
+        key "monster"
+        doc "Single enemy in a generated side group. entryMimic @0x10C218C dereferences member zero; this is not an additional BattleGroupMst wave."
+    }
+}
+
+json RandomMimicChests {
+    doc """
+    Server-authored policy for replacing a SUCCESSFUL ordinary chest roll.
+    chance is conditional on a chest existing, not a per-enemy spawn rate.
+    The 10 percent rollout is Evan's choice (2026-09-09), not recovered MST data.
+    The resulting payload follows BattleTreasure::create @0x10E7AAC and
+    MonsterParty::entryMimic @0x10C218C; the chest/warning path is APPX-confirmed.
+    """
+    field chance type="u32::int" {
+        key "chance"
+        doc "0 disables substitution; 100 replaces every eligible chest. Inclusive percent roll on the server."
+    }
+    field monsters type="[BattleMonster]" {
+        key "monsters"
+        doc """
+        Equal-weight Mimic candidates; one generated side group per candidate.
+        Optional capture/no-nested-chest contract, as for MissionMimicChest.monster.
+        In shared mimic.json this is the species catalog: prefer species already
+        placed in the mission, using that placement's battle stats; otherwise
+        use the first catalog member. Per-mission overrides use their exact list.
+        Battle stats and species selection are authored policy, not wire semantics.
+        """
+    }
+}
+
 json MissionRecord {
     doc """
     Server-owned curated mission archive data.
@@ -499,6 +554,18 @@ json MissionRecord {
     field energy_cost type="u32::int" {
         key "energy_cost"
         doc "Energy consumed when starting this mission."
+    }
+
+    field random_mimics type=RandomMimicChests {
+        key "random_mimics"
+        optional #true
+        doc "Optional mission override of archive/mimic.json. Omit to inherit the shared policy; chance 0 explicitly disables it. Fixed mimic_chests hosts take precedence."
+    }
+
+    field mimic_chests type="[MissionMimicChest]" {
+        key "mimic_chests"
+        optional #true
+        doc "Optional chest encounters. Side group ids follow all wave group ids in list order. Omit to preserve existing mission behavior."
     }
 
     field stages type="[MissionStage]" {

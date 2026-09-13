@@ -70,6 +70,11 @@ json ItemEditReq {
         key "71U5wzhI"
         doc "The chosen loadout, one node per occupied slot.  An empty/absent group means the player cleared every slot."
     }
+
+    field bonusItems type="[UserEquipBoostItemInfo]" {
+        key "nAligJSQ"
+        doc "The BONUS-item slots of the same screen, same shape and same full-replace rule.  Used to be skipped by the lenient read, so the player's bonus picks were dropped and came back empty; they are persisted now and reported as UserInfoResp.equipBoostItemInfo."
+    }
 }
 
 json ItemSellReq {

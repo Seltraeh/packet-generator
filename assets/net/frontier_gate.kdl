@@ -466,3 +466,189 @@ json FrontierGateUserUnitInfo {
     }
 
 }
+
+// ---------------------------------------------------------------------------
+// The run's battle state and its end — decoded 2026-09-11.
+//
+// A Frontier Gate run is a string of battles.  After each one the client sends
+// MissionEnd with the FG groups below (MissionEndRequest::createBody @0x13A8B8C
+// -> createBodyFrontierGateBattle @0x13A8ED4), and the only way its running
+// floor count and score survive into the next battle is the server handing
+// them back as eIQ79KO2: FrontierBattleInfoResponse::readParam @0x142E25C is
+// the ONLY caller of FrontierBattleInfo::setProgress / setNowScore /
+// setSupportID.  The run ends in the result scene (FrontierGateResultScene,
+// scene 0x66A), reached two ways: Retire sends FrontierGateEnd and the
+// interval scene changes scene on the reply; a lost battle sends MissionEnd
+// and FrontierGateBattleEndScene::updateEvent @0x15DB740 moves on ONLY when
+// FrontierGateComInfo::getResult() is set — which nothing but
+// FrontierEndInfoResponse (mu0kXAlV) does.  Without it the scene sits in
+// state 2 for good.
+// ---------------------------------------------------------------------------
+
+json FrontierBattleInfo {
+    doc """
+    The run's battle state, key eIQ79KO2 — the same group in both directions.
+
+    REQUEST (MissionEnd, createBodyFrontierGateBattle @0x13A8ED4): the client's
+    view after the battle.  RESPONSE (FrontierBattleInfoResponse::readParam
+    @0x142E25C, a singleton): the state the next battle starts from; the
+    server sends it in MissionStart (so a new run starts at 0) and echoes it in
+    MissionEnd.  Every value is StrToInt'd, so scores are int32 on this path
+    even though FrontierGateComInfo stores them as long long.
+    """
+
+    field high_score type="i64::str" {
+        key "TPR79fyI"
+        doc "REQUEST: FrontierGateComInfo::getHighScore, the gate's best before this battle.  RESPONSE: FrontierBattleInfo::setScore and FrontierGateComInfo::setHighScore — the best the result scene compares the run against (its new-record animation)."
+    }
+
+    field note type="str" {
+        key "7cev0fzQ"
+        doc "FrontierBattleInfo::setNote — the run's bonus tallies, ...,fronterBonus:a@b@c@d@e@f@g@h (win, no-death, spark, overkill, multi-kill, weakness hits, and the two SG damage scores), which createBodyFrontierGateBattle reads back, adds the battle's counts to and resends.  Empty starts a run at zero."
+    }
+
+    field progress type="i32::str" {
+        key "pG2n1A28"
+        doc "Floors cleared in the run.  REQUEST: the previous progress + BattleState::getBattleOrder - (1 if the battle was lost), i.e. waves won so far.  RESPONSE: FrontierBattleInfo::setProgress and FrontierGateComInfo::setPlayProgress.  A floor is a wave: a gate's floor rewards top out at the sum of its missions' battleCount (gate 1: 6 x 5 = 30)."
+    }
+
+    field support_id type="str" {
+        key "NungTq5g"
+        doc "FrontierBattleInfo::setSupportID (StrToInt then IntToString) — the support BattleParty::setPartyPassiveList @0x10B65D4 applies (it null-checks the FrontierSupportMst lookup).  Sent only when the run has a support: 0 would become the id 0."
+        optional #true
+    }
+
+    field od_info type="str" {
+        key "H7f9NAXu"
+        doc "FrontierBattleInfo::setOdInfo — REQUEST: FrontierGateComInfo::getOdInfo.  Read back by MissionScene::updateFrontierGateUnitStatus @0x1812770; the server returns what the client last sent, verbatim."
+    }
+
+    field now_score type="i64::str" {
+        key "PYbfxpTp"
+        doc "The run's score.  REQUEST: ChallengeBattleResultList::getTotalScore, which for Frontier Gate is this battle's score plus FrontierBattleInfo::getNowScore.  RESPONSE: FrontierBattleInfo::setNowScore and FrontierGateComInfo::setNowScore — the total the result scene shows."
+    }
+}
+
+json FrontierGateMissionRef {
+    doc "Request group dPM7oJDl on a Frontier Gate MissionEnd (createBody @0x13A8B98): the gate the battle belongs to.  Same key as the FrontierGateInfo list, a different class."
+
+    field frogate_id type="i32::str" {
+        key "hBNPQAU0"
+        doc "FrontierGateComInfo::getFrogateGateID."
+    }
+}
+
+json FrontierGateMissionRun {
+    doc "Request group Mg8K8Y1a on a Frontier Gate MissionStart (MissionStartRequest::createBody @0x13AB230): the run the battle belongs to."
+
+    field frogate_id type="i32::str" {
+        key "hBNPQAU0"
+        doc "FrontierGateNum::getFrogateID."
+    }
+
+    field support_id type="str" {
+        key "NungTq5g"
+        doc "FrontierGateNum::getSelSupportID."
+    }
+
+    field frogate_num type="i32::str" {
+        key "2FQdEbG3"
+        doc "FrontierGateNum::getFrogateNum — the run handle."
+    }
+}
+
+json FrontierEndInfo {
+    doc """
+    The run's result, key mu0kXAlV (FrontierEndInfoResponse::readParam
+    @0x142E564, a singleton into FrontierGateEndInfo).  Any param also calls
+    FrontierGateComInfo::setResult(true), which is what sends a lost battle's
+    FrontierGateBattleEndScene on to the result scene.
+
+    What FrontierGateResultScene shows of it (setParam @0x15EBE40): the grade
+    (setRankSam), the merit points (setPoint) and, only above x1, the bonus
+    rate (setContributionLayout @0x15EE9FC).  The score on screen is the
+    client's own run total (FrontierGateComInfo::getNowScore), not score below;
+    zel and karma have no reader.
+    """
+
+    field grade_id type="str" {
+        key "Cdv07KEU"
+        doc "setResGradeID.  setRankSam @0x15F2CAC switches on a one-character 1..7 through the table at 0x2348AD0: 1 D, 2 C, 3 B, 4 A, 5 S, 6 SS, 7 SSS (HunterResult<rank>.sam); anything else draws D.  Same values and art as Frontier Hunter's F_CHLNG_MISSION_GRADE_MST."
+    }
+
+    field zel type="i32::str" {
+        key "Najhr8m6"
+        doc "setResZel — no reader (getResZel has no caller)."
+    }
+
+    field karma type="i32::str" {
+        key "HTVh8a65"
+        doc "setResKarma — no reader."
+    }
+
+    field score type="i32::str" {
+        key "TPR79fyI"
+        doc "setResScore — copied to the scene (+0x3C8) but not drawn."
+    }
+
+    field achieve_point type="i32::str" {
+        key "idfCDG70"
+        doc "setResAchieveP — the Merit Points (ACHIEVE_POINT) line under the CHALLENGE_PARTICIPATION_BONUS Reward header."
+    }
+
+    field bonus_rate type="f32::str" {
+        key "5Z1LNoyH"
+        doc "setResBonusRate (StrToFloat).  Drawn as a multiplier only when above 1.0, so 1 is the neutral value."
+    }
+
+    field prestige_points type="i32::str" {
+        key "sc83dkh3"
+        doc "setPrestigePoints — the guild prestige line."
+    }
+}
+
+json FrontierResRewardInfo {
+    doc """
+    One reward the run earned, key QXFCkE67 (FrontierResRewardInfoResponse::
+    readParam @0x14324B8).  A FULL REPLACE (removeAllObjects on row 0), and
+    FrontierGateUtils::frontierEndClean @0x11E87E0 empties the list on the way
+    back to the gate list, so an empty send leaves nothing stale.
+    FrontierGateResultScene::setRewardList keeps the rows with a non-zero
+    tar_type and shows them one per tap under CHALLENGE_GET_BONUS (Rewards).
+    """
+
+    field tar_type type="i32::str" {
+        key "30Kw4WBa"
+        doc "setTarType — the present type; setReward @0x15EFE84 names and draws it (items, units, zel, karma, gems, keys, selector and summon tickets, event tokens, medals)."
+    }
+
+    field tar_id type="str" {
+        key "TdDHf59J"
+        doc "setTarID."
+    }
+
+    field tar_cnt type="i32::str" {
+        key "wJsB35iH"
+        doc "setTarCnt."
+    }
+
+    field tar_param type="str" {
+        key "37moriMq"
+        doc "setTarParam."
+    }
+
+    field reward_type type="i32::str" {
+        key "IkmC8gG2"
+        doc "setRewardType — rewardLabel @0x15F41A8: 1 CHALLENGE_FLOOR_CLEAR (Stage<floor> Cleared!!), 2 CHALLENGE_EVALUATION_BONUS (Esteem Reward).  The reward MST's cond_type."
+    }
+
+    field reward_param type="str" {
+        key "empaR60j"
+        doc "setRewardParam — rewardLabel sets it as the <param=floor> of the label, so the floor for reward_type 1; the score threshold for 2, whose label has no param."
+    }
+
+    field present_flg type="i32::str" {
+        key "6n9PgKbv"
+        doc "setPresentFlg — no reader.  Sent as 1 for a reward queued to the present box, 0 for currency credited at once."
+    }
+}

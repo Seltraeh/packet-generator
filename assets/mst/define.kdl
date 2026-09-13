@@ -29,17 +29,17 @@ json DefineMst {
 
     field max_unit_count type="i32::str" {
         key "ouXxIY63"
-        doc "TODO"
+        doc "Hard cap on unit-box capacity (4000).  ShopUnitBoxExtScene::confirmAnswerYes reads it via DefineMst::getMaxUnitCnt @0x1AD98E4 next to UserTeamInfo::getSumUnitCnt to bound the Expand slider; ShopUse type 2 enforces it server-side."
     }
 
     field max_warehouse_count type="i32::str" {
         key "5pjoGBC4"
-        doc "TODO"
+        doc "Hard cap on item-box capacity (3200).  ShopItemBoxExtScene::confirmAnswerYes reads it via DefineMst::getMaxWarehouseCnt @0x1AD0488 next to UserTeamInfo::getMaxWarehouseCnt; ShopUse type 3 enforces it server-side."
     }
 
     field default_unit_count type="i32::str" {
         key "k0xrd38b"
-        doc "TODO"
+        doc "50 in our data.  The server's starting unit box is its own kBaseUnitBoxSlots (100), sent as team_info add_unit_count."
     }
 
     // // number of free unit slots when creating an account
@@ -103,27 +103,26 @@ json DefineMst {
 
     field action_point_heal_count type="i32::str" {
         key "C8KkHGa7"
-        doc "TODO"
+        doc "Gem price of a full Energy refill (1).  Every energy prompt reads it via getActionPointHealCnt and sends it as the ShopUse type 1 / 10 cost (ShopHelActionScene::touchBegan, MissionSelectShortageStaminaScene::touchBegan, MissionResultRepeatCheckScene::recoverStamina)."
     }
  // energy
     field fight_point_heal_count type="i32::str" {
         key "sy9G24Su"
-        doc "TODO"
+        doc "Gem price of a full Arena Orb restore (1).  ShopHelFightScene::touchBegan reads it via getFightPointHealCnt for ShopUse type 4."
     }
  // arena points
     field unit_box_ext_count type="i32::str" {
         key "I73XkAQi"
-        doc "TODO"
+        doc "Gem price of ONE 5-slot unit-box expansion step (1).  ShopUnitBoxExtScene::confirmAnswerYes reads it via getUnitBoxExtCnt @0x1AD9998 to price the purchase; the 5-slot step itself is the 5.0f its ctor loads @0x1AD6ACC.  Captured ShopUse type 2 prices (1/19/20 gems for 5/95/100 slots) agree."
     }
- // TODO: eh? number of gems?
+
     field item_box_ext_count type="i32::str" {
         key "CA01vo2Q"
-        doc "TODO"
+        doc "Gem price of ONE 5-slot item-box expansion step (1).  ShopItemBoxExtScene::confirmAnswerYes reads it via getItemBoxExtCnt @0x1AD053C; the 5-slot step is the 5.0f its ctor loads @0x1ACD870."
     }
-  // TODO: eh?
     field continue_dia_count type="i32::str" {
         key "QW3HiNv8"
-        doc "TODO"
+        doc "setContinuDiaCnt @0x131A884-adjacent (the DefineMst readParam pairs this key with it @0x13D54C0).  THE PRICE OF A REVIVAL -- 1 gem in this data.  MissionGameOverScene::initContinueConfirm @0x17F8720 reads it back through DefineMst::getContinuDiaCnt to fill the confirm window's \"use_dia_num\" against \"hava_dia_num\", so it is the number the player is shown before tapping CONTINUE; the server charges the same value in MissionContinue."
     }
 
     // // TODO: number of continues?
@@ -177,17 +176,39 @@ json DefineMst {
 
     field unit_mix_great_exp_rate type="f32::str" {
         key "2inP0tCg"
-        doc "TODO"
+        doc """
+        Exp multiplier applied when a fusion rolls Great Success.  Our data: 1.5.
+
+        // IDENTIFIED 2026-09-07 — was `TODO`.  Pairs with
+        // UserOpeResult.success_type (6hMI5xeF), whose tiers are CONFIRMED from
+        // UnitMixPlayScene::ConvSuccessSet @0x1C200A4 (0 normal / 1 great /
+        // 2 super).  Consumed by the UnitMix handler, which multiplies the
+        // computed exp by this when the roll lands on that tier.
+        //
+        // The matching PROBABILITY is not in this table or any other — only the
+        // two multipliers exist — so the roll itself is server-side.
+        """
     }
 
     field unit_mix_super_exp_rate type="f32::str" {
         key "zn65EXYF"
-        doc "TODO"
+        doc """
+        Exp multiplier applied when a fusion rolls Super Success.  Our data: 2.0.
+
+        // IDENTIFIED 2026-09-07 — was `TODO`.  Pairs with
+        // UserOpeResult.success_type (6hMI5xeF), whose tiers are CONFIRMED from
+        // UnitMixPlayScene::ConvSuccessSet @0x1C200A4 (0 normal / 1 great /
+        // 2 super).  Consumed by the UnitMix handler, which multiplies the
+        // computed exp by this when the roll lands on that tier.
+        //
+        // The matching PROBABILITY is not in this table or any other — only the
+        // two multipliers exist — so the roll itself is server-side.
+        """
     }
 
     field recover_time_frohun type="i32::str" {
         key "3xAsgHL8"
-        doc "TODO"
+        doc "setRecoverTimeFrohun @0x131A7D8 (the DefineMst readParam pairs this key with it @0x13D58A8).  Seconds to regenerate ONE Hunter Orb -- 10800 here, three hours.  ChallengeHeaderInfo::decFightRestTimer @0x1258270 is the consumer: it ticks AubeRestTimer down a second at a time and, every time the remainder divides by this, grants an orb and reloads the timer with this value (stopping at max_frohun_p).  ChallengeHeaderInfo::getFightRecoveryTime @0x1258210 also takes the rest timer modulo this to render the minutes-remaining label."
     }
 
     field recover_time_raid type="i32::str" {
@@ -207,7 +228,7 @@ json DefineMst {
 
     field friend_ext_count type="i32::str" {
         key "3Ep5akHJ"
-        doc "TODO"
+        doc "Gem price of ONE 5-slot friend-capacity step (1).  ShopFriendExtScene::touchBegan reads it via getFriendExtCnt and sends ShopUse type 7 with ext_cnt 5.  How many steps a level allows is UserLevelMst add_friend_count."
     }
 
     field medal_max_num type="i32::str" {
@@ -334,7 +355,7 @@ json DefineMst {
     // this is NOT just a string
     field action_point_recover_fixed type="i32::int" {
         key "hAiXsSPF"
-        doc "TODO"
+        doc "Only the header's gem energy refill reads it: GameScene::touchBegan @0x1616378 puts it in the confirm text as <param=energy_fixed>.  Absent from our data, so the client keeps its ctor 0; the server's refill (ShopUse type 1) fills energy to the level max, and the ENERGY_RECOVER_GEM_RECOVER_ENERGY text we add does not quote it."
         optional #true
         // TODO(anri): look at this
         // "default": DefaultType.Omit
@@ -342,7 +363,7 @@ json DefineMst {
 
     field action_point_threshold type="i32::int" {
         key "eRQvzLeF"
-        doc "TODO"
+        doc "Tapping the header's Energy gauge (GameScene::touchBegan @0x16162E4) shows ENERGY_RECOVER_GEM_MAX_THRESHOLD instead of the refill prompt when current energy >= this.  Absent from our data and 0 in the ctor, so every tap said \"max\".  The server sends the player's own max energy through DefineEnergyRecover instead (UserInfo, HomeInfo, MissionEnd)."
         // TODO(anri): look at this
         // "default": DefaultType.Omit
         optional #true
@@ -431,10 +452,9 @@ json DefineMst {
         // NOTE: not used in last version
     }
 
-    field unk15 type="i32::str" {
+    field max_frohun_p type="i32::str" {
         key "SziK4Xg1"
-        doc "TODO"
-        // NOTE: not used in last version
+        doc "setMaxfrohunP @0x131A884 (paired with this key in the DefineMst readParam @0x13D58D4).  The HUNTER ORB CAP -- 3 in this data.  ChallengeHeaderInfo::getAubeMax @0x125819C is a straight forward to it, and decFightRestTimer stops regenerating once the count reaches it.  Note this is the cap the CLIENT clamps to, which is why an earlier probe sending 4/5/6 read back as 3/3/3 and could not tell the three Aube fields apart."
     }
 
     field unk16 type="i32::str" {
@@ -459,5 +479,14 @@ json DefineMst {
         key "25aTznBk"
         doc "TODO"
         // NOTE: not used in last version
+    }
+}
+
+json DefineEnergyRecover {
+    doc "A one-field DefineMst block (response key VkoZ5t3K) carrying just the header energy-refill threshold.  DefineMstResponse::readParam @0x13D5068 never resets the singleton — each key has its own strcmp and setter — so this updates the threshold and leaves every other define as Initialize set it.  Sent by UserInfo, HomeInfo and MissionEnd so the threshold follows the player's level."
+
+    field action_point_threshold type="i32::str" {
+        key "eRQvzLeF"
+        doc "The player's own max energy (UserLevelMst energy for their level): the header then says ENERGY_RECOVER_GEM_MAX_THRESHOLD exactly when energy is at or above max, and offers the refill below it."
     }
 }

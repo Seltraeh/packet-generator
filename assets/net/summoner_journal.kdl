@@ -344,4 +344,9 @@ json SummonerJournalInfoResp {
         key "r3D28bqW"
         doc "Per-user milestone claim state."
     }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "The refreshed header, on every Journal reply (filled by gme::buildSummonerJournal).  Journal rewards land in the present box, and the Rewards menu badges the Presents tile from team_info's present_count (RewardsTopScene::checkForBadgeAlert) — without this a claim's badge waited for the next HomeInfo."
+    }
 }

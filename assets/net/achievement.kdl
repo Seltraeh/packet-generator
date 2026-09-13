@@ -43,31 +43,228 @@ json GetAchievementInfoReq {
     }
 }
 
+json UserAchievementSubjectInfo {
+    doc """
+    One achievement's progress for this player (wrapper YTRJLG65,
+    UserAchievementSubjectInfoResponse, readParam @0x13FBEEC).
+
+    ⚠ MERGE, not replace: readParam calls addObject with no removeAll of any
+    kind.  The list IS emptied, but by the REQUEST -- GetAchievementInfoRequest::
+    createBody clears UserAchievementSubjectInfoList before it sends, so a reply
+    that omits this key leaves the screen empty rather than stale.
+
+    Field map decoded 2026-09-13.  The class has no setters at all (every store
+    is inlined), so the wire keys were matched to members through readParam and
+    then the members were read back out of the two screens that draw them --
+    RandallAchievementListItem::createSprite @0x1A57364 (the row) and
+    RandallAchievementListDetailScene::setLayout @0x1A53D40 (the page).  Between
+    them every field below is now CONFIRMED by a reader, not inferred from a
+    hash.  setParameter @0x1A56B6C is the bridge: it copies info+0x30..0x4b to
+    scene+0x388.., so scene+0x388 == info+0x30 (`pG2n1A28`) and so on.
+
+    THIS BLOCK WAS SENT ALL-ZEROES AND EVERY ZERO MEANT SOMETHING.  The screen
+    reported "Time Expired" on all 873 achievements, "Achieved 26/0" on a
+    finished one, and offered a Start button instead of Receive -- three symptoms
+    of three fields left at 0 because they were documented as unknown state.
+    """
+
+    field subject_id type="str" {
+        key "M7SXoc31"
+        doc "AchievementSubjectMst.id.  A STRING here -- readParam assigns it without conversion, unlike the MST side."
+    }
+
+    field progress type="i64::str" {
+        key "pG2n1A28"
+        doc """
+        StrToLL -> +0x30.  How far along the condition this player is, and the
+        NUMERATOR of the detail page's "Achieved n/m": setLayout builds that
+        string as CommonUtils::LLToString(scene+0x388) + "/" +
+        CommonUtils::IntToString(scene+0x390) @0x1A54DF8.  64-bit because zel
+        and damage totals live here.
+        """
+    }
+
+    field need_count type="i32::str" {
+        key "9g4hdDJn"
+        doc """
+        StrToInt -> +0x38.  The TARGET -- the denominator of "Achieved n/m",
+        printed from scene+0x390 by the same builder at 0x1A54E48.
+
+        It is AchievementSubjectMst.cond_param restated per user, and the client
+        does NOT fall back to the MST: left at 0 a finished achievement reads
+        "Achieved 26/0", which is what the screen showed on 2026-09-13.
+        """
+    }
+
+    field state type="i32::str" {
+        key "0B5bQgZh"
+        doc """
+        StrToInt -> +0x3c.  The row's STATE, and the detail page's button.
+
+        The row (createSprite @0x1A57B2C) picks the badge from it:
+          1 -> achievement_situation_label2.png  "In Progress"
+          2 -> rPk8gtY5 decides: 2 gives label3 "Completed", anything else
+               label1 "Completed / Claim Rewards"
+          anything else -> no badge at all
+        The page (setLayout @0x1A55E1C) indexes a four-entry jump table with it
+        (`cmp #3; b.hi` guards it, so the domain is 0..3):
+          0    -> sub_m_btn_start_label      "Start"   (AchievementAccept, flag 1)
+          1,3  -> sub_m_btn_cancellation_... "Cancel"  (AchievementAccept, flag 2)
+          2    -> sub_m_btn_receive_label    "Receive" / "Received"
+
+        This fork sends 1 while the condition is unmet and 2 once it is met.
+        There is no 0: accepting is what starts the original's timer, and here
+        every counter is tracked unconditionally, so nothing has to be started.
+        """
+    }
+
+    field time_left type="i32::str" {
+        key "VDKB0Y5h"
+        doc """
+        StrToInt -> +0x40.  SECONDS REMAINING on an accepted challenge -- NOT an
+        accept status, which is what this was called before a reader was traced.
+
+        Both screens run the same test (list @0x1A57CC8, page @0x1A545B4):
+          >= 1  -> GameUtils::convertToTimeLimitString(seconds)
+          == 0  -> the literal text RANDALL_ACHIEVEMENT_TIME_LIMIT, "Time Expired"
+          <  0  -> the label is left as the empty string it was zeroed to
+        So 0 -- the value this block used to carry for every row -- is the one
+        value that says EXPIRED.  Achievements here have no timer, so -1 goes out
+        and the line simply is not drawn.
+        """
+    }
+
+    field reward_received type="i32::str" {
+        key "rPk8gtY5"
+        doc """
+        StrToInt -> +0x44.  Whether the reward is waiting, and it is a THREE-way
+        value, not a flag:
+          0 -> nothing to claim; the page draws no receive button at all
+          1 -> claimable: sub_m_btn_receive_label1 "Receive" (@0x1A56034)
+          2 -> claimed:   sub_m_btn_receive_label3 "Received", and the row's
+               badge becomes label3 "Completed" instead of "Claim Rewards"
+        AchievementRewardReceive (uq69mTtR) is what moves 1 -> 2.
+        """
+    }
+
+    field new_flag type="i32::str" {
+        key "dJNpLc81"
+        doc "StrToInt -> +0x48.  NewFlg in UserUnitInfoResponse and RaidUserBagInfoResponse -- the NEW badge on the row."
+    }
+
+    field cond_info type="str" {
+        key "AKtVeaZ2"
+        doc "Passed whole to UserAchievementSubjectInfo::parseAchievementCondInfo @0x1C6CFE0 -- a packed per-condition detail string.  Empty until that parser is decoded; the client accepts an empty one."
+    }
+
+    field chain_info type="str" {
+        key "oJIEa3hU"
+        doc "Passed whole to UserAchievementSubjectInfo::parseAchievementChainInfo @0x13E280 -- the chain (10 -> 100 -> 1000 ...) this subject belongs to.  Empty for the same reason."
+    }
+}
+
+json UserAchievementTradeInfo {
+    doc "What this player has bought from the Merit Point shop (wrapper 9j3ALx8I, UserAchievementTradeInfoResponse, readParam @0x13FCC68 -- a REPLACE list)."
+
+    field trade_id type="str" {
+        key "Mdgsh04u"
+        doc "AchievementTradeMst.id."
+    }
+
+    field count type="i32::str" {
+        key "H6k1LIxC"
+        doc "How many times this offer has been bought, against AchievementTradeMst.limit_count.  Named Cnt by PermitRecipeResponse and used the same way by the selector-ticket and guild-exchange blocks."
+    }
+
+    field state type="i32::str" {
+        key "VDKB0Y5h"
+        doc "The same per-row state hash the subject block carries.  // UNVERIFIED; sent 0."
+    }
+
+    field unk_ypV81b7k type="i32::str" {
+        key "ypV81b7k"
+        doc "// UNVERIFIED: no setter for this hash in any class.  Sent 0."
+    }
+}
+
+json UserAchievementSPSubjectInfo {
+    doc "The SP (special) achievements this player has, one id per row (wrapper LcFCx1Uz, readParam @0x13FBC64 -- a REPLACE list with a single key).  Nothing here fills it yet: the SP tab is category 4/5 and its conditions are Trials, which this server does not run."
+
+    field subject_id type="str" {
+        key "M7SXoc31"
+        doc "AchievementSubjectMst.id."
+    }
+}
+
 json GetAchievementInfoResp {
     doc """
-    Achievement screen payload — INTENTIONALLY EMPTY for now.
+    The achievement screen.
 
-    The four response classes are known but NOT decoded:
-        Bnc4LpM8  UserAchievementInfoResponse           3 x uint32
-        YTRJLG65  UserAchievementSubjectInfoResponse    9 fields (M7SXoc31 = subject id)
-        9j3ALx8I  UserAchievementTradeInfoResponse      4 fields
-        LcFCx1Uz  UserAchievementSPSubjectInfoResponse  1 field  (M7SXoc31)
+    This used to be deliberately empty -- the four response classes were known
+    but their fields were not, and handbook rule 3.4 says an unknown field sent
+    as 0 is worse than an absent one.  The readParam audit behind
+    UserAchievementSubjectInfo lifted that block for everything that matters;
+    the two keys still unnamed are sent as 0, which is the value the client's own
+    constructor gives them.
 
-    `readparam_analysis.json` carries their keys and C++ types but every setter
-    name is null, so what the fields MEAN is unknown.  Handbook §3.4: shipping a
-    response key with unknown fields stuffed with 0/\"\" is worse than omitting
-    it, because the client takes a present-but-wrong value at face value while a
-    missing key falls back to its own default.  So this response deliberately
-    carries nothing until a readParam audit names the setters.
+    Three of the four blocks below are MASTER data, and they do not travel
+    through getResponseObject at all: `H9ATfJ38`, `82CcMZhp` and `1tJiqKgZ` are
+    parseBodyTag tags, written into the client's own MST store by
+    DataMstManager::save* and read back by load*, which HomeScene::loadFiles
+    re-runs -- so a table sent here is live from the next trip through Home.
+    Nothing had ever sent them, which is why the screen had no achievement names
+    to print even for a player whose counters were full.
 
-    Registering the handler at all is still the right move: it converts a hard
-    \"Unsupported request: YPBU7MD8\" — which kills the screen before anything
-    else on it can load — into an empty achievements list.
+    The request is a QUERY (see GetAchievementInfoNode): mode 1 wants the
+    subject list, mode 2 the trade shop, filtered by category and cond_type.
+    Both lists are answered, filtered, because the client clears the one it asks
+    for and a missing key reads as "none".
     """
 
     field signalKey type="[SignalKey]::size(1)" {
         key "6FrKacq7"
         doc "Signal-key dispatch tag echoed back to the client."
+    }
+
+    field achievementInfo type="UserAchievementInfo" {
+        key "Bnc4LpM8"
+        doc "The Merit Point balance -- see gme/common/Achievements.hpp.  The screen prints it and nothing else writes the client's singleton."
+    }
+
+    field subjectMst type="[AchievementSubjectMst]" {
+        key "H9ATfJ38"
+        doc "The achievement catalogue (parseBodyTag -> the client's MST store)."
+        optional #true
+    }
+
+    field tradeMst type="[AchievementTradeMst]" {
+        key "82CcMZhp"
+        doc "The Merit Point shop catalogue (parseBodyTag)."
+        optional #true
+    }
+
+    field deliverRateMst type="[AchievementDeliverRateMst]" {
+        key "1tJiqKgZ"
+        doc "The dedicate-rate table (parseBodyTag)."
+        optional #true
+    }
+
+    field subjects type="[UserAchievementSubjectInfo]" {
+        key "YTRJLG65"
+        doc "This player's progress on the subjects the query asked for."
+        optional #true
+    }
+
+    field trades type="[UserAchievementTradeInfo]" {
+        key "9j3ALx8I"
+        doc "This player's purchase counts."
+        optional #true
+    }
+
+    field spSubjects type="[UserAchievementSPSubjectInfo]" {
+        key "LcFCx1Uz"
+        doc "SP achievements; empty until Trials run here."
+        optional #true
     }
 }
 
@@ -110,5 +307,240 @@ json DailyTaskUserInfoResp {
     field dailyTasks type="[DailyTaskMst]" {
         key "k23D7d43"
         doc "Today's Tasks table — same rows Initialize sends."
+    }
+}
+
+json AchievementRewardReceiveNode {
+    doc """
+    Which achievement is being claimed -- the 1Q2pGAXE group of
+    AchievementRewardReceiveRequest::createBody @0x139E3A8.  The three params go
+    out in this order: category and cond_type through addParam(const char*, int),
+    subject_id through the std::string overload.
+    """
+
+    field category type="i32::str" {
+        key "KT71m8Ae"
+        doc "AchievementSubjectMst.category -- the tab the row was on."
+    }
+
+    field cond_type type="i32::str" {
+        key "3rhygS9K"
+        doc "AchievementSubjectMst.cond_type -- the filter the row was under."
+    }
+
+    field subject_id type="str" {
+        key "M7SXoc31"
+        doc "The achievement being claimed.  This is the one field that identifies it; the other two are the screen's filters, echoed so the reply can re-answer the same list."
+    }
+}
+
+json AchievementRewardReceiveReq {
+    doc "AchievementRewardReceive (GroupId uq69mTtR, AES key cbE74zBZ) -- claim a finished achievement's Merit Points."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[AchievementRewardReceiveNode]" {
+        key "1Q2pGAXE"
+        doc "The achievement to pay out.  Same group key the screen's query uses."
+    }
+}
+
+json AchievementRewardReceiveResp {
+    doc """
+    The claim's result: the new balance and the list the screen is looking at.
+
+    The subject list goes back FILTERED by the node's own category/cond_type,
+    because that is the list the client has on screen -- and it clears its copy
+    before every request, so re-sending is how the claimed row turns into a
+    claimed row rather than staying lit.
+    """
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back to the client."
+    }
+
+    field achievementInfo type="UserAchievementInfo" {
+        key "Bnc4LpM8"
+        doc "The Merit Point balance after the payout.  Nothing else writes the client's singleton, so this is what makes the number move."
+    }
+
+    field subjects type="[UserAchievementSubjectInfo]" {
+        key "YTRJLG65"
+        doc "The same slice of the achievement list the request named, with the claimed row now marked."
+    }
+}
+
+json AchievementAcceptNode {
+    doc """
+    Which achievement is being started or given up -- the 1Q2pGAXE group of
+    AchievementAcceptRequest::createBody @0x139DCA0.
+    """
+
+    field category type="i32::str" {
+        key "KT71m8Ae"
+        doc "AchievementSubjectMst.category -- the tab the row was on."
+    }
+
+    field cond_type type="i32::str" {
+        key "3rhygS9K"
+        doc "AchievementSubjectMst.cond_type -- the filter the row was under."
+    }
+
+    field subject_id type="str" {
+        key "M7SXoc31"
+        doc "The achievement being accepted or dropped."
+    }
+
+    field accept_flag type="i32::str" {
+        key "mnZ5K4Ii"
+        doc """
+        1 = accept, 2 = give up.  One request serves both buttons:
+        NormalState::challengeStart @0x1A570CC writes 1 and
+        QuitRequestState::updateEvent @0x1A571D8 writes 2 into the same member
+        (+0x40) before sending.
+        """
+    }
+}
+
+json AchievementAcceptReq {
+    doc """
+    AchievementAccept (GroupId dx5qvm7L, AES key g9N1y7bc) -- the Start and Give
+    Up buttons on an achievement's detail page.
+
+    REGISTERING THIS IS A SAFETY FIX, not a feature.  The buttons became
+    reachable the moment the achievement screen started drawing rows, and an
+    unregistered GroupId closes the session -- which on that page looks like a
+    crash.
+
+    The original gated progress behind accepting: RandallAchievementCommon::
+    getMaxAchievementAcceptCnt (called at 0x1A57038) caps how many may be held
+    at once, and accepting starts the VDKB0Y5h countdown.  Here every counter is
+    tracked whether or not anything was accepted, so there is nothing to start
+    and nothing to lose by giving up; the handler answers with the refreshed
+    list and stores nothing.  That is also why `state` never goes out as 0 --
+    see UserAchievementSubjectInfo.state.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[AchievementAcceptNode]" {
+        key "1Q2pGAXE"
+        doc "The achievement, and which button was pressed."
+    }
+}
+
+json AchievementAcceptResp {
+    doc """
+    The refreshed list.
+
+    Answering is not optional and neither is the list: createBody calls
+    UserAchievementSubjectInfoList::removeDataObject(category, cond_type) on its
+    way out, so the client has already thrown away the page it is looking at.  A
+    bare acknowledgement would leave the screen blank.
+    """
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back to the client."
+    }
+
+    field achievementInfo type="UserAchievementInfo" {
+        key "Bnc4LpM8"
+        doc "The Merit Point balance, unchanged -- the page prints it and nothing else writes the client's singleton."
+    }
+
+    field subjects type="[UserAchievementSubjectInfo]" {
+        key "YTRJLG65"
+        doc "The same slice of the list the request named, rebuilt."
+    }
+}
+
+json AchievementTradeNode {
+    doc "One purchase -- the rX74GNsm group of AchievementTradeRequest::createBody @0x139E600: trade id as a string, count as an int."
+
+    field trade_id type="str" {
+        key "Mdgsh04u"
+        doc "AchievementTradeMst.id."
+    }
+
+    field count type="i32::str" {
+        key "H6k1LIxC"
+        doc "How many to buy.  Every unexpired offer has limit_count 1, so this is 1 in practice."
+    }
+}
+
+json AchievementTradeReq {
+    doc "AchievementTrade (GroupId m9LiF6P2, AES key 0IWC9LVq) -- buy from the Merit Point shop."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[AchievementTradeNode]" {
+        key "rX74GNsm"
+        doc "What is being bought."
+    }
+}
+
+json AchievementTradeResp {
+    doc """
+    The purchase's result.
+
+    Merit Points are not part of the currency block, so `Bnc4LpM8` has to come
+    back on its own; everything the reward touched comes back beside it, because
+    the shop is reachable from Randall without passing through a login.
+    """
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back to the client."
+    }
+
+    field achievementInfo type="UserAchievementInfo" {
+        key "Bnc4LpM8"
+        doc "The Merit Point balance after the spend."
+    }
+
+    field trades type="[UserAchievementTradeInfo]" {
+        key "9j3ALx8I"
+        doc "Purchase counts after the buy -- a REPLACE list, so the whole catalogue goes back."
+    }
+
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        doc "The header, for an offer that pays zel, karma or gems."
+        optional #true
+    }
+
+    field warehouse_info type="[UserWarehouseInfo]" {
+        key "9wjrh74P"
+        doc "The item warehouse, for an offer that pays an item or a sphere.  A full replace -- see the item emitters."
+        optional #true
+    }
+
+    field item_dictionary_info type="[UserItemDictionaryInfo]" {
+        key "bd5Rj6pN"
+        doc "The item dictionary, so a first-time item is not missing from the guide."
+        optional #true
+    }
+
+    field unit_info type="[UserUnitInfo]" {
+        key "qC2tJs4E"
+        doc "The unit a unit offer granted.  Insert-if-absent on the client, which is right for a brand-new unit."
+        optional #true
+    }
+
+    field unit_dictionary type="[UserUnitDictionary]" {
+        key "GV81ctzR"
+        doc "The COMPLETE unit dictionary, never just the new species -- see the reward emitters."
+        optional #true
     }
 }
