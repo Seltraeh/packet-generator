@@ -139,6 +139,13 @@ json UnitReinforceEntry {
     inlined setters, so a setter-call scan sees only three (setTeamLv @0x13EB77C,
     setGuildID @0x13EB9AC, setFriendPoint @0x13EBB40).
 
+    2026-09-15: that blind spot is closed, and it had cost us a real field.
+    `tools/readparam_map.py` resolves all 46 keys of this readParam -- following
+    the control flow instead of reading forward, resolving virtual calls through
+    the vtable, and naming inlined writes by their member offset.  It is what
+    proved Ge8Yo32T is setEquipItemID (the sphere) and not setMissionID.  Re-run
+    it before trusting any hand-written note in this file.
+
     The 20 fields below are ALL among those 48: a correct SUBSET, not a mismatch.
     The other 28 are friend and guild fields (bM7RLu5K, 98WfKiyA, J3stQ7jd,
     sD73jd20, zsiAn9P1, ...) that this server has no system for.
@@ -245,9 +252,21 @@ json UnitReinforceEntry {
         doc "Unit type/element id.  Quoted decimal integer on the wire."
     }
 
-    field mission_id type="str" {
+    field equipitem_id type="i32::str" {
         key "Ge8Yo32T"
-        doc "Mission id context echoed back by the client animation."
+        doc """
+        The unit's equipped SPHERE, slot 1 -- not a mission id.
+
+        CORRECTED 2026-09-15 along with ReinforcementInfo.equipitem_id, which
+        carries the same key into the same readParam (xZH6EIQ7 dispatches to
+        ReinforcementInfoResponse, so both structs land on
+        UserUnitInfoBase::setEquipItemID at vtable +0x1e8).
+
+        This one mattered because xZH6EIQ7 is a REPLACE: sending an empty value
+        here blanked the sphere on the record the result screen then draws.
+        Fill from `user_units.eqip_item_id` -- both UnitEvo and UnitMix already
+        select it.
+        """
     }
 }
 

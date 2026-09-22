@@ -90,9 +90,28 @@ json AreaMst {
     doc "World areas (wrapper hash 3SG2wX0R).  411 rows.  Three fields are optional because the shipped data uses JSON null -- see the file header."
     hash "3SG2wX0R"
 
-    field unk1 type="str" {
+    field parent_area_id type="str" {
         key "sHMai2ZG"
-        doc "// UNVERIFIED: JSON NULL on 284 of 411 rows, \"0\" on the rest.  Optional for that reason."
+        doc """
+        The area this one is NESTED UNDER — a category tile the player opens to
+        reach it.  Empty or "0" for a top-level area.
+
+        // IDENTIFIED 2026-09-20 — this was `unk1`, documented as "JSON NULL on
+        // 284 of 411 rows, \\"0\\" on the rest", i.e. read as noise.  It is not
+        // noise: the 127 rows that carry a value name six parents, and the
+        // grouping is exactly the game's own — 47 areas under 100002
+        // "Travellers" (Trial of the Gods among them), 21 and 15 under the two
+        // "Seasons Past" rows, 9 under "Battles of Brave Frontier", 4 under
+        // "Vortex Trials", 3 under "Scrolls of Urzyma".
+
+        ⚠ A PARENT MUST NEVER BE HIDDEN.  ServerCache curates the Vortex list by
+        dropping an area that is empty, untranslated, or a banner duplicate of
+        another — all judged on the area's OWN dungeons.  Area 100002 has one
+        dungeon whose banner matches 100004's, so it was dropped as a duplicate
+        and took the navigation path to all 47 of its children with it.  That is
+        why Trial of the Gods had a permitted area, a permitted dungeon and six
+        permitted missions and still showed no tile.
+        """
         optional #true
     }
 

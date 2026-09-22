@@ -50,10 +50,13 @@ import "../mst/scenario.kdl"
 import "../mst/achievement.kdl"
 import "../net/signal_key.kdl"
 import "../net/challenge_arena.kdl"
-import "../net/guild.kdl"
 import "../net/daily_login.kdl"
 import "../net/summoner_journal.kdl"
 import "../net/user.kdl"
+// AFTER user.kdl: the guild request envelopes embed LoginInfoReq, and the
+// generator emits types in import order, so importing guild first left every
+// GuildXxxReq referencing an undefined struct.
+import "../net/guild.kdl"
 import "../net/items.kdl"
 import "../net/scenario.kdl"
 import "../net/present.kdl"
@@ -1509,9 +1512,9 @@ json UserInfoResp {
         key "Y73mHKS8"
         doc "TODO"
     }
-    field soundInfo type="[UserSoundInfo]::size(1)" {
+    field soundInfo type="[UserSoundInfo]" {
         key "d98mjNDc"
-        doc "TODO"
+        doc "Every Music House track the player owns.  A LIST and a full replace (removeAllObjects at row 0), not the one-element wrapper this used to be -- the point of the block is to carry a collection.  Without it the jukebox forgets every purchase at relaunch."
     }
     field medalInfo type="[UserBraveMedalInfo]" {
         key "6C0kzwM5"
@@ -1810,6 +1813,36 @@ json FriendGetResp {
     }
 }
 
+json FriendApplyResp {
+    doc """
+    FriendApply (WUNi08YL) response -- the roster as it stands AFTER the friend
+    was accepted.
+
+    THE REPLY HAS TO CARRY IT.  FriendInfoList is a client singleton filled at
+    login and refreshed only when a reply sends tojMy68W; nothing re-fetches it
+    when a friend request is accepted, so returning an empty body left the new
+    friend on the server and missing from the Friend List until the next
+    FriendGet.  Same discipline as the present box and the unit dictionary:
+    every handler refreshes the cache it just changed.
+
+    xZH6EIQ7 is deliberately NOT sent.  This reply lands while the mission
+    result screens are still up and still reading ReinforcementInfoList, and
+    that list is a full replace -- sending the roster alone would drop the
+    strangers out from under the scene.  FriendGet rebuilds it on the way into
+    the next picker anyway.
+    """
+
+    field friend_info type="[FriendInfo]" {
+        key "tojMy68W"
+        doc "The COMPLETE roster.  FriendInfoResponse::readParam @0x13D93C0 calls FriendInfoList::removeAllObjects on row 0 field 0, so this is a full replace and a partial send would erase the rest."
+    }
+
+    field friend_point_info type="[FriendPointInfo]" {
+        key "6e4b7sQt"
+        doc "Honor rates, resent so the refreshed cards keep their amounts -- the singleton's ctor defaults both to the literal 0."
+    }
+}
+
 json ChallengeArenaResetInfoResp {
     doc "Challenge Arena cooling/reset timer snapshot"
 
@@ -2074,6 +2107,27 @@ json UnitMixResp {
         doc "Every item species ever stacked, sent with warehouse_info (merge with dedupe; see PresentReceiptResp)."
         optional #true
     }
+    field dbb_info type="[UserUnitDbbInfo]" {
+        key "sxorQ3Mb"
+        doc """
+        The DBB list, re-sent because THIS handler can change it.
+
+        Fusing an Elemental Golem opens a unit's DBB slot, and the client learns
+        a slot is open only by finding the unit in this list -- setDbbFusedIcon
+        @0x1EC4CF8 does `objectForKey(<user_unit_id>)` on it.  Writing
+        `dbb_unlocked` and not re-sending this left the fusion looking like it
+        had done nothing: handbook §6, "a successful SQL update is not a UI
+        refresh".  A REPLACE list, so it is always the complete set.
+        """
+        optional #true
+    }
+
+    field dbb_level_info type="[UserUnitDbbLevelInfo]" {
+        key "tR4katob"
+        doc "Bond levels, sent alongside dbb_info so the two never disagree."
+        optional #true
+    }
+
 }
 
 json UnitSellReq {
@@ -2562,6 +2616,12 @@ json ShopUseResp {
     field team_info type="[UserTeamInfo]::size(1)" {
         key "fEi17cnx"
         doc "Refreshed team info: gems after the spend, and the energy, orbs, box or friend capacity the purchase changed.  Sent on a refusal too, so the client falls back to the server's numbers."
+    }
+
+    field user_team type="HunterOrbRefresh" {
+        key "kN2i7qds"
+        doc "HUNTER ORBS AFTER THE PURCHASE.  ShopUse type 5 refills them, and they are NOT in team_info -- they live in the client's ChallengeHeaderInfo, whose only writer is this key.  Without it the player paid the Gem and the counter on screen stayed where it was, so the \"restore orbs\" prompt simply came back.  Sent only for the orb purchase. Uses the partial count/timer shape so buying orbs cannot overwrite HR or Frontier Gate score."
+        optional #true
     }
 }
 
@@ -3325,6 +3385,11 @@ json UpdateInfoLightResp {
         key "UT1SVg59"
         doc "Cleared-mission history — the progression driver the client evaluates unlocks against."
     }
+    field hunter_orbs type="HunterOrbRefresh" {
+        key "kN2i7qds"
+        doc "Read-only derived orb count/timer; partial singleton update preserves existing rank and score."
+    }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -3372,6 +3437,11 @@ json UpdateInfoResp {
         key "AhSmZF07"
         doc "Server time."
     }
+    field hunter_orbs type="HunterOrbRefresh" {
+        key "kN2i7qds"
+        doc "Read-only derived orb count/timer; partial singleton update preserves existing rank and score."
+    }
+
 }
 
 // NoticeUpdate (68pTQAJv / WHfcd53M) — refreshes the notice list.  Sent by
@@ -3439,6 +3509,28 @@ json UserLoginCampaignInfoReq {
     field loginInfo type="[LoginInfoReq]::size(1)" {
         key "IKqx1Cn9"
         doc "Login info identifying the current user."
+    }
+}
+
+json UserLoginCampaignInfoResp {
+    doc """
+    UserLoginCampaignInfo (5fc8bf2c) response -- which calendar cell the player
+    is on.
+
+    Home asks again twelve hours after launch
+    (LoginCampaignRewardObjectManager::is12HoursSinceLastRequest, interval
+    43200 s) and carries on without waiting, so this is the request that rolls
+    the calendar over for someone who leaves the game running across midnight.
+
+    It used to reply {} on the grounds that no campaign runs offline.  That was
+    the visible half of why the advent calendar paid nothing: with neither this
+    nor InitializeResp's 3da6bd0a populated, UserLoginCampaignInfo::shared()
+    kept its constructed defaults and the grid believed the player was on day 0.
+    """
+
+    field campaign_info type="[UserLoginCampaignInfo]::size(1)" {
+        key "3da6bd0a"
+        doc "The cell to light and whether to play the claim flourish.  A singleton -- readParam @0x1C70D74 writes into UserLoginCampaignInfo::shared() with no row-0 clear, so one full row goes out or none at all."
     }
 }
 
@@ -3939,5 +4031,138 @@ json UpdatePermitPlaceInfoResp {
     field permitPlaceML type="[PermitPlaceML]" {
         key "Y73mHKS8"
         doc "The ML half, cleared by removeMLObjects.  AreaMst type 10.  Same contract as permitPlaceSP."
+    }
+}
+
+json HunterOrbRefresh {
+    doc "Partial ChallengeHeaderInfo update. APK ChallengeUserTeamResponse::readParam @0x13D3F94 only sets named fields, with no reset. Omitting HR and score preserves both ChallengeHeaderInfo and FrontierGateComInfo score."
+    field aube type="i32::str" {
+        key "38sHatGk"
+        doc "Current Hunter Orb count, setter @0x13D4008; derived from persisted count/deadline."
+    }
+    field aube_rest_timer type="i32::str" {
+        key "RHKA30s5"
+        doc "Seconds to next orb, setter @0x13D4068; zero at cap. Does not alter rank or Frontier Gate score."
+    }
+}
+
+// ---------------------------------------------------------------------------
+// FixGiftInfo (gLRIn74v) -- the gift screen's one write.
+//
+// Modelled 2026-09-15 from FixGiftInfoRequest::createBody @0x13A37E4.  It does
+// THREE things in one request, which is why the handler cannot be a stub:
+//   * updates the player's wanted gift (from UserTeamInfo::getWantGift)
+//   * CLAIMS the received gifts it names by gift_identify_id
+//   * sends gifts to friends
+// ---------------------------------------------------------------------------
+
+json FixGiftInfoNode {
+    doc "One FixGiftInfo write: the wanted-gift preference, the gifts being claimed, and the gifts being sent."
+
+    field want_gift type="str" {
+        key "s2WnRw9N"
+        doc "The gift the player has asked friends for -- UserTeamInfo::getWantGift @0x13A3844, stored on user_info.want_gift.  The wiki calls this the request list; this build carries one id."
+    }
+
+    field receive_ids type="str" {
+        key "23Xi0jom"
+        doc "COMMA-SEPARATED gift_identify_ids being claimed, joined from UserState::getUserGiftInfoListRecieve.  Each names a row of the player's own inbox; granting must be idempotent because the client resends the whole selection."
+    }
+
+    field send_pairs type="str" {
+        key "qD74LPXb"
+        doc "Gifts being SENT, as `user_id_to:gift_id` pairs joined with commas (getUserIDTo and getGiftID, separators at 0x13A3A18/0x13A3A20).  Unused here until real friends exist."
+    }
+}
+
+json FixGiftInfoReq {
+    doc "Request for FixGiftInfo (gLRIn74v) -- fired by the gift screen's Receive button and after MissionEnd."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[FixGiftInfoNode]" {
+        key "Gg5c3eM6"
+        doc "The write itself."
+    }
+}
+
+json GetGiftInfoReq {
+    doc "Request for GetGiftInfo (ifYoPJ46) -- fired by GiftRecieveConnectScene::initConnect simply to open the gift screen."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+}
+
+json GetGiftInfoResp {
+    doc """
+    The gift inbox.
+
+    MUST NOT BE EMPTY.  GiftRecieveListScene2 renders straight from
+    UserGiftInfoList and setGiftList @0x166D330 null-derefs on an empty list --
+    a deterministic client crash reproduced in two identical minidumps
+    (+0x84F533, read 0x14).  An empty inbox is not a safe state here, which is
+    why the simulated friend sends a gift a day.
+    """
+
+    field giftInfo type="[UserGiftInfo]" {
+        key "30uygM9m"
+        doc "The player's unclaimed gifts, same shape as UserInfoResp.giftInfo."
+    }
+}
+
+// ---------------------------------------------------------------------------
+// FriendDelete (SfMN9w4p) -- unfriend.  Shape from FriendDeleteRequest::
+// createBody @0x13A3EC0.  FriendApply (WUNi08YL) and FriendAgree (NYKBH4V6)
+// send the IDENTICAL body, so this struct will serve all three.
+// ---------------------------------------------------------------------------
+
+json FriendDeleteNode {
+    doc "One friend named by the request."
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "The friend's user id -- the same key the roster is emitted under in xZH6EIQ7 and tojMy68W."
+    }
+}
+
+json FriendDeleteReq {
+    doc "Request for FriendDelete (SfMN9w4p)."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[FriendDeleteNode]" {
+        key "BPz1e5tU"
+        doc "The friend(s) to drop."
+    }
+}
+
+json FriendApplyNode {
+    doc "One Summoner named by a friend request."
+
+    field user_id type="str" {
+        key "h7eY3sAK"
+        doc "The Summoner to add -- for the developer easter egg, the encounter id FriendGet offered in the picker."
+    }
+}
+
+json FriendApplyReq {
+    doc "Request for FriendApply (WUNi08YL).  Body shape identical to FriendDelete's, from FriendApplyRequest::createBody @0x13A3DA0."
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[FriendApplyNode]" {
+        key "BPz1e5tU"
+        doc "The Summoner(s) being added."
     }
 }

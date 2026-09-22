@@ -202,33 +202,82 @@ json AchievementTradeMst {
 json AchievementDeliverRateMst {
     hash "1tJiqKgZ"
     doc """
-    F_ACHIEVEMENT_DELIVER_RATE_MST -- how much Merit Point a delivered currency
-    or unit is worth (53 rows).  response_class =
-    AchievementDeliverRateMstResponse, readParam @0x13CAF08.  Delivered through
-    parseBodyTag.
+    F_ACHIEVEMENT_DELIVER_RATE_MST -- how much Merit Point a delivered unit or
+    item is worth (53 rows).  response_class = AchievementDeliverRateMstResponse,
+    readParam @0x13CAF08, delivered through parseBodyTag.
 
-    Needed by the Deliver flow (AchievementDeliverRequest, vsaXI4M0), which is
-    not built yet; ported now because it is the table the screen prices its
-    dedicate panel from.
+    FULLY DECODED 2026-09-15.  readParam gives the struct exactly:
+      row+0x0  oC6Dc1xp  StrToInt    rarity
+      row+0x4  6yHMXYv1  StrToInt    getting_type   (same hash as UnitMst's)
+      row+0x8  ug9xV4Fz  StrToFloat  multiplier
+      row+0xC  232id0qQ  StrToInt    flat base
+
+    THE PAYOUT, from GameUtils::getSellAchievePoint @0x1176B70 (unit) and
+    @0x1176EAC (item):
+
+        points = getSellAchievePointRate() * ( base + trunc( mult * unitLv ) )
+
+    where unitLv is UserUnitInfoBase::getUnitLv (vtable +0xb0, resolved from
+    _ZTV12UserUnitInfo's relocations), the row is
+    AchievementDeliverRateMstList::find(rarity, getting_type) for a unit and
+    find(ItemMst::getRare(), 5) for an item -- kind 5 is hardcoded on the item
+    path -- and a missing row yields 0 rather than a default rate.
+
+    getSellAchievePointRate @0x1176D2C reads GeneralEventMst type 19, splits its
+    params on "," and takes element 0; with no such row it returns 1.  This data
+    has no type-19 row, so the rate is 1 and the formula reduces to
+    base + trunc(mult * level).
+
+    ⚠ THE EARLIER "NOT CREDIBLE" READING WAS A PARSE ERROR, NOT BAD DATA.
+    `232id0qQ` values like "1:1:100:20:0" go through StrToInt, which stops at the
+    first non-digit and yields 1.  And the rows with huge bases (839902, 10313)
+    are rarity 1 / getting_type 6 and 7, which NO unit in this data matches.
+    Crossed against all 2291 units the reachable rows are a clean progression --
+    getting_type 1 pays (0.1, 10..200) by rarity 3..8 and getting_type 2 pays
+    (4..12, 496..4488) -- and 304 units of getting_type 3 have no row at all, so
+    the client itself refuses to price them.
+
+    The Deliver flow this prices is AchievementDeliverRequest (vsaXI4M0, key
+    2Lj5hIEG, /actionSymbol/H2guKY1A.php).  // WAS: "still unregistered" — it
+    has been registered since, in GmeControllerHandlers.cpp.  Its request is
+    two groups: `1Q2pGAXE` {KT71m8Ae category, 3rhygS9K cond_type, M7SXoc31
+    subject} and `dE79UwNE` {Rs7bCE3t amount, idfCDG70 the merit the CLIENT
+    thinks it earned, edy7fq3L a comma list of user_unit_ids, n6E8iMf3}.
+    `3rhygS9K` is the flow selector, confirmed by
+    RandallAchievementDedicateKarmaScene::setBaseData's getDataObject(3, 5):
+    category 3 is the Trade category and cond_type 4 = Zel, 5 = Karma,
+    6 = Sphere, 8 = Unit.  Currency is priced from DefineMst instead of this
+    table -- zel_per_achieve_point 10000, karma_per_achieve_point 5000 -- and
+    each flow has its own daily ceiling (max_achieve_point_{zel,karma,item}
+    _per_day = 20000 / 20000 / 99999, plus a unit ceiling DefineMst carries that
+    this schema does not model yet).
+    // UNVERIFIED: what n6E8iMf3 carries; by symmetry with edy7fq3L it is the
+    // sphere/item id list, but no store to that offset was read.
     """
 
-    field kind type="i32::str" {
+    field rarity type="i32::str" {
         key "oC6Dc1xp"
-        doc "What is being delivered (0 on most rows).  // UNVERIFIED: named from position; AchievementDeliverRateMstList::find takes TWO ints, which this and `tier` supply."
+        doc "RARITY -- UnitMst::getRare() on the unit path, ItemMst::getRare() on the item path.  First argument of AchievementDeliverRateMstList::find."
     }
 
-    field tier type="i32::str" {
+    field getting_type type="i32::str" {
         key "6yHMXYv1"
-        doc "Second selector of the find(int,int) pair -- rarity or band.  // UNVERIFIED."
+        doc "GETTING_TYPE -- the same hash and meaning as UnitMst.getting_type, and the second argument of find().  The item path passes the constant 5 instead."
     }
 
-    field rate type=str {
+    field multiplier type=str {
         key "ug9xV4Fz"
-        doc "Points per unit delivered, a decimal string (\"2.00\", \"3.00\").  Same hash/name as the gacha weight column.  Kept string: it is fractional and the client parses it itself."
+        doc "MULTIPLIER on the unit's LEVEL, a decimal string read with StrToFloat into row+0x8.  points = base + trunc(rate * unitLv).  Kept string because it is fractional."
     }
 
-    field band type=str {
+    field base type=str {
         key "232id0qQ"
-        doc "Colon-packed band the rate applies over, e.g. \"1:3:600:610:0\".  // UNVERIFIED shape: five numbers, not yet split."
+        doc """
+        FLAT BASE, not a packed band.  readParam runs StrToInt on it into row+0xC
+        and the payout adds it whole.  The colon-packed look of a few rows
+        ("1:1:100:20:0") is leftover text that StrToInt truncates to 1, and those
+        rows are rarity 0, which nothing matches.  Kept as a string because the
+        raw data is not always a clean integer.
+        """
     }
 }

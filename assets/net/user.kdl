@@ -1279,9 +1279,25 @@ json UserWarehouseInfo {
         doc "Quantity held in this stack."
     }
 
-    field favorite_flg type="i32::str" {
+    field new_flg type="i32::str" {
         key "dJNpLc81"
-        doc "Lock/favorite flag.  // UNVERIFIED: dJNpLc81 vs DbMVG16I order not yet confirmed against a capture; both default 0."
+        doc """
+        setNewFlg -- the NEW badge on a warehouse stack.  NOT the lock/favorite
+        flag, which is what this field used to be called.
+
+        CORRECTED 2026-09-15.  UserWarehouseInfoResponse::readParam @0x14060E0
+        sends this key to UserWarehouseInfo::setNewFlg, and the KDL doc here
+        already admitted it was unconfirmed.  It was mapped in
+        PacketInterfaceSchemas to the `user_items.favorite_flg` COLUMN, so
+        locking an item would have made the client draw a NEW badge on it.
+        Latent rather than live only because every row in the save is still 0.
+
+        Locks have their own round trip and do not belong here: ItemFavorite
+        (`5JbjC3Pp` -> setFavorit) carries them, and UserInfo reports them back
+        through UserInfoResp.item_favorite.  So this is no longer fed from the
+        lock column and goes out as 0 -- nothing on this server tracks
+        item newness yet.
+        """
     }
 
     field disp_order type="i32::str" {
@@ -1290,97 +1306,113 @@ json UserWarehouseInfo {
     }
 }
 
+// UserGiftInfo — one entry in the PLAYER-TO-PLAYER gift inbox.
+//
+// Every field below was `unk<N>` with a `TODO` doc until 2026-09-15.  The
+// names are not guesses: `UserGiftInfoResponse::readParam` @0x13FE4E8 was
+// mapped key-by-key with tools/readparam_map.py, and each one dispatches to a
+// UserGiftInfo setter by name.  Re-run that tool rather than editing these by
+// hand.
+//
+// GIFTS ARE NOT THE PRESENT BOX.  user_id_from / user_id_to make that plain:
+// this is one player sending another a gift, which needs a friend system this
+// server does not have.  The present box (`user_presents`) is the separate,
+// working thing that mission rewards and purchases land in.
+//
+// Nothing fills this struct yet — GetGiftInfo (ifYoPJ46) deliberately answers
+// with an empty object so that opening the gift screen cannot close the
+// session.  This schema is what a real implementation would fill.
 json UserGiftInfo {
-	doc "TODO"
-	
-    field unk1 type="i32::str" {
+	doc "One entry in the player-to-player gift inbox (response key 30uygM9m).  Distinct from the present box; not yet implemented server-side."
+
+    field gift_identify_id type="i32::str" {
         key "gNE76SLp"
-        doc "TODO"
+        doc "setGiftIdentifyID.  The inbox row's own id — what a claim would name.  STRING setter."
     }
 
-    field unk2 type="str" {
+    field user_id_from type="str" {
         key "yDiG31Fe"
-        doc "TODO"
+        doc "setUserIDFrom.  The sender.  Half of the pair that makes this player-to-player rather than a present-box grant."
     }
 
-    field unk3 type="str" {
+    field user_id_to type="str" {
         key "1px2dbX3"
-        doc "TODO"
+        doc "setUserIDTo.  The recipient."
     }
 
-    field unk4 type="i32::str" {
+    field gift_id type="i32::str" {
         key "eDj82kMN"
-        doc "TODO"
+        doc "setGiftID(int).  Which gift, as opposed to which inbox row."
     }
 
-    field unk5 type="i32::str" {
+    field gift_type type="i32::str" {
         key "2bvT9hKt"
-        doc "TODO"
+        doc "setGiftType(int).  Enum not yet decoded — no sample traffic exists for this screen."
     }
 
-    field unk6 type="i32::str" {
+    field item_id type="i32::str" {
         key "kixHbe54"
-        doc "TODO"
+        doc "setItemID.  Same key ItemMst uses for its own id.  STRING setter, so a quoted number is what it wants."
     }
 
-    field unk7 type="i32::str" {
+    field possession type="i32::str" {
         key "wgV86x1q"
-        doc "TODO"
+        doc "setPossession(int).  Quantity held / sent."
     }
 
-    field unk8 type="datetime" {
+    field gift_date type="str" {
         key "aHSvC81N"
-        doc "TODO"
+        doc "setGiftDate.  A STRING setter, so this is modelled as str -- it was `datetime`, which generates a chrono_time the server cannot assign a date string to."
     }
 
-    field unk9 type="i32::str" {
+    field gift_ymd type="i32::str" {
         key "q5Y4gUnb"
-        doc "TODO"
+        doc "setGiftYmd(int).  The date again as a packed integer, alongside gift_date."
     }
 
-    field unk10 type="i32::str" {
+    field recieve_flg type="i32::str" {
         key "fa6WwE9u"
-        doc "TODO"
+        doc "setRecieveFlg(int).  Whether the recipient has claimed it.  (Spelling is the client's.)"
     }
 
-    field unk11 type="i32::str" {
+    field unit_id type="i32::str" {
         key "pn16CNah"
-        doc "TODO"
+        doc "setUnitID.  STRING setter.  Present so the inbox row can draw the sender's leader."
     }
 
-    field unk12 type="str" {
+    field handle_name type="str" {
         key "B5JQyV8j"
-        doc "TODO"
+        doc "setHandlename.  Sender's display name.  (Lower-case `n` is the client's.)"
     }
 
-    field unk13 type="i32::str" {
+    field unit_img_type type="i32::str" {
         key "2pAyFjmZ"
-        doc "TODO"
+        doc "setUnitImgType(int).  Alternate art bit for the leader drawn on the row — the same flag reference_alternate_art covers."
     }
 
-    field un14 type="i32::int" {
+    field ep3_flg type="i32::int" {
         key "jkldTrhL"
-        doc "TODO"
+        doc "setEp3Flg(int).  Episode-3 marker, shared with the arena/ranking rows.  // UNVERIFIED: this is the one field here still sent UNQUOTED, unlike everything around it."
     }
 
-    field unk15 type="str" {
+    field sex type="i32::str" {
         key "9i2xhMaJ"
-        doc "TODO"
+        doc "setSex(int).  Sender's summoner avatar sex.  CORRECTED from type=str: the setter takes an int."
     }
 
-    field unk16 type="str" {
+    field element type="i32::str" {
         key "iNy0ZU5M"
-        doc "TODO"
+        doc "setElement(int).  Sender's leader element.  CORRECTED from type=str: the setter takes an int, and FriendInfo's note records the same trap on this key."
     }
 
-    field unk17 type="str" {
+    field hair_id type="str" {
         key "btZizNep"
-        doc "TODO"
+        doc "setHairID.  Sender's summoner hair.  STRING setter (by const reference)."
     }
 
-    field unk18 type="str" {
+    field arm_id type="str" {
         key "RVVgyuor"
-        doc "TODO"
+        doc "setArmID -- the sender's equipped SUMMONER ARM, a STRING setter (const ref).  An earlier pass here claimed this key was NOT accepted by UserGiftInfoResponse::readParam; that was a tool blind spot, not a fact -- readParam has two dispatch shapes (`cbz w0,<handler>` and `cbnz w0,<skip>`) and only the first was being parsed, so keys in the second form went unseen.  All 18 fields of this struct are accepted."
     }
 }
 
@@ -2088,8 +2120,22 @@ json UserTeamArenaArchive {
 
 }
 
+// One Music House track the player OWNS -- response key d98mjNDc,
+// UserSoundInfoResponse::readParam @0x1401614.
+//
+// A LIST and a FULL REPLACE: readParam calls UserSoundInfoList::removeAllObjects
+// at row 0 and addObject per row.  It was modelled as a one-element wrapper,
+// which cannot express a collection of purchased tracks.
+//
+// Readers are MyTownSoundRoomScene (the jukebox: which tracks are playable, and
+// getCount for the list) and SandbagChangeSoundScene (choosing battle BGM).
+// The purchase itself is client-local -- confirmAnswerYes builds a UserSoundInfo
+// and addObject's it straight into the list, decrements Zel through
+// UserTeamInfo::getZel/setZel, and queues a TownUpdate carrying the new ids
+// under LzKDI2i7 -- so WITHOUT this block every track the player paid Zel for
+// is gone at the next launch.
 json UserSoundInfo {
-    doc "TODO"
+    doc "A Music House track the player owns.  See the note above: a full-replace LIST, not a singleton."
 
     field user_id type="str" {
         key "h7eY3sAK"
@@ -2099,7 +2145,7 @@ json UserSoundInfo {
 
     field sound_id type="i32::str" {
         key "k7Lf0jTt"
-        doc "TODO"
+        doc "setSoundID -- the SoundMst row this track is.  Same key SoundMst uses for its own id."
     }
 
 }
@@ -2777,5 +2823,167 @@ json UserTrophyGradeInfo {
     field grade_id type="i32::str" {
         key "ARn3u96q"
         doc "setTrophyGradeID -- TrophyGradeMst.id, not the grade NUMBER: that table keys (trophy_id, grade, clear_cond) by its own id."
+    }
+}
+
+json UserSummonerInfoEditNode {
+    doc """
+    The Summoner's appearance, from UserSummonerInfoEditRequest::createBody.
+
+    The wiki's Summoner Avatar article names exactly these three choices as the
+    first thing the arc asks for -- "Players will be prompted here when entering
+    the Summoner Avatar Arc the first time": Gender, Hairstyle A/B/C, and
+    Element.  Changing gender afterwards costs 1 Gem.
+    """
+
+    field accept_flag type="i32::str" {
+        key "mnZ5K4Ii"
+        doc "Confirmation flag the edit screen sends with the change."
+    }
+
+    field sex type="i32::str" {
+        key "9i2xhMaJ"
+        doc "Gender.  1 male, 2 female -- the same hash UserInfo already uses for it."
+    }
+
+    field element type="i32::str" {
+        key "iNy0ZU5M"
+        doc """
+        Chosen element, 1 Fire .. 6 Dark.  ⚠ NOT cosmetic: the wiki is explicit
+        that "the Quest you complete will merit you Summoning Arts based on the
+        element you have picked", so this selects which of the six element
+        levels a quest feeds -- the levels Randall bands 56000-61000 measure.
+        """
+    }
+
+    field hair_id type="str" {
+        key "btZizNep"
+        doc "Hairstyle A/B/C.  // UNVERIFIED: named by position in createBody and by the wiki's list of the three choices; no setter was read."
+    }
+
+    field unk_RVVgyuor type="str" {
+        key "RVVgyuor"
+        doc "// UNVERIFIED: the fifth param of the edit group; no store to it was read."
+        optional #true
+    }
+}
+
+json UserSummonerInfoEditReq {
+    doc """
+    UserSummonerInfoEdit -- GroupId `ZJYkXcHo`, AES key `lyR0us9b`, recovered
+    from getRequestID/getEncodeKey on the request class.
+
+    ⚠ UNREGISTERED UNTIL 2026-09-20, and it is the FIRST request the Summoner
+    Avatar arc makes, so entering the arc closed the session.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Caller identity."
+    }
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag, echoed back."
+    }
+
+    field edit type="[UserSummonerInfoEditNode]::size(1)" {
+        key "pxjFxjDZ"
+        doc "The appearance being set."
+    }
+}
+
+json UserSummonerInfoEditResp {
+    doc "The refreshed Summoner block, so the screen redraws what was just saved."
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag echoed back."
+    }
+
+    field summonerInfo type="[UserSummonerInfo]" {
+        key "n5mdIUqj"
+        doc "The one Summoner row.  A LIST -- readParam never runs on an empty array, so the client would keep its constructed defaults."
+    }
+}
+
+json SummonerMixNode {
+    doc "One unit offered to the Summoner, same node shape UnitBondBoost uses."
+
+    field user_unit_id type="i32::str" {
+        key "inU8Q4gL"
+        doc "The user_unit_id being fused in."
+    }
+
+    field slot type="i32::str" {
+        key "mnZ5K4Ii"
+        doc "Picker slot; a client concern."
+        optional #true
+    }
+
+    field kind type="i32::str" {
+        key "29MgiJIQ"
+        doc "Material kind, as on UnitBondBoost's list."
+        optional #true
+    }
+}
+
+json SummonerMixReq {
+    doc """
+    SummonerMix -- GroupId `nv4d3O7F`, AES key `vM65bAB4`.
+
+    Fusing Frog units into the Summoner to earn SP.  The wiki's Summoner
+    Parameters article gives the whole table: Burst Frog 50,000 Zel for +1 SP,
+    Burst Emperor 250,000 for +5, Sphere Frog 500,000 for +10, and SP caps at
+    99,999.  Nothing else can be fused.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Caller identity."
+    }
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag, echoed back."
+    }
+
+    field materials type="[SummonerMixNode]" {
+        key "8Z2NQrx1"
+        doc "The units being fused in."
+        optional #true
+    }
+}
+
+json SummonerSkillGetReq {
+    doc """
+    SummonerSkillGet -- GroupId `qWkYyw5i`, AES key `mrXjLLJB`.
+
+    Spends SP to raise one Parameter a level.  `SummonerAbilityLevelMst.need_sp`
+    is the price, and it matches the wiki's SP cost tables exactly (Max HP lv2
+    10, lv3 40, lv4 80, lv5 130 ...), which is what confirms the MST is the
+    authority rather than the article.
+    """
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Caller identity."
+    }
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal-key dispatch tag, echoed back."
+    }
+
+    field ability_id type="str" {
+        key "LPx0yZhY"
+        doc "The Parameter being raised.  Sent through SummonerSkillGetRequest::setParam."
+        optional #true
+    }
+
+    field target_level type="i32::str" {
+        key "mgNdrCEe"
+        doc "The level being bought -- the CURRENT level plus one."
+        optional #true
     }
 }

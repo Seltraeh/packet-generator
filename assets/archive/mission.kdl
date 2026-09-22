@@ -404,6 +404,26 @@ json BattleMonster {
         doc "Dropped unit chance percent, or 0 when this monster does not drop a unit."
     }
 
+    field authored_capture type="bool" {
+        key "authored_capture"
+        doc """
+        Set when `unit_drop_chance` is a DELIBERATE number rather than whatever
+        the regenerated archive happened to carry, which stops the 40 percent
+        capture floor in MissionArchiver from raising it.
+
+        The floor exists because the regenerated archive left most monsters at
+        0 or 5 percent, and it cannot tell a junk 5 from an authored 10.  The
+        event dungeons need the difference: Evan's rule for them (2026-09-19) is
+        that the boss is the top form of its chain and ONLY its base form is
+        capturable, at 10 percent, with the escorts not capturable at all —
+        none of which survives a blanket raise to 40.
+
+        Optional so every mission authored before this field existed keeps
+        loading unchanged; absent means "not authored", i.e. the floor applies.
+        """
+        optional #true
+    }
+
     field zel_max_drop type="u32::int" {
         key "zel_max_drop"
         doc "Maximum zel this monster can drop."

@@ -69,11 +69,16 @@ json FriendPointInfo {
 //   3. GuildRaidFriendSelectRequest::createBody at 0x1C5B388 (confirms
 //      wire-side field order via JsonNode::addParam calls)
 //
-// Several keys overload between contexts: in UserUnitInfo (qC2tJs4E)
-// Ge8Yo32T is equipitem_id and 2Fh3J7ng is unrelated; in
-// ReinforcementInfo (xZH6EIQ7) Ge8Yo32T is MissionID; in FriendInfo
-// (this) Ge8Yo32T is EquipItemID and 2Fh3J7ng is TeamLv.  Same wire key,
-// different semantic — depends on which response class deserialises it.
+// 2Fh3J7ng genuinely overloads: unrelated in UserUnitInfo (qC2tJs4E),
+// TeamLv here.  Same wire key, different semantic, depending on which
+// response class deserialises it.
+//
+// Ge8Yo32T DOES NOT.  This comment used to claim it meant MissionID in
+// ReinforcementInfo (xZH6EIQ7) — it does not; readParam sends it to
+// UserUnitInfoBase::setEquipItemID there exactly as it does here, and that
+// mistake left every borrowed helper with no sphere.  It is equipitem_id in
+// all three contexts.  Verified with tools/readparam_map.py; see the
+// corrected note on ReinforcementInfo.equipitem_id.
 //
 // iNy0ZU5M is uint32_t (element ID as int) here, NOT a string like in
 // UserUnitInfo — FriendInfo's typed setter takes int.
@@ -97,7 +102,7 @@ json FriendInfo {
 
     field friend_type type="i32::str" {
         key "96Nxs2WQ"
-        doc "setFriendType.  Friend relation type.  1 is CONFIRMED to be the value that counts as \"a friend\": FriendInfoList::existTypeOK @0x12607CC scans this list for a matching user id and returns true only when that row's getFriendType() == 1 exactly -- any other value keeps scanning.  That is the test ReinforcementInfo::getFriendPoint uses to choose between FriendPointInfo's friend and normal Honor amounts.  The rest of the enum is still // UNVERIFIED."
+        doc "setFriendType.  EFFECTIVELY BINARY: 1 means 'a friend', anything else does not. Resolved 2026-09-15 by reading ALL FOUR consumers -- getFriendType is non-virtual, so its 66 xrefs are conclusive -- and every one of them tests `cmp w0, #1` and nothing else: FriendInfoList::existTypeOK @0x12607CC (returns true only on ==1; this is the test ReinforcementInfo::getFriendPoint uses to pick the friend vs normal Honor amount), FriendListUtils::setFriendIcon @0x11735E4 (draws the friend badge only on ==1), FriendListUtils::getFriendList @0x11695D8, and GameUtils::getReinforcementListValue. There is NO evidence in this build for a distinct guild-member or stranger value -- the earlier guess of 0=stranger/1=friend/2=guild was speculation. Send 1 for a helper the player should be paid friend Honor for."
     }
 
     field last_login_date type="i32::str" {

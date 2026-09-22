@@ -270,7 +270,7 @@ json DefineMst {
 
     field max_achieve_point_item_per_day type="i32::str" {
         key "M1AJuFU6"
-        doc "TODO"
+        doc "setMaxAchievePointItemPerDay -- the Merit POINTS a player may earn in one day from trading ITEMS (spheres).  Named 2026-09-15 from DefineMstResponse::readParam."
     }
 
     field max_achievement_challenge_accept_count type="i32::str" {
@@ -457,10 +457,28 @@ json DefineMst {
         doc "setMaxfrohunP @0x131A884 (paired with this key in the DefineMst readParam @0x13D58D4).  The HUNTER ORB CAP -- 3 in this data.  ChallengeHeaderInfo::getAubeMax @0x125819C is a straight forward to it, and decFightRestTimer stops regenerating once the count reaches it.  Note this is the cap the CLIENT clamps to, which is why an earlier probe sending 4/5/6 read back as 3/3/3 and could not tell the three Aube fields apart."
     }
 
-    field unk16 type="i32::str" {
+    field max_achieve_point_unit_per_day type="i32::str" {
         key "j1zaSBm7"
-        doc "TODO"
-        // NOTE: not used in last version
+        doc """
+        setMaxAchievePointUnitPerDay -- the Merit POINTS a player may earn in one
+        day from trading UNITS.
+
+        RENAMED from `unk16` 2026-09-15, which carried "TODO / not used in last
+        version".  It is used: `deliverDailyCap` had no unit column to read, so
+        units fell back to the ITEM ceiling and the Trade Units screen quoted
+        the wrong field.  Both are 99999 in this data, so nothing was ever
+        mis-enforced.
+
+        Recovered from DefineMstResponse::readParam with tools/readparam_map.py.
+        Adding it as a NEW field rather than renaming this one is what broke the
+        build: two fields on one key makes Glaze fail to build its key hash
+        (`static assertion failed: bool(hash_info<T>.type)`), which is what that
+        error means.
+
+        NOTE the two halves of the client's "Trade Limit x/y" do not agree: y is
+        this POINTS cap, x is the deliver subject's progress, which counts
+        UNITS.  Settling that wants a capture from the live game.
+        """
     }
 
     field unk18 type="i32::str" {
@@ -488,5 +506,48 @@ json DefineEnergyRecover {
     field action_point_threshold type="i32::str" {
         key "eRQvzLeF"
         doc "The player's own max energy (UserLevelMst energy for their level): the header then says ENERGY_RECOVER_GEM_MAX_THRESHOLD exactly when energy is at or above max, and offers the refill below it."
+    }
+}
+
+json FunctionReleaseMst {
+    doc """
+    F_FUNCTION_RELEASE_MST — WHICH FEATURE EACH `function_id` IS, AND WHAT
+    UNLOCKS IT.  12 rows, function ids 8-19, read 2026-09-20 out of the
+    client's own cached `Ver10_FA69am2p.dat` (encode key `tLaGZ8h3`).
+
+    ★ ROW 9 IS THE SUMMONER AVATAR ARC: its condition is `2:10864`, and 10864
+    is "The Holy Emperor" — the Karna Masta fight in Menon that the wiki names
+    as what opens the arc.  That is what finally pinned the arc's gate down.
+
+    NO WIRE KEY, like FrontierGateRewardMst: the client loads this from its own
+    MST store and the binary defines no FunctionReleaseMstResponse, so the
+    wrapper `F_FUNCTION_RELEASE_MST` is server-side only.  The server cannot
+    change these conditions -- it can only EVALUATE them and report the result
+    through `UserReleaseInfo` (Dp0MjKAf) on UserInfoResp, which is the only
+    lever it has over feature locks.
+
+    Ids 1-7 never appear here; those are the client's hardcoded early gates.
+    """
+    hash "F_FUNCTION_RELEASE_MST"
+
+    field function_id type="i32::str" {
+        key "JHYubaBP"
+        doc "The client function this row gates.  Joins to UserReleaseInfo.function_id."
+    }
+
+    field param type="str" {
+        key "t5R47iwj"
+        doc "Empty on all 12 shipped rows.  // UNVERIFIED: no consumer read."
+        optional #true
+    }
+
+    field condition type="str" {
+        key "eyOHR7lB"
+        doc """
+        `type:param`.  **type 2 = the mission named by param has been cleared**
+        (eleven of the twelve rows).  Type 4 appears once, as "4:4", on row 8
+        and is not decoded.  An unrecognised type must be treated as NOT
+        released rather than as released, or a feature opens for free.
+        """
     }
 }

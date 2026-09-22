@@ -32,7 +32,7 @@ json ReinforcementInfo {
 
     field friend_type type="i32::str" {
         key "q9Arz8Jv"
-        doc "setFriendType (per IDA audit). Relation type — // UNVERIFIED enum, likely 0=stranger/1=friend/2=guild-member-only/etc."
+        doc "setFriendType.  EFFECTIVELY BINARY: 1 means 'a friend', anything else does not. Resolved 2026-09-15 by reading ALL FOUR consumers -- getFriendType is non-virtual, so its 66 xrefs are conclusive -- and every one of them tests `cmp w0, #1` and nothing else: FriendInfoList::existTypeOK @0x12607CC (returns true only on ==1; this is the test ReinforcementInfo::getFriendPoint uses to pick the friend vs normal Honor amount), FriendListUtils::setFriendIcon @0x11735E4 (draws the friend badge only on ==1), FriendListUtils::getFriendList @0x11695D8, and GameUtils::getReinforcementListValue. There is NO evidence in this build for a distinct guild-member or stranger value -- the earlier guess of 0=stranger/1=friend/2=guild was speculation. Send 1 for a helper the player should be paid friend Honor for."
     }
 
     field last_login_date type="i32::str" {
@@ -134,12 +134,24 @@ json ReinforcementInfo {
 
     field skill_id type="i32::str" {
         key "nj9Lw7mV"
-        doc "BB (Brave Burst) skill id."
+        doc """
+        BB (Brave Burst) skill id.
+
+        ⚠ THE FIELD NAME LIES -- FILL THIS FROM `user_units.bb_id`, NOT
+        `user_units.skill_id`.  This key is UserUnitInfo's bb_id (net/user.kdl),
+        and UnitArchiver records that "bb_id is unit_mst's skill_id
+        (nj9Lw7mV)".  The user_units column literally called skill_id is a
+        different thing and is 0 on every row in this save.  Reading it by name
+        is what sent the borrowed helper into battle with no Brave Burst, so its
+        gauge never filled -- fixed in FriendGet and CampaignBattleStart
+        2026-09-14.  The name is kept only because UnitEvo/UnitMix already build
+        this struct under it.
+        """
     }
 
     field skill_lv type="i32::str" {
         key "3NbeC8AB"
-        doc "BB skill level."
+        doc "BB skill level -- `user_units.bb_lvl`, not skill_lv.  See skill_id above."
     }
 
     field unit_type_id type="i32::str" {
@@ -149,12 +161,12 @@ json ReinforcementInfo {
 
     field extra_skill_id type="i32::str" {
         key "iEFZ6H19"
-        doc "SBB (Super Brave Burst) / extra skill id."
+        doc "SBB (Super Brave Burst) id -- `user_units.sbb_id`, NOT extra_skill_id.  Same trap as skill_id above."
     }
 
     field extra_skill_lv type="i32::str" {
         key "RQ5GnFE2"
-        doc "Extra skill level."
+        doc "SBB level -- `user_units.sbb_lvl`, not extra_skill_lv.  See skill_id above."
     }
 
     field user_unit_id type="i32::str" {
@@ -162,29 +174,54 @@ json ReinforcementInfo {
         doc "Friend's user_unit DB row id."
     }
 
-    field mission_id type=str {
+    field equipitem_id type="i32::str" {
         key "Ge8Yo32T"
-        doc "setMissionID.  The mission this reinforce was offered for.  Overloaded key: in UserUnitInfo this is equipitem_id; in ReinforcementInfo the typed setter name is MissionID."
+        doc """
+        The helper's equipped SPHERE, slot 1.  Not a mission id.
+
+        CORRECTED 2026-09-15.  This was documented as setMissionID and sent as
+        an empty string, so every borrowed helper fought with no sphere
+        passives -- the same shape of bug as the missing Brave Burst above.
+
+        Verified three independent ways, because the previous reading also
+        looked convincing:
+          1. ReinforcementInfoResponse::readParam @0x13EB29C dispatches this key
+             to vtable +0x1e8 = UserUnitInfoBase::setEquipItemID.  There is no
+             setMissionID anywhere in ReinforcementInfo's vtable; setMissionID
+             belongs to FixedReinforcementInfo, under key j28VNcUW.
+          2. FriendListUtils::setSphereIcon/setSphereName @0x116E0C0 call
+             getEquipItemID (+0x1e0) and getEquipItemID2 (+0x200) on a
+             ReinforcementInfo* as their first act -- the helper list's sphere
+             icon and name.
+          3. BattleUnit::initializeBaseStatus @0x10F1438 stores both into
+             BattleUnit+0x260/+0x278, which BattleUnit::setEquipPassive reads
+             and feeds to ItemMstList::getObject -> getProcessParam ->
+             buffManipParser -> setPassiveParam.  That is the sphere's stat
+             effect being applied.
+
+        Fill from `user_units.eqip_item_id`.  0 is fine when nothing is
+        equipped: the id fails the ItemMst lookup and no passive is applied.
+        """
     }
 
     field equipitem_id2 type="i32::str" {
         key "mZA7fH2v"
-        doc "Sphere slot 2 (matches UserUnitInfo.equipitem_id2)."
+        doc "The helper's equipped SPHERE, slot 2 -- readParam sends it to vtable +0x208, UserUnitInfoBase::setEquipItemID2.  Fill from `user_units.eqip_item_id2`.  See equipitem_id above."
     }
 
-    field unk_bM7RLu5K type=str {
+    field friend_message type=str {
         key "bM7RLu5K"
-        doc "// UNVERIFIED — getValue() path.  Also appears in UserTeamInfo as a placeholder string."
+        doc "setFriendMessage.  The helper's profile message, the same one FriendInfo carries. Named 2026-09-15 from ReinforcementInfoResponse::readParam @0x13EB29C itself (tools/readparam_map.py)."
     }
 
-    field unk_JmFn3g9t type="i32::str" {
+    field arena_rank_id type="i32::str" {
         key "JmFn3g9t"
-        doc "// UNVERIFIED — getValue() path.  Also appears in UserTeamInfo."
+        doc "setArenaRankID.  Arena rank badge shown on the helper card. Named 2026-09-15 from ReinforcementInfoResponse::readParam @0x13EB29C itself (tools/readparam_map.py).  Arena is deferred, so this stays unfilled by decision."
     }
 
-    field unk_98WfKiyA type="i32::str" {
+    field friend_id type="i32::str" {
         key "98WfKiyA"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setFriendID.  The shareable in-game friend id, as in FriendInfo.friend_id. Named 2026-09-15 from ReinforcementInfoResponse::readParam @0x13EB29C itself (tools/readparam_map.py)."
     }
 
     field extra_passive_skill_id type="i32::str" {
@@ -207,19 +244,19 @@ json ReinforcementInfo {
         doc "FE (frontier element) skill info string."
     }
 
-    field unk_zsiAn9P1 type="i32::str" {
+    field deck_no type="i32::str" {
         key "zsiAn9P1"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setDeckNo(int).  Which of the helper's decks this leader came from. Named 2026-09-15 from ReinforcementInfoResponse::readParam @0x13EB29C itself (tools/readparam_map.py)."
     }
 
-    field unk_yu18xScw type="i32::str" {
+    field priority type="i32::str" {
         key "yu18xScw"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setPriority(int).  Sort weight in the helper picker. Named 2026-09-15 from ReinforcementInfoResponse::readParam @0x13EB29C itself (tools/readparam_map.py)."
     }
 
-    field unk_jkldTrhL type="i32::str" {
+    field ep3_flg type="i32::str" {
         key "jkldTrhL"
-        doc "// UNVERIFIED — getValue() path.  Same key appears as a constant 0 in MissionEnd request and UserTeamInfo."
+        doc "setEp3Flg(int) -- member +0x250. Named 2026-09-15.  ReinforcementInfoResponse stores this key INLINE at the member offset noted below, so it has no setter symbol of its own; the name comes from a sibling response class that accepts the same key through a named setter.  Strong lead, not proof -- confirm before relying on it."
     }
 
     field sex type="i32::str" {
@@ -232,34 +269,34 @@ json ReinforcementInfo {
         doc "Element string (fire/water/earth/thunder/light/dark).  Matches UserUnitInfo.element."
     }
 
-    field unk_btZizNep type="i32::str" {
+    field hair_id type="i32::str" {
         key "btZizNep"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setHairID -- member +0x260, an inlined STRING assign.  Summoner avatar hair. Named 2026-09-15.  ReinforcementInfoResponse stores this key INLINE at the member offset noted below, so it has no setter symbol of its own; the name comes from a sibling response class that accepts the same key through a named setter.  Strong lead, not proof -- confirm before relying on it."
     }
 
-    field unk_RVVgyuor type="i32::str" {
+    field arm_id type="i32::str" {
         key "RVVgyuor"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setArmID -- member +0x278, an inlined STRING assign.  The helper's equipped SUMMONER ARM. Named 2026-09-15.  ReinforcementInfoResponse stores this key INLINE at the member offset noted below, so it has no setter symbol of its own; the name comes from a sibling response class that accepts the same key through a named setter.  Strong lead, not proof -- confirm before relying on it.  Worth following up: summoner arms are already implemented on this server, so this is fillable."
     }
 
-    field unk_U8FCB2Wj type="i32::str" {
+    field arm_lv type="i32::str" {
         key "U8FCB2Wj"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setArmLv(int) -- member +0x290.  Summoner arm level. Named 2026-09-15.  ReinforcementInfoResponse stores this key INLINE at the member offset noted below, so it has no setter symbol of its own; the name comes from a sibling response class that accepts the same key through a named setter.  Strong lead, not proof -- confirm before relying on it."
     }
 
-    field unk_NqVAPbLC type="i32::str" {
+    field arm_exp type="i32::str" {
         key "NqVAPbLC"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setArmExp(int) -- member +0x294.  Summoner arm experience. Named 2026-09-15.  ReinforcementInfoResponse stores this key INLINE at the member offset noted below, so it has no setter symbol of its own; the name comes from a sibling response class that accepts the same key through a named setter.  Strong lead, not proof -- confirm before relying on it."
     }
 
-    field unk_mgNdrCEe type="i32::str" {
+    field ability_info type="i32::str" {
         key "mgNdrCEe"
-        doc "// UNVERIFIED — getValue() path."
+        doc "Inlined store to member +0x298 -- ReinforcementInfoResponse::readParam accepts this key but writes it directly, so there is no setter symbol to name.  Sibling classes (RaidRoomPartyInfo, SummonerFriendInfo) call it setAbilityInfo.  Note: an earlier pass here claimed this key was NOT accepted by ReinforcementInfoResponse::readParam.  That was a tool blind spot, not a fact -- readParam has two dispatch shapes (`cbz w0,<handler>` and `cbnz w0,<skip>`) and only the first was being parsed, so keys in the second form went unseen.  It IS accepted."
     }
 
-    field unk_sD73jd20 type="i32::str" {
+    field guild_id type="i32::str" {
         key "sD73jd20"
-        doc "// UNVERIFIED — getValue() path."
+        doc "setGuildID(int) -- confirmed 2026-09-15 in ReinforcementInfoResponse::readParam itself, not inferred from a sibling.  Guild is deferred, so this stays unfilled by decision.  Note: an earlier pass here claimed this key was NOT accepted by ReinforcementInfoResponse::readParam.  That was a tool blind spot, not a fact -- readParam has two dispatch shapes (`cbz w0,<handler>` and `cbnz w0,<skip>`) and only the first was being parsed, so keys in the second form went unseen.  It IS accepted."
     }
 
     field omni_level type="i32::str" {
