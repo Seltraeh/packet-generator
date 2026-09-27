@@ -225,9 +225,17 @@ json DungeonMst {
         doc "Area this dungeon belongs to — AreaMst.area_id."
     }
 
-    field unk1 type="i32::str" {
+    field dungeon_type type="i32::str" {
         key "3hPeI1RV"
-        doc "// UNVERIFIED: 0..1000."
+        doc """
+        Dungeon type.  DungeonMstResponse::readParam hands it to
+        DungeonMst::setDungeonType @0x13D6E5C, and GameUtils::isTrialMission
+        is exactly `getDungeonType() == 2` -- the switch into the client's
+        three-squad trial mode (UserTrialInfo, PlayerParty::entryTrial).
+        In the shipped table 2 is only dungeon 2000000 (the Research Lab's
+        Trial Zone) and 8 only 2100000 (its Strategy Zone); the other values
+        (0, 1, 3-7, 9, 100) are not decoded.
+        """
     }
 
     field display_order type="i32::str" {

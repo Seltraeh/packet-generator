@@ -56,22 +56,15 @@ json AilmentResists {
     Per-ailment resistance percentages for a monster, 0-100.
 
     Packed by MissionArchiver into MonsterMst.bad_state_resists (CEeqs63b) as
-    six colon-separated values.  Named fields rather than a raw string on
-    purpose: the SLOT ORDER is the one part of this that is still unproven, so
-    it is spelled out in exactly one place and every authored mission inherits
-    a correction to it.
+    six colon-separated values.
 
-    THE SIX AILMENTS ARE CERTAIN -- the client ships exactly six and no more
-    (DESC_BADSTATE_POISON "HP decreases every turn", _WEAK "Defense decreases",
-    _SICK "Recovery decreases", _INJURY "Attack decreases", _CURSE "BB gauge
-    stops charging", _PARA "Causes immobility for a fixed number of turns").
-
-    // UNVERIFIED: THE ORDER.  It is the order net/unit.kdl already documents
-    for the same hash on UnitMst, and F_UNIT_MST is nearly useless as a check:
-    of 2291 rows only four are not all-zero or all-100 -- Nice Burny (810212)
-    and Frosty (820212) at "0:0:0:0:0:100", and two rows carrying a literal
-    space in slot five.  A boss with known, PARTIAL immunities is what would
-    settle it.
+    THE ORDER IS BINARY-CONFIRMED (2026-09-25).  BattleUnit::judgeBadCondition
+    @0x1101310 splits the target's resist string on ':' and reads slot
+    [ailment id - 1], and BattleUnit::searchAiTarget's ailment search terms
+    name the ids: poison 1, weakness 2, sick 3, injury 4, curse 5,
+    paralysis 6 (isBadState calls @0x1133190..0x1133380).  The skill tables
+    agree -- Lightning Axe's `6,50` is the wiki's 50% paralysis, Light Attack's
+    `2,40` its 40% weakness.  So slot N below is ailment id N.
     """
 
     field poison type="u32::int" {
@@ -96,7 +89,7 @@ json AilmentResists {
     }
     field paralysis type="u32::int" {
         key "paralysis"
-        doc "Slot 6 — immobility.  The only slot with any corroboration: it is the one Nice Burny and Frosty carry 100 in."
+        doc "Slot 6 — immobility."
     }
 }
 
@@ -379,6 +372,21 @@ json BattleMonster {
         doc "Maximum number of actions this monster may take per turn."
     }
 
+    field act_rate type="f32::int" {
+        key "act_rate"
+        doc """
+        Percent chance of each action beyond `act_min`, up to `act_max`.
+        MonsterUnit::initTurnChild @0x1159098 starts from min_act_count and
+        rolls act_rate once per extra step, so 1/2 at 50 is "one action, half
+        the time two".
+
+        Optional: absent sends 100, which every captured live row carried and
+        which makes the monster always take `act_max` actions -- the behaviour
+        of every mission authored before this field existed.
+        """
+        optional #true
+    }
+
     field wait type="i32::int" {
         key "wait"
         doc "Monster wait value (Not sure where this comes from yet)."
@@ -591,5 +599,31 @@ json MissionRecord {
     field stages type="[MissionStage]" {
         key "stages"
         doc "Ordered stages in this mission."
+    }
+
+    field script_monsters type="[BattleMonster]" {
+        key "script_monsters"
+        doc """
+        Monsters the client's own mission script brings into the battle, which
+        no wave places.  The script lives client-side in F_MISSION_SCRIPT_MST;
+        its command 6 (and 11) calls MonsterParty::changeMonster @0x10C3160,
+        which REPLACES the monster that triggered the event with another
+        monster id and re-initialises it from MonsterMstList -- so each of
+        these needs a MonsterMst row, its AI rows and its art in the
+        MissionStart response, and nothing else.  They get no
+        BattleMonsterGroupMst row, which is what keeps them off the opening
+        field.
+
+        That table's second column names the monsters a script features --
+        "1102,54501" for Trial No. 003, the two it swaps in; Trial No. 002
+        lists its own opening boss -- and MissionScriptMstResponse::readParam
+        never reads it, so it was the original server's list of monsters to
+        describe.  Any of them not already in a wave belongs here.
+
+        Ids must not repeat within this list or collide with a wave monster's
+        id.  Drops, capture and chests do not apply to them.  Optional: absent
+        means the mission has no scripted monsters.
+        """
+        optional #true
     }
 }

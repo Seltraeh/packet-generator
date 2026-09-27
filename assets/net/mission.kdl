@@ -1149,10 +1149,10 @@ json MonsterMst {
 
         THE SIX AILMENTS ARE CERTAIN: the client ships exactly six
         (DESC_BADSTATE_POISON / _WEAK / _SICK / _INJURY / _CURSE / _PARA).
-        // STILL UNVERIFIED: the slot ORDER.  F_UNIT_MST barely helps — 2287 of
-        // 2291 rows are all-zero or all-100; the only informative rows are
-        // Nice Burny (810212) and Frosty (820212) at "0:0:0:0:0:100", which
-        // makes slot 6 the one a Burny would plausibly resist.
+        The slot ORDER is binary-confirmed: BattleUnit::judgeBadCondition
+        @0x1101310 reads slot [ailment id - 1], and the ids are poison 1,
+        weakness 2, sick 3, injury 4, curse 5, paralysis 6 (searchAiTarget's
+        ailment search terms).
         """
     }
 

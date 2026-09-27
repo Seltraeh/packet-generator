@@ -191,6 +191,12 @@ json PresentReceiptReq {
 }
 
 json PresentReceiptResp {
+    field guild_members type="[GuildMemberInfo]" {
+        key "csIuech30"
+        optional #true
+        doc "guild members; see enclosing packet for binary evidence."
+    }
+
     doc """
     Result of a claim: the refreshed present box plus the updated HUD currency,
     so the client re-renders the list and the header in one pass — and, for

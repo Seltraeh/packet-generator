@@ -1418,6 +1418,12 @@ json GetPlayerInfoResp {
 }
 
 json UserInfoResp {
+    field entered_features type="[UserEnteredFeatureInfo]" {
+        key "2386Diw1"
+        doc "Full per-player visit snapshot: the reader clears its list before ingesting rows."
+    }
+
+
     // AUDIT 2026-08-24: 33 blocks, all structurally verified (dispatch, response
     // class, and replace-vs-merge).  NO BLOCK ACCUMULATES: every list either
     // calls removeAllObjects, does a selective clear (the PermitPlace trio), or
@@ -3353,6 +3359,12 @@ json UpdateInfoLightReq {
 }
 
 json UpdateInfoLightResp {
+    field entered_features type="[UserEnteredFeatureInfo]" {
+        key "2386Diw1"
+        doc "Full per-player visit snapshot: the reader clears its list before ingesting rows."
+    }
+
+
     doc """
     UpdateInfoLight (ynB7X5P9) response — the mutable per-user state, resent so
     the client can refresh without a relaunch.
@@ -3421,6 +3433,12 @@ json UpdateServerTime {
 }
 
 json UpdateInfoResp {
+    field entered_features type="[UserEnteredFeatureInfo]" {
+        key "2386Diw1"
+        doc "Full per-player visit snapshot: the reader clears its list before ingesting rows."
+    }
+
+
     doc "UpdateInfo (RUV94Dqz) response — what UpdateInfoLight sends (and for the same reason no unit list), plus the server time that restarts the client's timer."
 
     field team_info type="[UserTeamInfo]::size(1)" {
@@ -4165,4 +4183,33 @@ json FriendApplyReq {
         key "BPz1e5tU"
         doc "The Summoner(s) being added."
     }
+}
+
+// Android arm64: createBody 0x1C706F0, readParam 0x1C7041C.
+// The reader resets the list on its first field, then appends triples.
+json UserEnteredFeatureInfo {
+    doc "One feature/dungeon visit; zero new_flg means entered."
+    field feature_id type="i32::str" {
+        key "e63D1BV0"
+        doc "Feature ID. Zero can accompany a dungeon-specific visit."
+    }
+    field dungeon_id type="i32::str" {
+        key "MHx05sXt"
+        doc "Dungeon ID, or zero for a feature-wide visit."
+    }
+    field new_flg type="i32::str" {
+        key "Diwl3b56"
+        doc "Zero means entered: confirmed by enteredCheckByFeatureID 0x1CBBE68 and getIfUserEnteredParadeFeature 0x1CBBD20. All traced request call sites send zero."
+    }
+}
+
+json UserEnteredFeatureReq {
+    doc "One client-reported visit, GroupId 983D5Dii."
+    field login_info type="[LoginInfoReq]::size(1)" { key "IKqx1Cn9"; doc "Current player login."; }
+    field entered_features type="[UserEnteredFeatureInfo]" { key "2386Diw1"; doc "Feature visit rows."; }
+}
+
+json UserEnteredFeatureResp {
+    doc "Complete persistent visit history for the current player."
+    field entered_features type="[UserEnteredFeatureInfo]" { key "2386Diw1"; doc "Feature visit rows."; }
 }

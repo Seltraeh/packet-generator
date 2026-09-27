@@ -143,7 +143,38 @@ json GuildInfoReq {
     }
 }
 
+json GuildExchangeStock {
+    doc "GuildUserExchangeInfoResponse at 0x1C68844. Count is purchases USED: sliderSet at 0x1DAF8C8 subtracts it from MST limit."
+    field id type="i32::str" {
+        key "Yxo3bEic"
+        doc "id; see enclosing packet for binary evidence."
+    }
+    field count type="i32::str" {
+        key "H6k1LIxC"
+        doc "count; see enclosing packet for binary evidence."
+    }
+    field time_left type="i32::str" {
+        key "VDKB0Y5h"
+        doc "time left; see enclosing packet for binary evidence."
+    }
+    field flag type="i32::str" {
+        key "ypV81b7k"
+        doc "flag; see enclosing packet for binary evidence."
+    }
+}
+
 json GuildInfoResp {
+    field exchange_mst type="[GuildPointExchangeMst]" {
+        key "baD81eqw"
+         optional #true
+        doc "exchange mst; see enclosing packet for binary evidence."
+    }
+    field exchange_stock type="[GuildExchangeStock]" {
+        key "nMe3ai17"
+         optional #true
+        doc "exchange stock; see enclosing packet for binary evidence."
+    }
+
     doc """
     The guild, as GuildInfoResponse @0x1C536E0 reads it.
 
@@ -257,6 +288,255 @@ json GuildRecomendedMemberInfo {
     }
 }
 
+json GuildRecommendFriendInfo {
+    doc """
+    One invite candidate's PROFILE -- GuildRecommendedFriendInfo on the client,
+    filled by GuildRecommendFriendInfoResponse::readParam @0x1C64DF4 (46 keys,
+    every setter named by tools/readparam_map.py).
+
+    WHY IT EXISTS.  The Hall's candidate list (fRaBu6et) is only the card.  Tapping
+    a card runs GuildHallScene::touchEnded, which looks the candidate up here with
+    GuildRecommendedFriendInfoList::getObjectWithUserID and calls clone() on the
+    result WITHOUT a null check (@0x1DCFD64..0x1DCFD80), then opens the profile
+    (FriendRandomSearchFriendRequestScene, mode 3) whose button sends GuildJoin.
+    No row here = an access violation on the tap (read 0x230), the 2026-09-26 crash.
+
+    The same card as the Social list's FriendInfo, but its OWN class: 43 keys are
+    shared, FriendInfo's other 8 are not read here, and the guild id rides
+    sD73jd20 instead of mgNdrCEe.
+    """
+
+    field user_id type=str {
+        key "h7eY3sAK"
+        doc "setUserID.  ⚠ MUST equal the fRaBu6et row's h7eY3sAK: the Hall finds this row with getObjectWithUserID(that id)."
+    }
+
+    field handle_name type=str {
+        key "B5JQyV8j"
+        doc "setHandleName."
+    }
+
+    field team_lv type="i32::str" {
+        key "2Fh3J7ng"
+        doc "setTeamLv."
+    }
+
+    field friend_type type="i32::str" {
+        key "96Nxs2WQ"
+        doc "setFriendType.  1 = a friend; see FriendInfo.friend_type for why nothing else counts."
+    }
+
+    field last_login_date type="i32::str" {
+        key "0CAQ6wUe"
+        doc "setLastLoginDate."
+    }
+
+    field unit_id type="i32::str" {
+        key "pn16CNah"
+        doc "UserUnitInfoBase::setUnitID (vtable +0x98).  The unit on the profile."
+    }
+
+    field unit_lv type="i32::str" {
+        key "4A6LzBxr"
+        doc "UserUnitInfoBase::setUnitLv (+0xb8)."
+    }
+
+    field base_hp type="i32::str" {
+        key "e7DK0FQT"
+        doc "UserUnitInfoBase::setBaseHp (+0x118)."
+    }
+
+    field base_atk type="i32::str" {
+        key "67CApcti"
+        doc "UserUnitInfoBase::setBaseAtk (+0x128)."
+    }
+
+    field base_def type="i32::str" {
+        key "q08xLEsy"
+        doc "UserUnitInfoBase::setBaseDef (+0x138)."
+    }
+
+    field base_heal type="i32::str" {
+        key "PWXu25cg"
+        doc "UserUnitInfoBase::setBaseHeal (+0x148)."
+    }
+
+    field add_hp type="i32::str" {
+        key "cuIWp89g"
+        doc "UserUnitInfoBase::setAddHp (+0x158)."
+    }
+
+    field ext_hp type="i32::str" {
+        key "TokWs1B3"
+        doc "UserUnitInfoBase::setExtHp (+0x168)."
+    }
+
+    field add_atk type="i32::str" {
+        key "RT4CtH5d"
+        doc "UserUnitInfoBase::setAddAtk (+0x178)."
+    }
+
+    field ext_atk type="i32::str" {
+        key "t4m1RH6Y"
+        doc "UserUnitInfoBase::setExtAtk (+0x188)."
+    }
+
+    field add_def type="i32::str" {
+        key "GcMD0hy6"
+        doc "UserUnitInfoBase::setAddDef (+0x198)."
+    }
+
+    field ext_def type="i32::str" {
+        key "e6mY8Z0k"
+        doc "UserUnitInfoBase::setExtDef (+0x1a8)."
+    }
+
+    field add_heal type="i32::str" {
+        key "C1HZr3pb"
+        doc "UserUnitInfoBase::setAddHeal (+0x1b8)."
+    }
+
+    field ext_heal type="i32::str" {
+        key "X6jf8DUw"
+        doc "UserUnitInfoBase::setExtHeal (+0x1c8)."
+    }
+
+    field today_yale type="i32::str" {
+        key "a1Jp3TVb"
+        doc "setTodayYale."
+    }
+
+    field want_gift type=str {
+        key "s2WnRw9N"
+        doc "setWantGift."
+    }
+
+    field favorite type="i32::str" {
+        key "5JbjC3Pp"
+        doc "setFavorite."
+    }
+
+    field equipitem_id type=str {
+        key "Ge8Yo32T"
+        doc "UserUnitInfoBase::setEquipItemID (+0x1e8).  The first sphere."
+    }
+
+    field equipitem_id2 type=str {
+        key "mZA7fH2v"
+        doc "UserUnitInfoBase::setEquipItemID2 (+0x208).  The second sphere."
+    }
+
+    field friend_id type=str {
+        key "98WfKiyA"
+        doc "setFriendID."
+    }
+
+    field friend_message type=str {
+        key "bM7RLu5K"
+        doc "setFriendMessage."
+    }
+
+    field friend_message_change_time type="i32::str" {
+        key "8DtoZdXE"
+        doc "setFriendMessageChangeTime."
+    }
+
+    field arena_rank_id type=str {
+        key "JmFn3g9t"
+        doc "setArenaRankID."
+    }
+
+    field ranking_point type="i32::str" {
+        key "U4pMNjy0"
+        doc "setRankingPoint."
+    }
+
+    field unit_type_id type="i32::str" {
+        key "nBTx56W9"
+        doc "UserUnitInfoBase::setUnitTypeID (+0xa8)."
+    }
+
+    field skill_id type=str {
+        key "nj9Lw7mV"
+        doc "UserUnitInfoBase::setSkillID (+0xc8).  Brave Burst."
+    }
+
+    field skill_lv type="i32::str" {
+        key "3NbeC8AB"
+        doc "UserUnitInfoBase::setSkillLv (+0x38)."
+    }
+
+    field extra_skill_id type=str {
+        key "iEFZ6H19"
+        doc "UserUnitInfoBase::setExtraSkillID (+0xd8).  Super Brave Burst."
+    }
+
+    field extra_skill_lv type="i32::str" {
+        key "RQ5GnFE2"
+        doc "UserUnitInfoBase::setExtraSkillLv (+0x48)."
+    }
+
+    field req_time type=str {
+        key "3InKeya4"
+        doc "setReqTime."
+    }
+
+    field elapsed_agree_time type="i32::str" {
+        key "paND1zM8"
+        doc "setElapsedAgreeTime."
+    }
+
+    field friend_rc type="i32::str" {
+        key "7x3pPB2C"
+        doc "setFriendRC (+0x2a8).  FriendInfo models the same key as unk_7x3pPB2C; this readParam names it.  // UNVERIFIED: what RC stands for."
+    }
+
+    field friend_hr type="i32::str" {
+        key "Sv80kL5r"
+        doc "setFriendHR (+0x2b8).  FriendInfo's unk_Sv80kL5r, named here.  // UNVERIFIED: what HR stands for."
+    }
+
+    field extra_passive_skill_id type=str {
+        key "cP83zNsv"
+        doc "UserUnitInfoBase::setExtraPassiveSkillID (+0xe8)."
+    }
+
+    field extra_passive_skill_id2 type=str {
+        key "LjY4DfRg"
+        doc "UserUnitInfoBase::setExtraPassiveSkillID2 (+0xf8)."
+    }
+
+    field unit_img_type type="i32::str" {
+        key "2pAyFjmZ"
+        doc "setUnitImgType.  Art variant; 2 and up append _N to the art filename, so send 1 (base art) as every other guild card does."
+    }
+
+    field guild_id type="i32::str" {
+        key "sD73jd20"
+        doc "setGuildID.  ⚠ NOT FriendInfo's key (mgNdrCEe): a FriendInfo row sent here would leave this unset.  0 = in no guild."
+    }
+
+    field fe_skill_info type=str {
+        key "Fnxab5CN"
+        doc "UserUnitInfoBase::setFeSkillInfo.  The unit's enhancement (SP) selection string; empty = none."
+    }
+
+    field deck_no type="i32::str" {
+        key "zsiAn9P1"
+        doc "setDeckNo."
+    }
+
+    field priority type="i32::str" {
+        key "yu18xScw"
+        doc "setPriority."
+    }
+
+    field omni_level type="i32::str" {
+        key "49sa3sld"
+        doc "UserUnitInfoBase::setOmniLevel (+0x298)."
+    }
+}
+
 json GuildRecomendedMemberResp {
     doc """
     Response for GuildRecomendedMember (ja5Enusw).
@@ -269,6 +549,11 @@ json GuildRecomendedMemberResp {
     field members type="[GuildRecomendedMemberInfo]" {
         key "fRaBu6et"
         doc "Every invitable Summoner, in full."
+    }
+
+    field friends type="[GuildRecommendFriendInfo]" {
+        key "8lAroepR"
+        doc "One profile per fRaBu6et row, SAME user ids -- tapping a card clones its row from here unchecked.  Also a full replace (removeAllObjects on row 0).  ⚠ Neither list can be EMPTIED over the wire: a zero-row array never reaches readParam, so the last candidate invited stays on the client's list until a non-empty reply replaces it."
     }
 }
 
@@ -314,8 +599,9 @@ json GuildMemberUpdateReq {
     }
 }
 
-// ⚠ aj38Jk10 IS TWO THINGS.  Below it is the REQUEST group GuildInviteManage
-// sends its accept/decline decisions under -- two ints per node.  It is ALSO the
+// ⚠ aj38Jk10 IS THREE THINGS.  It is the REQUEST group GuildJoin sends its one
+// node under (GuildJoinReq, below), AND the group GuildInviteManage sends its
+// accept/decline decisions under -- two ints per node.  It is ALSO the
 // RESPONSE key GameResponseParser dispatches to GuildJoinRequestInfoResponse
 // @0x1C54530, which reads 33 keys: the member card again, plus 7ad38bad,
 // SL7ySqi8 and xvkLFco0.  That response is the list of Summoners who have
@@ -349,8 +635,9 @@ json GuildInviteManageReq {
     the client message box and is an integer; this server has no numeric account
     ids and no message-box invite channel, and the Summoners being invited are
     simulated, so nothing ever sends the player an invite to accept.  Joining
-    here runs the other way, through GuildMemberUpdate, whose ids are strings we
-    actually own.
+    here runs the other way: the player's own invite, GuildJoin with type 2,
+    whose ids are strings we actually own.  (Until 2026-09-26 this said
+    GuildMemberUpdate; the client never sends that for an invite.)
     """
 
     field login_info type="[LoginInfoReq]::size(1)" {
@@ -361,6 +648,54 @@ json GuildInviteManageReq {
     field nodes type="[GuildInviteManageNode]" {
         key "aj38Jk10"
         doc "One node per decision; createBody loops the vector at +0x20 adding a node each time."
+    }
+}
+
+json GuildJoinNode {
+    doc "The one node GuildJoinRequest::createBody @0x1C54338 adds.  All three values go through CommonUtils::IntToString / a std::string, so all three arrive QUOTED."
+
+    field guild_id type="i32::str" {
+        key "sD73jd20"
+        doc "The guild.  For an invite, the SENDER'S own guild (GuildUserGuildInfo::getGuildInfo()->getGuildId()); for an application, the guild being applied to."
+    }
+
+    field user_id type=str {
+        key "h7eY3sAK"
+        doc "Who joins.  For an invite, the FRIEND'S id (FriendInfo::getUserID of the profile being viewed); for an application, the player's own."
+    }
+
+    field request_type type="i32::str" {
+        key "xvkLFco0"
+        doc "setRequestValues' third argument, read off every caller: 2 = INVITE (all nine friend-profile scenes pass mov w3,#2 -- Guild Hall candidate, Social list, friend search, mission/arena/colosseum/vortex-arena results), 1 = APPLY (GuildDetailScene::touchBegan @0x1DA99CC).  The same key as GuildJoinRequestInfo's request type."
+    }
+}
+
+json GuildJoinReq {
+    doc """
+    Request for GuildJoin (bfa2D1bp) -- the Invite to Guild button.
+
+    ⚠ INVITING IS THIS REQUEST, NOT GuildMemberUpdate.  Every friend profile's
+    invite button builds a GuildJoinRequest with type 2.  GuildMemberUpdate is sent
+    only by the Hall, the member screen and GuildTeamScene2 -- with the player's
+    OWN id next to GUILD_DISBAND_CONFIRMATION_OK, i.e. leaving/disbanding and
+    member management, never an invite.
+
+    After the send the profile scenes read nothing back except an error message:
+    FriendDetailScene and the other result screens show GUILD_INVITE_FINISH, and
+    the Guild Hall's own profile (FriendRandomSearchFriendRequestScene) shows
+    nothing.  Going back rebuilds the Hall, whose initConnect re-requests ONLY
+    GuildRecomendedMember -- so the reply should carry the refreshed GuildInfo or
+    the member list stays stale until the next GuildInfo.
+    """
+
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field nodes type="[GuildJoinNode]" {
+        key "aj38Jk10"
+        doc "Exactly one node (addGroup then a single addNode)."
     }
 }
 
@@ -1034,5 +1369,28 @@ json GuildRankingReqItem {
     field season_id type="i32::str" {
         key "X7hZ03iq"
         doc "The season being viewed, taken from GuildRaidRoundInfo::getSeasonID() before the send."
+    }
+}
+json GuildTradeNode {
+    doc "GuildTradeRequest createBody 0x1C67D3C, numeric addParam overloads."
+    field id type="i32::int" {
+        key "Yxo3bEic"
+        doc "id; see enclosing packet for binary evidence."
+    }
+    field count type="i32::int" {
+        key "H6k1LIxC"
+        doc "count; see enclosing packet for binary evidence."
+    }
+}
+
+json GuildTradeReq {
+    doc "Group 38adiJeb, key ja3biAqb."
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "login info; see enclosing packet for binary evidence."
+    }
+    field nodes type="[GuildTradeNode]" {
+        key "ah82D1iq"
+        doc "nodes; see enclosing packet for binary evidence."
     }
 }

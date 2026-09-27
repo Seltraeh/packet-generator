@@ -80,3 +80,156 @@ json EventTokenInfoResp {
         doc "One row per token the player has a record of, zeros included."
     }
 }
+json EventExchangeOffer {
+    doc "EventTokenExchangeInfoResponse readParam 0x1C48250; full replacement list c2Sls4DD."
+    field id type="str" {
+        key "Kd3DL39d"
+        doc "id; see enclosing packet for binary evidence."
+    }
+    field name type="str" {
+        key "s35idar9"
+        doc "name; see enclosing packet for binary evidence."
+    }
+    field description type="str" {
+        key "qp37xTDh"
+        doc "description; see enclosing packet for binary evidence."
+    }
+    field order type="i32::str" {
+        key "XuJL4pc5"
+        doc "order; see enclosing packet for binary evidence."
+    }
+    field price type="i32::str" {
+        key "3EWLm0sA"
+        doc "price; see enclosing packet for binary evidence."
+    }
+    field remaining type="i32::str" {
+        key "S8rdp9zk"
+        doc "remaining; see enclosing packet for binary evidence."
+    }
+    field reward type="str" {
+        key "qBAb07rh"
+        doc "reward; see enclosing packet for binary evidence."
+    }
+    field preview type="str" {
+        key "ra4iFR6T"
+        doc "preview; see enclosing packet for binary evidence."
+    }
+}
+
+json EventExchangeToken {
+    doc "Selected currency, from createBody 0x1C480DC."
+    field token_id type="str" {
+        key "Slkc395l"
+        doc "token id; see enclosing packet for binary evidence."
+    }
+}
+
+json EventExchangeReq {
+    doc "Group 49zxdfl3, key v2DfDSFl."
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "login info; see enclosing packet for binary evidence."
+    }
+    field tokens type="[EventExchangeToken]" {
+        key "l234vdKs"
+        doc "tokens; see enclosing packet for binary evidence."
+    }
+}
+
+json EventExchangePurchaseNode {
+    doc "Purchase createBody 0x1C48A30; count uses integer addParam."
+    field id type="str" {
+        key "Kd3DL39d"
+        doc "id; see enclosing packet for binary evidence."
+    }
+    field count type="i32::int" {
+        key "H6k1LIxC"
+        doc "count; see enclosing packet for binary evidence."
+    }
+    field token_id type="str" {
+        key "Slkc395l"
+        doc "token id; see enclosing packet for binary evidence."
+    }
+}
+
+json EventExchangePurchaseReq {
+    doc "Group SLf48fs0, key Odiel30s."
+    field login_info type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "login info; see enclosing packet for binary evidence."
+    }
+    field nodes type="[EventExchangePurchaseNode]" {
+        key "c2Sls4DD"
+        doc "nodes; see enclosing packet for binary evidence."
+    }
+}
+
+json EventExchangeResult {
+    doc "Result reader at 0x1C48F14. Success compares the literal string 1."
+    field id type="str" {
+        key "Kd3DL39d"
+        doc "id; see enclosing packet for binary evidence."
+    }
+    field success type="i32::str" {
+        key "Sc3slc04"
+        doc "success; see enclosing packet for binary evidence."
+    }
+    field message type="str" {
+        key "Sd3dsx41"
+        doc "message; see enclosing packet for binary evidence."
+    }
+}
+
+json ExchangeResp {
+    doc "Exchange snapshots after a purchase; inventory lists are complete when replaced."
+    field offers type="[EventExchangeOffer]" {
+        key "c2Sls4DD"
+        optional #true
+        doc "offers; see enclosing packet for binary evidence."
+    }
+    field results type="[EventExchangeResult]" {
+        key "Sdvs2lds"
+        optional #true
+        doc "results; see enclosing packet for binary evidence."
+    }
+    field event_token_info type="[EventTokenInfo]" {
+        key "l234vdKs"
+        optional #true
+        doc "event token info; see enclosing packet for binary evidence."
+    }
+    field guild_stock type="[GuildExchangeStock]" {
+        key "nMe3ai17"
+        optional #true
+        doc "guild stock; see enclosing packet for binary evidence."
+    }
+    field guild_members type="[GuildMemberInfo]" {
+        key "csIuech30"
+        optional #true
+        doc "guild members; see enclosing packet for binary evidence."
+    }
+    field unit_info type="[UserUnitInfo]" {
+        key "qC2tJs4E"
+        optional #true
+        doc "unit info; see enclosing packet for binary evidence."
+    }
+    field unit_dictionary type="[UserUnitDictionary]" {
+        key "GV81ctzR"
+        optional #true
+        doc "unit dictionary; see enclosing packet for binary evidence."
+    }
+    field warehouse_info type="[UserWarehouseInfo]" {
+        key "9wjrh74P"
+        optional #true
+        doc "warehouse info; see enclosing packet for binary evidence."
+    }
+    field item_dictionary_info type="[UserItemDictionaryInfo]" {
+        key "bd5Rj6pN"
+        optional #true
+        doc "item dictionary info; see enclosing packet for binary evidence."
+    }
+    field team_info type="[UserTeamInfo]::size(1)" {
+        key "fEi17cnx"
+        optional #true
+        doc "team info; see enclosing packet for binary evidence."
+    }
+}
