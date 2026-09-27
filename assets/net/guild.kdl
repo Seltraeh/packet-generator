@@ -560,9 +560,9 @@ json GuildRecomendedMemberResp {
 json GuildTargetNode {
     doc "A guild named by id alone."
 
-    field guild_id type="i32::int" {
+    field guild_id type="i32::str" {
         key "sD73jd20"
-        doc "Unquoted -- GuildMemberUpdateRequest::createBody uses addParam(const char*, int) here, unlike the create path which sends the same key as a string."
+        doc "The guild.  QUOTED like every number a request carries: JsonNode::addParam(const char*, int) @0xFDB82C is CommonUtils::IntToString plus the string overload (binary-confirmed 2026-09-27).  An unquoted i32::int here stops glaze at this field and silently drops the rest of the request.  Captured from the Windows client 2026-09-27: \"sD73jd20\": \"1\" -- the unquoted model made every rank change a no-op."
     }
 }
 
@@ -576,7 +576,7 @@ json GuildMemberEditNode {
 
     field value type="str" {
         key "gr48vsdJ"
-        doc "The member's TYPE -- their rank inside the guild, not an action code.  Resolved by GuildMembersInfoResponse, which reads this same key back through setMemberType @0x1C572FC.  QUOTED on the wire despite setMemberEditValue taking an int, because createBody uses the std::string addParam overload.  // UNVERIFIED: the type vocabulary itself (master / officer / member) is still not recovered."
+        doc "The member's NEW rank (see GuildMemberInfo.member_type), or 0 to remove them.  GuildMemberInfoScene::updateEvent @0x1DD36B8 sends current - 1 to promote, current + 1 to demote and 0 to dismiss; the Hall and GuildTeamScene2 send the player's OWN id with 0 to leave.  QUOTED on the wire despite setMemberEditValue taking an int, because createBody uses the std::string addParam overload.  After a success the client applies the change to its own list (noticeOK @0x1DD3DD4), so the reply must NOT carry csIuech30: that key clears the member list first and the promote dereferences a freed member."
     }
 }
 
@@ -615,12 +615,12 @@ json GuildMemberUpdateReq {
 json GuildInviteManageNode {
     doc "One accept/decline decision.  From setUserIdAndAction(int, int) @0x1C53DA0."
 
-    field user_id type="i32::int" {
+    field user_id type="i32::str" {
         key "7ad38bad"
         doc "⚠ AN INT, not the string id every other guild request uses.  GuildDetailScene::touchBegan @0x1DA9AC0 fills it from MessageBoxInfo::getGuildInviteID(), so it is an INVITE id travelling in the message box, not a Summoner id."
     }
 
-    field action type="i32::int" {
+    field action type="i32::str" {
         key "ad8D1kqP"
         doc "1 = accept, 0 = decline.  Both constants read off the callers: GuildDetailScene::touchBegan and GuildRequestsListScene::updateEvent pass mov w2,#1 at 0x1DA9AD8 and 0x1E4B7B0, and the reject loop passes wzr at 0x1E4B900."
     }
@@ -822,12 +822,12 @@ json MessageInboxResp {
 json InboxMessageManageNode {
     doc "One message being acted on.  From setMessageIdAndAction(int, int) @0x1C69388, the same shape GuildInviteManage uses for invites."
 
-    field message_id type="i32::int" {
+    field message_id type="i32::str" {
         key "78Zema70"
-        doc "Which message.  Unquoted -- addParam(const char*, int)."
+        doc "Which message.  QUOTED like every number a request carries: JsonNode::addParam(const char*, int) @0xFDB82C is CommonUtils::IntToString plus the string overload (binary-confirmed 2026-09-27).  An unquoted i32::int here stops glaze at this field and silently drops the rest of the request."
     }
 
-    field action type="i32::int" {
+    field action type="i32::str" {
         key "Hhgi79M1"
         doc "What to do with it.  ⚠ This key is also the OUTER envelope's GroupId field (handbook 4); inside this node it is the action, and the two have nothing to do with each other.  // UNVERIFIED: the action vocabulary is not recovered."
     }
@@ -904,11 +904,12 @@ json GuildMemberInfo {
         doc """
         setMemberType @0x1C572FC -- the member's RANK inside the guild.
 
-        This resolves what GuildMemberUpdate's `value` carries: the request and
-        this response share the key, so an edit sets a member's type rather than
-        naming an invite/kick action, which is what an earlier pass could not
-        determine.  // UNVERIFIED: the type vocabulary (master / officer /
-        member) is still not recovered -- no consumer has been read.
+        BINARY-CONFIRMED vocabulary (2026-09-27): GameUtils::getNameOfGuildRank
+        @0x1EC4178 draws GUILD_RANK_NAME_<n>, which the client's string table
+        defines for 1 Guild Master, 2 Vice Guild Master, 3 Officer, 4 Member.
+        Lower is higher: promoting sends n - 1.  0 has no name (it is
+        GuildMemberUpdate's "remove"), which is why every member drew wrong
+        while the server sent 0.
         """
     }
 
@@ -1372,12 +1373,12 @@ json GuildRankingReqItem {
     }
 }
 json GuildTradeNode {
-    doc "GuildTradeRequest createBody 0x1C67D3C, numeric addParam overloads."
-    field id type="i32::int" {
+    doc "GuildTradeRequest createBody 0x1C67D3C, numeric addParam overloads.  QUOTED like every number a request carries: JsonNode::addParam(const char*, int) @0xFDB82C is CommonUtils::IntToString plus the string overload (binary-confirmed 2026-09-27).  An unquoted i32::int here stops glaze at this field and silently drops the rest of the request."
+    field id type="i32::str" {
         key "Yxo3bEic"
         doc "id; see enclosing packet for binary evidence."
     }
-    field count type="i32::int" {
+    field count type="i32::str" {
         key "H6k1LIxC"
         doc "count; see enclosing packet for binary evidence."
     }

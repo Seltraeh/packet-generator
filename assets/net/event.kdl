@@ -137,12 +137,12 @@ json EventExchangeReq {
 }
 
 json EventExchangePurchaseNode {
-    doc "Purchase createBody 0x1C48A30; count uses integer addParam."
+    doc "Purchase createBody 0x1C48A30; count uses integer addParam.  QUOTED like every number a request carries: JsonNode::addParam(const char*, int) @0xFDB82C is CommonUtils::IntToString plus the string overload (binary-confirmed 2026-09-27).  An unquoted i32::int here stops glaze at this field and silently drops the rest of the request."
     field id type="str" {
         key "Kd3DL39d"
         doc "id; see enclosing packet for binary evidence."
     }
-    field count type="i32::int" {
+    field count type="i32::str" {
         key "H6k1LIxC"
         doc "count; see enclosing packet for binary evidence."
     }
