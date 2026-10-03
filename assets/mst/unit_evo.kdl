@@ -42,49 +42,49 @@ json UnitEvoMst {
         doc "Karma cost (0..1500000).  Same hash/name as mission.kdl/raid.kdl."
     }
 
-    field unk1 type="i32::str" {
+    field material_1_kind type="i32::str" {
         key "Xyt6rhx2"
-        doc "// UNVERIFIED: constant 1.  All-zero in UnitFeCategoryMst, which shares this hash."
+        doc "Kind of material_1: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk2 type="i32::str" {
+    field material_2_kind type="i32::str" {
         key "0tna4Idu"
-        doc "// UNVERIFIED: constant 1."
+        doc "Kind of material_2: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk3 type="i32::str" {
+    field material_3_kind type="i32::str" {
         key "6GwnugW3"
-        doc "// UNVERIFIED: 1..2."
+        doc "Kind of material_3: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk4 type="i32::str" {
+    field material_4_kind type="i32::str" {
         key "hdF8ND2H"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_4: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk5 type="i32::str" {
+    field material_5_kind type="i32::str" {
         key "nB7pFdR0"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_5: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk6 type="i32::str" {
+    field material_6_kind type="i32::str" {
         key "IZUvR489"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_6: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk7 type="i32::str" {
+    field material_7_kind type="i32::str" {
         key "bNRUuatB"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_7: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk8 type="i32::str" {
+    field material_8_kind type="i32::str" {
         key "2BFgYLjg"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_8: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
-    field unk9 type="i32::str" {
+    field material_9_kind type="i32::str" {
         key "18Oz7z8k"
-        doc "// UNVERIFIED: 0..2."
+        doc "Kind of material_9: 1 = a unit id (or an unused slot), 2 = an item id.  Verified on all 1342 rows: every non-zero material slot whose id is an ItemMst id carries 2 and every unit id carries 1 (333 item slots, 7107 unit slots, 0 exceptions); UnitEvoRequest::createBody @0x13AE818 sends the same code as 29MgiJIQ.  Unused slots carry 1 (4578 slots) or 0 (60 slots)."
     }
 
     field unk10 type="i32::str" {

@@ -65,19 +65,25 @@ json UnitExtMst {
         doc "Unit this override applies to (10452..60812).  Same hash/name as unit.kdl."
     }
 
-    field unk1 type="[i32::str]::sep(colon)" {
+    field param_up_ext type="[i32::str]::sep(colon)" {
         key "VS7df4oH"
-        doc "// UNVERIFIED: colon quad, elements 0..150 (\"0:0:0:20\") — a stat or rate override."
+        doc "CONFIRMED setParamUpExt (UnitExtMstResponse::readParam @0x13F5B94).  HP:ATK:DEF:REC quad; non-zero exactly on the five imps (10452 0:20:0:0, 20442 0:0:20:0, 30432 0:0:0:20, 40432 50:0:0:0, 50612 150:60:60:60)."
     }
 
-    field unk2 type="i32::str" {
+    field double_sphere_trigger type="i32::str" {
         key "FKVRt01T"
-        doc "// UNVERIFIED: 0/1 flag."
+        doc """
+        CONFIRMED setDoubleSphereTrigger(bool) (same readParam).  1 only on
+        20302 Sphere Frog.  Besides opening the second sphere slot, the client
+        counts it as 10 enhancement SP once the base ALREADY has that slot:
+        UserState::getUserUnitListEfPoint @0x1247888 adds 10 when the base's
+        second frame is not "-1" and this flag is set.
+        """
     }
 
-    field unk3 type="i32::str" {
+    field extra_skill_flg type="i32::str" {
         key "dyFUE5fN"
-        doc "// UNVERIFIED: 0..2."
+        doc "CONFIRMED setExtraSkillFlg (same readParam).  1 on 50792, 2 on 60812, 0 elsewhere."
     }
 }
 
@@ -157,7 +163,7 @@ json UnitCommentMst {
 }
 
 json UnitFeSkillMst {
-    doc "Frontier Evolution skill nodes (wrapper hash kXes8fSi).  5124 rows — the per-unit FE tree.  Distinct from F_FE_SKILL_MST, which is still unported (no response class)."
+    doc "Frontier Evolution skill nodes (wrapper hash kXes8fSi).  5124 rows — the per-unit FE tree.  The skills themselves (SP cost, series, level) are F_FE_SKILL_MST — FeSkillMst below."
     hash "kXes8fSi"
 
     field unit_id type="i32::str" {
@@ -177,17 +183,77 @@ json UnitFeSkillMst {
 
     field skill_id type="i32::str" {
         key "ri6D9yBi"
-        doc "// UNVERIFIED (named from context): skill granted by the node (100500..1900000002)."
+        doc "CONFIRMED: the FeSkillMst id the node grants (1..1900000002).  UnitDetailVirtuallyInfoScene::touchSkill resolves it with FESkillMstList::getObjectFeID, and FeSkillGet sends the chosen one back under the same key.  Every node's id is present in F_FE_SKILL_MST Ver618."
     }
 
     field term_skill type="str" {
         key "FHThxDv4"
-        doc "CONFIRMED setTermSkill (readParam).  at-joined entries whose elements can embed '/' (\"1@140000\", \"1000000189/1\").  Kept packed: '/' is not a supported separator."
+        doc "CONFIRMED setTermSkill (readParam); decoded from UnitDetailVirtuallyInfoScene::skillTermCheck @0x1BE21E8: '/'-separated entries of `type@value`; type 1 = the unit must already own FE skill `value` (isFeSkill).  In the shipped data every entry is type 1: 353 nodes have one (\"1@140000\"), one node has two (\"1@a/1@b\"), the rest none."
     }
 
     field description type="str" {
         key "7XYkj2EU"
         doc "Node effect text — Japanese (\"「攻撃ＢＢの威力をアップ」習得\") or English; free text containing commas and quotes, hence a plain string."
+    }
+}
+
+json FeSkillMst {
+    doc """
+    F_FE_SKILL_MST — the SP enhancement skills themselves (2,899 rows).  No
+    response class carries it: the client downloads it as
+    /mst/Ver618_2h9r3yEY.dat (file key 2h9r3yEY, encode key w3Z9EeUR) and
+    reads it through FESkillMstList.  The server keeps a decrypted copy,
+    deploy/mst/fe_skill_mst.json, written by scripts/gen_fe_skill_mst.py from
+    that same served file, so FeSkillGet prices a skill exactly as the
+    client's Enhancements screen does.  Setters: FESkillMst::setFeSkillID,
+    setFeSkillName, setSeries, setLv, setNeedBP, setEffectType,
+    setProcessType, setProcessParam, setDescription.
+    """
+    hash "2h9r3yEY"
+
+    field id type="i32::str" {
+        key "ri6D9yBi"
+        doc "setFeSkillID — joined by UnitFeSkillMst.skill_id and sent by FeSkillGet."
+    }
+
+    field name type="str" {
+        key "yRlCNyvk"
+        doc "setFeSkillName (Japanese in this table; the client shows its own text)."
+    }
+
+    field series type="i32::str" {
+        key "9PsmH7tz"
+        doc "setSeries — skills of one series are levels of one enhancement (isFeSkillLvCheck compares series and lv)."
+    }
+
+    field lv type="i32::str" {
+        key "D9wXQI2V"
+        doc "setLv — 1..11 within the series."
+    }
+
+    field need_bp type="i32::str" {
+        key "G5wFDad6"
+        doc "setNeedBP — the SP the skill costs (5..100).  skillTermCheck @0x1BE21E8 requires fe_bp >= need_bp and fe_used_bp + need_bp <= fe_max_usable_bp."
+    }
+
+    field effect_type type="str" {
+        key "jeR2rN3V"
+        doc "setEffectType — '@'-joined when the skill has several effects."
+    }
+
+    field process_type type="str" {
+        key "hjAy9St3"
+        doc "setProcessType — battle process ids, '@'-joined."
+    }
+
+    field process_param type="str" {
+        key "2Smu5Mtq"
+        doc "setProcessParam — per-process parameters, '@'-joined, comma lists inside."
+    }
+
+    field description type="str" {
+        key "qp37xTDh"
+        doc "setDescription."
     }
 }
 

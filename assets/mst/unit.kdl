@@ -282,7 +282,13 @@ json UnitMst {
 
     field category  type="i32::str" {
         key "9PsmH7tz"
-        doc "Unit category"
+        doc """
+        CONFIRMED UnitMst::setCategoryNo (UnitMstResponse::readParam).  The
+        evolution line: every form shares it (Vargas 10011..10017 all carry
+        10010).  The client's "duplicate of the unit (any evolutionary form)"
+        test for enhancement SP compares exactly this
+        (UserState::getUserUnitListEfPoint @0x1247888).
+        """
     }
 
     field burst_level_boost  type="i32::str" {
@@ -299,6 +305,11 @@ json UnitMst {
         //     10313 Burst Emperor +5  750004 Burst Queen +20
         // A skill-up rate would not be zero for every ordinary unit.
         // The friendly decode of F_UNIT_MST names it unitAdditionalBurstLevelBoost.
+        //
+        // The client's own name is UnitMst::setSkillUpAdjust / getSkillUpAdjust
+        // (UnitMstResponse::readParam).  UserState::getUserUnitListEfPoint
+        // @0x1247888 also turns it into enhancement SP: 1..4 -> 1 (2 -> 2),
+        // above 4 -> 5, and 20 on 750004 Burst Queen -> 20.
         """
     }
 

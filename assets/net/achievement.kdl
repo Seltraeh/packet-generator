@@ -173,7 +173,7 @@ json UserAchievementTradeInfo {
 
     field count type="i32::str" {
         key "H6k1LIxC"
-        doc "How many times this offer has been bought, against AchievementTradeMst.limit_count.  Named Cnt by PermitRecipeResponse and used the same way by the selector-ticket and guild-exchange blocks."
+        doc "How many of this offer the player has bought in total (row+0x30), against AchievementTradeMst.limit_count (S8rdp9zk): the shop shows limit_count minus this as the remaining stock and caps the slider with it.  Named Cnt by PermitRecipeResponse and used the same way by the selector-ticket and guild-exchange blocks."
     }
 
     field state type="i32::str" {
@@ -591,7 +591,7 @@ json AchievementTradeNode {
 
     field count type="i32::str" {
         key "H6k1LIxC"
-        doc "How many to buy.  Every unexpired offer has limit_count 1, so this is 1 in practice."
+        doc "How many to buy: the shop slider's value, 1 .. AchievementTradeMst.limit_count (S8rdp9zk) minus what this player has already bought (RandallAchievementShopDetailScene::sliderSet @0x1A62FBC) -- 400 on the Ignis Shard offer.  Quoted like every request number."
     }
 }
 
@@ -642,6 +642,20 @@ json AchievementTradeResp {
     field warehouse_info type="[UserWarehouseInfo]" {
         key "9wjrh74P"
         doc "The item warehouse, for an offer that pays an item or a sphere.  A full replace -- see the item emitters."
+        optional #true
+    }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
         optional #true
     }
 
@@ -719,7 +733,7 @@ json AchievementDeliverGoods {
 
     field item_ids type="str" {
         key "n6E8iMf3"
-        doc "The sphere screen's counterpart to user_unit_ids.  // UNVERIFIED: no store to this offset was read; inferred from position and from the sphere scene assigning a second string after the subject id."
+        doc "The sphere screen's WAREHOUSE ROW ids, comma-separated -- not item ids.  RandallAchievementDedicateSphereScene::sell @0x1A3D5D0 joins UserWarehouseInfo::getItemIndex() of each selected row, zeroes the row locally (setItemNum(0)), and assigns the string to request+0x60, which createBody @0x139DF80 sends under this key.  A crafted row not yet refreshed arrives as its INT_MAX - itemId placeholder."
     }
 }
 
@@ -782,6 +796,20 @@ json AchievementDeliverResp {
     field warehouse_info type="[UserWarehouseInfo]" {
         key "9wjrh74P"
         doc "The item warehouse after a sphere delivery.  A full replace."
+        optional #true
+    }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
         optional #true
     }
 

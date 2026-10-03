@@ -24,7 +24,7 @@ int-enum GmeErrorCommand start=0 {
     doc "Type of command to do after the user presses OK."
 
     variant Retry {
-        doc TODO
+        doc "GameScene::checkResponseMessage @0x1615E4C shows the message as notice -4000, which GameScene::noticeOK @0x16098AC ignores (its jump table covers -3999..-3989), so the requesting scene's own noticeOK decides.  MissionGameOverScene::noticeOK @0x17FB62C returns to initContinueConfirm (state 2; 4 in Frontier Gate): the refusal of a revival.  HandleResult::refuseToRetry."
         value 2
     }
 
@@ -80,7 +80,7 @@ json GmeHeader {
 
     field client_id type="str" {
         key "aV6cLn3v"
-        doc "ID of the client that invoked the request"
+        doc "NOT a client id: BaseRequest::getSendData @0x139FDB8 writes IntToString(this+8), and +8 of a cocos2d::CCObject is m_uID, which CCObject::CCObject @0x1F01E9C takes from a process-wide counter.  So it names the REQUEST OBJECT: unique among one client run's requests, the same on a retry (both retry paths re-send the same object), and restarted at every launch.  Handlers never see it (GmeController::Handle passes only the decrypted body).  Checked on the arm64 build only."
     }
 }
 

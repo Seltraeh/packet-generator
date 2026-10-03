@@ -127,8 +127,9 @@ json AchievementSubjectMst {
 json AchievementTradeMst {
     hash "82CcMZhp"
     doc """
-    F_ACHIEVEMENT_TRADE_MST -- the Merit Point shop (181 unexpired of 32,500,
-    after dropping one offer whose unit does not resolve).  response_class =
+    F_ACHIEVEMENT_TRADE_MST -- the Merit Point shop (241 offers served since
+    2026-09-25, selected from the original records; earlier 181 unexpired of
+    32,500 after dropping one offer whose unit does not resolve).  response_class =
     AchievementTradeMstResponse, readParam @0x13CB5C0.  Delivered through
     parseBodyTag like its sibling above.
     """
@@ -178,14 +179,33 @@ json AchievementTradeMst {
         doc "What the purchase pays, colon-packed in the shared present vocabulary: \"<type>:<id>:<count>:<a>:<b>\" -- \"7:47300:1:0:0\" is one sphere 47300, \"6:18830:1:1:0\" one unit.  Kept string: mixed ids and flags."
     }
 
-    field limit_count type="i32::str" {
+    field unk_9Hau45Jj type="i32::str" {
         key "9Hau45Jj"
-        doc "How many times one player may buy it; 1 on every unexpired row."
+        doc """
+        1 on all 241 served rows.  readParam @0x13CB5C0 stores it at row+0x88,
+        and NOTHING in the Merit shop reads that offset: sliderSet,
+        touchBegan and RandallAchievementShopItem::createSprite all read
+        +0x8c (S8rdp9zk) instead.  // UNVERIFIED meaning.  It was modelled as
+        the purchase limit until 2026-10-02, which refused every purchase of
+        more than one (offer 91000059, Ignis Shard x400) and capped every
+        offer at a single buy.
+        """
     }
 
-    field unk_S8rdp9zk type="i32::str" {
+    field limit_count type="i32::str" {
         key "S8rdp9zk"
-        doc "1 on every unexpired row.  // UNVERIFIED: likely a stock/enabled flag."
+        doc """
+        How many of this offer one player may buy in total (row+0x8c; 1, 2, 3,
+        4, 6, 10, 20, 40, 50, 99 or 400 in the served table).  Binary-confirmed
+        in RandallAchievementShopDetailScene: sliderSet @0x1A62FBC sets the
+        quantity slider to 1 .. (limit_count - bought), bought being
+        UserAchievementTradeInfo.H6k1LIxC (+0x30), floored at 1; touchBegan
+        @0x1A60890 refuses with RANDALL_ACHIEVEMENT_SHOP_CHECK_COUNT when
+        limit_count <= bought; RandallAchievementShopItem::createSprite
+        @0x1A64D50 shows RANDALL_ACHIEVEMENT_REST (limit_count - bought) when
+        limit_count >= 1.  A purchase is quantity x price points
+        (getBeedPointStr) for quantity x the reward's own count.
+        """
     }
 
     field start_date type=str {

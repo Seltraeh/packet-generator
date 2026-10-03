@@ -309,10 +309,9 @@ json DefineMst {
         doc "TODO"
     }
 
-    // ??
     field reset_fe_skill_dia_count type="i32::str" {
         key "5csFoG1G"
-        doc "TODO"
+        doc "THE PRICE OF AN SP-ENHANCEMENT RESET -- 1 gem in this data.  DefineMst::getResetFeSkillDiaCnt has three call sites in two functions: UnitDetailVirtuallyInfoScene::resetDialog @0x1BDF278 (the shortage dialog when UserTeamInfo's gems are below it, otherwise UNIT_VIRTUALLY_RESET with this value as the price parameter) and resetConnect @0x1BDEBDC, which sends it as ShopUse type 9's 03UGMHxF.  The server charges this value, not the claim."
     }
 
     field max_blacklist_count type="i32::str" {

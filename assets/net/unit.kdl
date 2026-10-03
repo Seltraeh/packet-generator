@@ -86,16 +86,22 @@ json UnitEvoZelEntry {
 }
 
 json UnitEvoElemEntry {
-    doc "One evolution material (element) unit consumed by a UnitEvo request.  Note the user_unit_id here rides key inU8Q4gL, not edy7fq3L."
+    doc "One node of UnitEvoRequest::createBody @0x13AE818's 8Z2NQrx1 group: the base unit, then every material unit, then every material ITEM.  Note the id here rides key inU8Q4gL, not edy7fq3L."
 
     field user_unit_id type="i32::str" {
         key "inU8Q4gL"
-        doc "user_units instance id of a consumed evo material.  Quoted decimal integer on the wire."
+        doc "For a unit node (material_kind 1) the user_units instance id.  For an ITEM node (material_kind 2) it is UserWarehouseInfo::getItemIndex @0x13AEB1C -- a client-side display index, NOT a unit id: never feed it to a user_units lookup.  Quoted decimal integer on the wire."
     }
 
     field role type="str" {
         key "mnZ5K4Ii"
-        doc "Material role marker."
+        doc "1 = the base being evolved, 2 = a material (constants at @0x13AE908 / @0x13AE9B8 / @0x13AEAF8)."
+    }
+
+    field material_kind type="i32::str" {
+        key "29MgiJIQ"
+        doc "1 = a unit (the base and each material unit), 2 = an item from the warehouse (createBody @0x13AE91C / @0x13AE9C8 / @0x13AEB08).  The same 1/2 code UnitEvoMst's per-slot flags carry for its nine material slots (verified on all 1342 rows: every item-id slot is 2, every unit-id slot 1)."
+        optional #true
     }
 }
 
@@ -152,7 +158,13 @@ json UnitReinforceEntry {
 
     Note the class the client builds is the reinforcement HELPER record, shared
     with the friend-slot path (handbook 8.33).  The name below describes how
-    UnitMix and UnitEvo use it, not what the class is.
+    UnitMix and UnitEvo used it, not what the class is.
+
+    2026-10-02: RETIRED.  Neither handler sends it any more.  A row without a
+    user id (h7eY3sAK) is discarded by readParam AFTER row 0 has already
+    cleared the helper list, so this entry only ever wiped the friend picker
+    (UnitMixResp.reinforce in net/handlers.kdl has the decode).  Kept so the
+    shape stays documented.
 
     Original note: Reinforcement/level-up animation + stat payload under response key xZH6EIQ7.  Shared by UnitMix and UnitEvo — the client's animation and stat-display code expects this same shape after either operation (the two handlers previously carried byte-identical MixReinforceEntry/EvoReinforceEntry structs).
     """

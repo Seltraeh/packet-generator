@@ -1929,7 +1929,7 @@ json UnitEvoReq {
 }
 
 json UnitEvoResp {
-    doc "UnitEvo response (response_class=UnitOpeEvoResponse).  Carries the evolution result (I82p0wCL), a full unit-cache rebuild (4ceMWH6k), the updated team info (fEi17cnx), and the reinforce/stat animation payload (xZH6EIQ7)."
+    doc "UnitEvo response (response_class=UnitOpeEvoResponse).  Carries the evolution result (I82p0wCL), a full unit-cache rebuild (4ceMWH6k) and the updated team info (fEi17cnx).  xZH6EIQ7 is the HELPER PICKER list and is never sent from here (see the reinforce field)."
 
     field evo_result type="[EvoResultEntry]" {
         key "I82p0wCL"
@@ -1984,7 +1984,11 @@ json UnitEvoResp {
 
     field reinforce type="[UnitReinforceEntry]" {
         key "xZH6EIQ7"
-        doc "Reinforcement/level-up animation + stat payload."
+        doc """
+        NEVER SET -- same hazard as UnitMixResp.reinforce.  xZH6EIQ7 is the
+        HELPER PICKER list, not an evolution animation payload.  Omitted.
+        """
+        optional #true
     }
 
     field warehouse_info type="[UserWarehouseInfo]" {
@@ -1996,6 +2000,20 @@ json UnitEvoResp {
         setItemNum, UserWarehouseInfoList::addObject) and HomeInfo carries no
         warehouse, so those spheres stayed invisible until relaunch.
         readParam @0x14060E0 clears first: whole warehouse only.
+        """
+        optional #true
+    }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
         """
         optional #true
     }
@@ -2027,11 +2045,31 @@ json UnitMixReq {
 }
 
 json UnitMixResp {
-    doc "UnitMix (Power Fusion) response.  Carries the reinforce/stat animation payload (xZH6EIQ7), an incremental unit-cache update for the fused base unit (qC2tJs4E), and the updated team info (fEi17cnx)."
+    doc "UnitMix (Power Fusion) response.  Carries the result record (1ZbHB6Im), a full unit-cache rebuild (4ceMWH6k) and the updated team info (fEi17cnx).  xZH6EIQ7 is the HELPER PICKER list and is never sent from here (see the reinforce field)."
 
     field reinforce type="[UnitReinforceEntry]" {
         key "xZH6EIQ7"
-        doc "Reinforcement/level-up animation + stat payload."
+        doc """
+        NEVER SET.  xZH6EIQ7 is the HELPER PICKER list, not a fusion
+        animation payload: it dispatches to ReinforcementInfoResponse, whose
+        readParam @0x13EB29C calls ReinforcementInfoList::removeAllObjects on
+        row 0 and, on each row's last field, ADDS the row only when its user id
+        (h7eY3sAK) is non-empty -- otherwise the row is autoreleased.
+
+        Until 2026-10-02 fusion and evolution sent one "DecompDev" row with no
+        user id here.  The client parsed it, emptied the helper list, then
+        threw the row away, so the next quest's picker said NO_REINFORCEMENT
+        ("Reinforcements could not be found") until a FriendGet (a battle
+        result or a relaunch) refilled it.  Player report 2026-10-02: "every
+        once in a while" -- i.e. after a fusion or evolution.
+
+        Nothing reads it for fusion either: the result screen draws from
+        UnitOpeResult (1ZbHB6Im) and the unit cards from the 4ceMWH6k roster.
+        The row could never reach a list, so it never drove anything.
+        Optional so the key is omitted; a zero-row array would also be inert,
+        but an absent key cannot be misread.
+        """
+        optional #true
     }
 
     field unit_update type="[UserUnitInfo]" {
@@ -2107,6 +2145,20 @@ json UnitMixResp {
         """
         optional #true
     }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
+        optional #true
+    }
 
     field item_dictionary_info type="[UserItemDictionaryInfo]" {
         key "bd5Rj6pN"
@@ -2166,6 +2218,20 @@ json UnitSellResp {
     field warehouse_info type="[UserWarehouseInfo]" {
         key "9wjrh74P"
         doc "Complete positive inventory, sent only when a sold unit had spheres equipped and gme::returnEquippedSpheres put them back.  readParam @0x14060E0 clears first: whole warehouse only."
+        optional #true
+    }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
         optional #true
     }
 
@@ -2405,6 +2471,20 @@ json MissionEndResp {
         key "9wjrh74P"
         doc "Complete positive inventory after crediting drops. APK readParam @0x14060E0 clears before adding; never send only earned stacks."
     }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
+        optional #true
+    }
     field item_dictionary_info type="[UserItemDictionaryInfo]" {
         key "bd5Rj6pN"
         doc "Every item species in persisted inventory, including zero-count historical stacks, matching UserInfo."
@@ -2412,6 +2492,31 @@ json MissionEndResp {
     field permit_receipes type="[PermitReceipe]" {
         key "51yQrDBR"
         doc "Complete recipe permissions after the clear. APK readParam @0x13E9B70 clears the recipe list; derive from all current facilities and cleared missions."
+    }
+    field town_location_detail type="[UserTownLocationDetail]" {
+        key "s8TCo2MS"
+        doc """
+        Every town tile's harvest state, re-read after the clear (Town::
+        locationState, against the same cleared set as permit_receipes).
+
+        WHY MissionEnd: missions 11 and 12 unlock the Farm and the Mountain
+        (TownLocationMst need_mission_id), and the client checks that gate
+        itself against UT1SVg59 -- which this reply already updates.  But a
+        locked tile is sent with no taps and no loot, and nothing but UserInfo
+        ever re-sent this list, so a Farm unlocked mid-session passed its gate
+        and still sat there with tap_cnt 0: no sparkle, and collectItem
+        @0x18F24A8 returns silently on a tap (reported 2026-10-02 as "Farm says
+        unlocked but is not").  Rolling here gives the newly opened tile its
+        first period at the moment it opens, and lets the 3-hour refresh reach
+        a long session at its next clear instead of its next login.
+
+        Race-free: the client batches every tile tap into one TownUpdate it
+        flushes on leaving town (captured "2:9,4:10" with the Home BadgeInfo),
+        long before a battle ends.  UserTownLocationDetailResponse::readParam
+        @0x1404090 clears the list at row 0, so this is always the full set.
+        Omitted on a result that settles nothing.
+        """
+        optional #true
     }
     field energy_recover type="DefineEnergyRecover" {
         key "VkoZ5t3K"
@@ -2568,7 +2673,7 @@ json ShopUseEntry {
         Types 2 and 3 are also what the Expand button on the Over Unit / Item
         Capacity warning reaches.  The client changes no counter itself after
         any of these (ShopUseConnectScene only checks the reply), so the
-        team_info reply is the purchase.  The handler implements 1-5, 7 and
+        team_info reply is the purchase.  The handler implements 1-5, 7, 9 and
         10 and ignores the rest rather than guess what they spend.
         """
     }
@@ -2600,6 +2705,11 @@ json ShopUseEntry {
         key "rA9jDCP5"
         doc "The stamp set bought by type 6: createBody writes ShopUseRequest +0x20, which only setStampSetId @0x13ACBAC sets (its one caller is ShopBuyStampScene::confirmAnswerYes).  0 for every other type."
     }
+
+    field user_unit_id type="str" {
+        key "edy7fq3L"
+        doc "The owned unit a type-9 use acts on.  ShopUseRequest::createBody @0x13AC8C8 adds it only when set, and its one setter caller is UnitDetailVirtuallyInfoScene::resetConnect @0x1BDEBDC (the Enhancements screen's Reset, priced at DefineMst reset_fe_skill_dia_count).  The client sends it only when the reset can do something: resetBtnSet @0x1BE2C88 disables the button while getFeUsedBP() is 0, and resetDialog @0x1BDF278 shows the shortage dialog instead when its gem count is below the price.  The body says nothing about the unit's state and carries no nonce, so a retry and a later genuine reset look the same.  Empty for every other type."
+    }
 }
 
 json ShopUseReq {
@@ -2627,6 +2737,79 @@ json ShopUseResp {
     field user_team type="HunterOrbRefresh" {
         key "kN2i7qds"
         doc "HUNTER ORBS AFTER THE PURCHASE.  ShopUse type 5 refills them, and they are NOT in team_info -- they live in the client's ChallengeHeaderInfo, whose only writer is this key.  Without it the player paid the Gem and the counter on screen stayed where it was, so the \"restore orbs\" prompt simply came back.  Sent only for the orb purchase. Uses the partial count/timer shape so buying orbs cannot overwrite HR or Frontier Gate score."
+        optional #true
+    }
+
+    field unit_refresh type="[UserUnitInfo]" {
+        key "4ceMWH6k"
+        doc "Type 9 (reset a unit's SP enhancements) only: the COMPLETE roster, full-replace.  The client never clears fe_skill_info or moves SP back itself -- setFeBP / setFeUsedBP / setFeSkillInfo are written only by UserUnitInfoResponse::readParam -- and qC2tJs4E cannot update an owned unit, so this is the one way the reset shows.  Safe here: UnitDetailVirtuallyInfoScene re-resolves its unit by id in every function that reads it.  Optional so every other type omits it (an empty full-replace list would clear the roster)."
+        optional #true
+    }
+}
+
+json FeSkillGetEntry {
+    doc """
+    The one node of request group bx56032l.  FeSkillGetRequest::createBody
+    @0x13CA7F4, filled by FeSkillGetRequest::setParam from
+    UnitDetailVirtuallyInfoScene::feSkillGetConnect @0x1BDF7AC — ONE skill per
+    request: the player taps a node (touchSkill stores that FESkillMst's id in
+    the scene at +0x3C0) and confirms.
+    """
+
+    field unit_id type="str" {
+        key "pn16CNah"
+        doc "The unit's MST id, as the unit's own getter returns it."
+    }
+
+    field user_unit_id type="str" {
+        key "edy7fq3L"
+        doc "The owned unit being enhanced."
+    }
+
+    field fe_skill_id type="str" {
+        key "ri6D9yBi"
+        doc "The FeSkillMst id to acquire — a node of UnitFeSkillMst for this unit."
+    }
+}
+
+json FeSkillGetReq {
+    doc "FeSkillGet (nSQxNOeL / nZ2bVoWu) request: spend SP on one Omni enhancement. Registered by FeSkillGet.cpp on 2026-10-01. Reverified against createBody @0x13CA7F4 and setParam @0x13CA750; see docs/FE_SKILL_PURCHASE_2026-10-01.md in the parent repository."
+
+    field signalKey type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key request block."
+    }
+
+    field loginInfo type="[LoginInfoReq]::size(1)" {
+        key "IKqx1Cn9"
+        doc "Login info identifying the current user."
+    }
+
+    field fe_skill_get type="[FeSkillGetEntry]::size(1)" {
+        key "bx56032l"
+        doc "The skill being acquired."
+    }
+}
+
+json FeSkillGetResp {
+    doc """
+    FeSkillGet response.  The binary has no FeSkillGetResponse class and the
+    scene applies nothing itself: checkConnectResult only runs
+    checkResponseMessage, and the unit's SP and skill list have no writer but
+    UserUnitInfoResponse::readParam.  So the reply IS the purchase: the whole
+    roster under 4ceMWH6k, which the Enhancements screen then redraws from
+    (it looks its unit up by id every time, so the full replace leaves it
+    nothing stale to hold).
+    """
+
+    field signal_key type="[SignalKey]::size(1)" {
+        key "6FrKacq7"
+        doc "Signal key echoed back."
+    }
+
+    field unit_refresh type="[UserUnitInfo]" {
+        key "4ceMWH6k"
+        doc "The COMPLETE roster, full-replace, carrying the unit's new fe_skill_info (Fnxab5CN), fe_bp and fe_used_bp.  Optional so a refusal never serialises an empty list."
         optional #true
     }
 }
@@ -3673,6 +3856,20 @@ json MysteryBoxClaimResp {
         doc "Complete positive inventory whenever the chest paid an item, material or sphere.  No Mystery Chest scene calls a client warehouse mutator and HomeInfo carries no warehouse; readParam @0x14060E0 clears first, so whole warehouse only."
         optional #true
     }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
+        optional #true
+    }
 
     field item_dictionary_info type="[UserItemDictionaryInfo]" {
         key "bd5Rj6pN"
@@ -3853,6 +4050,20 @@ json SlotActionResp {
         doc "Complete positive inventory whenever a pull paid an item, material or sphere.  No slot scene calls a client warehouse mutator and HomeInfo carries no warehouse; readParam @0x14060E0 clears first, so whole warehouse only."
         optional #true
     }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
+        optional #true
+    }
 
     field item_dictionary_info type="[UserItemDictionaryInfo]" {
         key "bd5Rj6pN"
@@ -3923,6 +4134,20 @@ json DailyLoginResp {
     field warehouse_info type="[UserWarehouseInfo]" {
         key "9wjrh74P"
         doc "Complete positive inventory whenever the spin paid an item.  No Daily Spin scene calls a client warehouse mutator and HomeInfo carries no warehouse; readParam @0x14060E0 clears first, so whole warehouse only."
+        optional #true
+    }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
         optional #true
     }
 

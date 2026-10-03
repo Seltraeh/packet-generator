@@ -262,6 +262,20 @@ json PresentReceiptResp {
         doc "Complete positive inventory after an item/material/sphere present (types 4/5/7).  UserWarehouseInfoResponse::readParam @0x14060E0 clears before adding, so this is always the whole warehouse."
         optional #true
     }
+    field item_favorite type="[ItemFavorite]" {
+        key "VSRPkdId"
+        doc """
+        The complete lock set, whenever this reply carries the warehouse.
+        GameResponseParser::parseBodyTag @0x139B3E8 re-derives every row's lock
+        from ItemFavoriteList (UserWarehouseInfoList::setFavorite) after BOTH
+        VSRPkdId and 9wjrh74P, so the two together settle on the server's set
+        in either order.  Without it, a copy the client locked under its craft
+        placeholder (INT_MAX - itemId) came back under its real id unlocked
+        until the next UserInfo.  A zero-row array never reaches readParam, so
+        an empty set changes nothing.
+        """
+        optional #true
+    }
 
     field item_dictionary_info type="[UserItemDictionaryInfo]" {
         key "bd5Rj6pN"

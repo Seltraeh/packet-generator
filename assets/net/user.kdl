@@ -131,13 +131,28 @@ json LoginInfoResp {
 
     field user_scenario_info type="str" {
         key "N4XVE1uA"
-        doc "TODO"
+        doc """
+        The client's own cutscene progress, echoed back so a fresh login
+        restores it.  UserInfoResponse::readParam @0x13FF340 hands the value
+        straight to UserScenarioInfoList::parse, which REPLACES the client's
+        list.  Per land (UserScenarioInfoList::getSaveStr @0x12A06A4):
+        "<eventId>,<eventType>@<areaEventId>@<landId>@<landEventDone>&",
+        then "|<viransilStart>,<viransilEnd>".
+
+        The client alone writes it -- DeckEdit, DungeonEventUpdate and a few
+        deck/chat requests upload it (BaseRequest::createDungeonEventUserInfoTag
+        @0x13A0B8C) -- so the server's copy can only be as new as the last
+        upload.  Optional so replies other than the login ones (MissionEnd)
+        can leave it OUT: an echo there re-parsed a stale copy over events the
+        player had just watched, and they played again after every clear.
+        """
+        optional #true
     }
 
-     // # TODO: this is UserScenarioInfoList we just dont have this yet
     field user_special_scenario_info type="str" {
         key "9yVsu21R"
-        doc "TODO"
+        doc "The one-off named intros the client has played (\"randall,frontiergate_v2,\"), UserSpecialScenarioInfoList.  Client-authored and uploaded with the same requests as N4XVE1uA; optional for the same reason."
+        optional #true
     }
 
     field first_desc type="str" {
@@ -827,7 +842,23 @@ json UserUnitInfo {
 
     field equipitem_frame_id type="i32::str" {
         key "0R3qTPK9"
-        doc "TODO"
+        doc """
+        SLOT 1's WAREHOUSE ROW: the item index (UserWarehouseInfo n6E8iMf3) of
+        the sphere copy equipped there, 0 when the slot is empty.  Not a sphere
+        type, despite the name.
+
+        BINARY-CONFIRMED (arm64 libgame.so):
+          * ItemSphereSelectScene::eqpSphere @0x1738980 writes the chosen copy's
+            index into it (setEquipItemFrameID, vtable +0x1d8);
+          * UserUnitInfoList::updateSphereEquipList @0x12BA7F8 keys the client's
+            "which unit wears this row" map on it, skipping "0";
+          * the sphere picker (setSphereList @0x172F0F8), the "equipped / total"
+            header (GameScene::getSphereNumString via getSphereEqpCount) and
+            GameUtils::decWarehouseItem all look warehouse rows up in that map.
+        So a sphere type here marks whichever row happens to have that index as
+        equipped, and the real copy as free.  The unit's slot ICON comes from
+        equipitem_id, never from this field (GameUtils::setEquipSphereIcon).
+        """
     }
 
     field equipitem_id type="i32::str" {
@@ -838,11 +869,18 @@ json UserUnitInfo {
     field equipitem_frame_id2 type="i32::str" {
         key "RXfC31FA"
         doc """
-        SLOT 2's SPHERE FRAME **AND** THE UNIT'S SPHERE CAPACITY.  Three-valued:
+        SLOT 2's WAREHOUSE ROW **AND** THE UNIT'S SPHERE CAPACITY.  Three-valued:
 
             -1     no second slot -- the client does not draw it at all
              0     slot present, empty
-          1..14    slot present, holding a sphere of that ItemMst.sphere_type
+            >0     slot present, holding the copy in that warehouse row
+
+        // CORRECTED 2026-10-02: the >0 case was documented as an ItemMst
+        // sphere_type (1..14).  It is the equipped copy's warehouse row, exactly
+        // as for slot 1 -- see equipitem_frame_id for the binary evidence.
+        // GameUtils::setEquipSphereIcon @0x118F344 reads this field only to
+        // compare it with "-1" (slot B drawn or not); the -1/0 sentinel below
+        // is unaffected by the correction.
 
         A unit is born with ONE slot; the second is granted only by fusing a
         Sphere Frog (unit 20302), which moves this field -1 -> 0.
@@ -973,22 +1011,42 @@ json UserUnitInfo {
 
     field fe_bp type="i32::str" {
         key "bFQbZh3x"
-        doc "TODO"
+        doc """
+        setFeBP -- the unit's UNSPENT enhancement SP (Omni "SP Enhancements").
+        GameUtils::mixFeBpCheck @0x1EC4C80 tests
+            fe_bp + <SP the selected materials give> + fe_used_bp
+        against fe_max_usable_bp (+ Omni Emperor cap), and the fusion material
+        screen greys out every SP-only material (Burst/Omni Frogs on a max-level
+        Omni unit) when that sum has no room -- so sending 0/0/0 here is what
+        made frogs unusable for SP (#25).  The fusion result adds fe_used_bp to
+        UnitOpeResult before/after_fe_bp for display (parseMixResult @0x1C18D6C),
+        so those two carry unspent SP too.  Global wiki, Unit Skills rev 656738:
+        10 SP to start, 100 at most.
+        """
     }
 
     field fe_used_bp type="i32::str" {
         key "3RgneFpP"
-        doc "TODO"
+        doc "setFeUsedBP -- SP already spent on enhancements (counts against fe_max_usable_bp together with fe_bp)."
     }
 
     field fe_max_usable_bp type="i32::str" {
         key "GIO9DTif"
-        doc "TODO"
+        doc "setFeMaxUsableBP -- the SP limit: 100 (Global wiki), raised by Omni+ Boost (unit_evo_omni_mst ddD4lsc1) and, at Omni+3, by Omni Emperors to 130 (checkElemUnit compares against 0x82)."
     }
 
     field fe_skill_info type="str" {
         key "Fnxab5CN"
-        doc "TODO"
+        doc """
+        setFeSkillInfo @0x12B7B14 — the unit's acquired SP enhancements.
+        Format, from the parser: groups joined by '/', each
+        `<category>@<skill>:<skill>...`; the categories land in the list
+        getFeCategory returns (helper-list icons), every skill id other than
+        "" or "0" in the list isFeSkill / getFeSkillInfoList read.  "" and "0"
+        mean none.  Categories are UnitFeSkillMst.category_id, skills
+        FeSkillMst ids.  Written by FeSkillGet, cleared by ShopUse type 9;
+        stored in user_units.fe_skill_info (30092026_UnitFeSkillInfo).
+        """
     }
 
 }
@@ -1266,7 +1324,7 @@ json UserWarehouseInfo {
 
     field instance_id type="u32::str" {
         key "n6E8iMf3"
-        doc "Warehouse row instance id (distinct from item_id).  The legacy ItemSphereEqp handler keys equips by this instance id; we use the user_items rowid."
+        doc "Warehouse row instance id (distinct from item_id): user_warehouse_rows.instance_id.  The client's getItemIndex; a unit's equipitem_frame_id/2 names the row of the sphere copy it wears by this id."
     }
 
     field item_id type="u32::str" {
@@ -1276,7 +1334,20 @@ json UserWarehouseInfo {
 
     field item_num type="u32::str" {
         key "wgV86x1q"
-        doc "Quantity held in this stack."
+        doc """
+        Quantity held in this stack.  AN EQUIPPED SPHERE COPY IS 1, not 0.
+
+        The client never changes a count when it equips or unequips: "equipped"
+        is only the unit's frame id naming this row (UserUnitInfo.
+        equipitem_frame_id).  And it reads equipped copies as ordinary rows --
+        the sphere picker skips a sphere row whose count is 0 (setSphereList
+        @0x172F264, getItemNum then cbz), decWarehouseItem protects the rows a
+        unit wears, and GameUtils::incWarehouseItem tops up any row below its
+        max stack, so a worn copy sent as 0 would vanish from the picker and
+        could even absorb the next crafted copy.  The server keeps
+        user_warehouse_rows.item_num 0 for a worn copy (user_items excludes it);
+        gme::loadWarehouseSnapshot puts 1 on the wire.
+        """
     }
 
     field new_flg type="i32::str" {

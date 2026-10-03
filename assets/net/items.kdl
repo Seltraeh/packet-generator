@@ -96,7 +96,31 @@ json ItemSphereEqpNode {
 
     field packed type="str" {
         key "a2utCvs8"
-        doc "Packed per-unit equip ops, comma-separated segments of wh1:wh2:user_unit_id:item_id1:item_id2.  wh1/wh2 are warehouse instance ids (informational); item_id1/2 are ItemMst ids for sphere slots 1/2, 0 = clear slot.  Captured (legacy handler comment): \"wx1ZLFj9\":[{\"a2utCvs8\":\"wh1:wh2:userUnitId:itemId1:itemId2[,...]\"}]."
+        doc """
+        Packed per-unit equip ops: comma-separated segments of
+        frame1:frame2:user_unit_id:item_id1:item_id2, one per unit the screen
+        changed (UserState::getChgUserUnitInfoList).
+
+        Each field is the unit's own string, copied verbatim -- createBody
+        @0x13A7054 calls UserUnitInfoBase::getEquipItemFrameID (vtable +0x1d0),
+        getEquipItemFrameID2 (+0x1f0), getUserUnitID (+0x30), getEquipItemID
+        (+0x1e0) and getEquipItemID2 (+0x200), resolved through the vtable's
+        relocations.  So a field holds whatever that string holds:
+
+          frame   the warehouse row (item index) of the copy in the slot, which
+                  ItemSphereSelectScene::eqpSphere @0x1738980 writes when the
+                  player picks one; an INT32_MAX - item placeholder for a copy the
+                  client crafted itself; "0" for an empty slot; "-1" for the
+                  second slot of a unit with no Sphere Frog (kNoSecondSphereSlot)
+          item    an ItemMst id, "0", or "" for an id the unit never held
+
+        The last forms are NOT rare: every unit without a Sphere Frog sends
+        frame2 "-1", and an unequip sends empty items.  Live captures:
+        "19:-1:1000:31000:0", "0:0:1000::", "0:-1:1000::,0:-1:1550::0".
+        The October 2 handler parsed every field as unsigned and refused all of
+        these silently, so equips on one-slot units never persisted and the next
+        HomeInfo unit rebuild took the sphere off the unit.
+        """
     }
 }
 
@@ -104,8 +128,9 @@ json ItemSphereEqpReq {
     doc """
     Equip/unequip spheres on units.  Wire root key wx1ZLFj9
     (ItemSphereEqpRequest::createBody).  Server updates user_units.eqip_item_id[2]
-    + eqip_item_frame_id[2] (frame = ItemMst.sphere_type) and adjusts user_items
-    counts.  Response is an empty ack (legacy-verified).
+    + eqip_item_frame_id[2] (frame = the equipped copy's warehouse row id; see
+    UserUnitInfo.equipitem_frame_id) and adjusts user_items counts.  Response is
+    an empty ack: the client has already applied the change to its own unit.
 
     SLOT 2 IS GATED on the unit having earned it from a Sphere Frog: the handler
     refuses an equip there and holds eqip_item_frame_id2 at the -1 "no slot"

@@ -354,7 +354,7 @@ json MissionEndReqMissionInfo {
 }
 
 json MissionReward {
-    doc "MissionRewardResponse (response key F5Vs19mb). Drives the 'Quest Clear Reward' screen and the post-mission level-up animation. All 19 fields decoded from MissionRewardResponse::readParam pseudocode at func_addr 0x13E3C34 in libgame.so (arm64 APK) via a private IDA audit. See gimuserver/gme/MissionEnd.cpp for the audit story."
+    doc "MissionRewardResponse (response key F5Vs19mb). Drives the 'Quest Clear Reward' screen and the post-mission level-up animation. All 19 fields decoded from MissionRewardResponse::readParam pseudocode at func_addr 0x13E3C34 in libgame.so (arm64 APK) via a private IDA audit. See gimuserver/gme/MissionEnd.cpp for the audit story.  SUPERSEDED: MissionEnd sends MissionRewardInfo (below), whose clear_mission_id / clear_dungeon_id / clear_area_id docs record the decoded first-clear-only semantics; the field notes here are the older reading."
 
     field clear_bonus type=str {
         key "92ms7J5M"
@@ -526,12 +526,32 @@ json MissionBreakInfo {
 // 5PR2VmH1 with the serial and the suspend blob.
 //
 // No MissionContinueResponse class exists in the binary, so this is an
-// acknowledge-and-refresh reply in the ShopUse mould: MissionGameOverScene::
-// loopContinue @0x17FB474 waits only for the request flag to clear, then calls
-// MissionScene::requestContinue and pops the scene.  Nothing client-side
+// acknowledge-and-refresh reply in the ShopUse mould.  Nothing client-side
 // deducts the gem -- UserTeamInfo has no setDia/decDia caller anywhere in the
 // binary -- so the charge is the server's, and team_info is the only way the
 // HUD learns about it.
+//
+// THE REPLY DECIDES THE REVIVAL.  When a request finishes, GameScene::update
+// @0x1601470 calls the scene's checkConnectResult (slot +0x310) before
+// clearing the in-flight bit; MissionGameOverScene inherits GameScene's, which
+// shows any error through checkResponseMessage.  With no error, loopContinue
+// @0x17FB474 calls MissionScene::requestContinue and pops the scene: an
+// ordinary reply IS the revival.  An error with GmeErrorCommand::Retry (2)
+// shows its message as notice -4000, and MissionGameOverScene::noticeOK
+// @0x17FB62C sends the scene back to initContinueConfirm -- the client's own
+// refusal path (Close would exit the app, ReturnToGame abandon the battle).
+// That the scene does not run loopContinue under the notice is inferred from
+// that handler, not traced through the scene manager.
+//
+// RETRY IDENTITY.  The body is built once (BaseRequest::create -> createBody)
+// and both retry paths re-send that same object (WrapAsyncHttpConnector::retry
+// @0x1005ED8 re-serialises it, NetworkManager::OnErrorRetryPressed @0xF5DCCC
+// re-sends the CCHttpRequest), so a retry repeats serial, status and blob byte
+// for byte; a later revival carries a new blob (turn counters, HP, logs).
+// There is no nonce: the signal key is the server's own echoed token and
+// F4q6i9xe.aV6cLn3v a per-process object counter handlers never see.  The
+// server keeps a receipt per run and revival (SHA-256 of "status:blob") in
+// user_mission_continue_receipts -- see gme/handlers/MissionBreak.cpp.
 
 json MissionContinueReq {
     doc "MissionContinue (p8B2i9rJ) request -- the revival tap, carrying the battle to be remembered."
@@ -558,7 +578,7 @@ json MissionContinueReq {
 }
 
 json MissionContinueResp {
-    doc "MissionContinue response.  No response class exists for it, so this carries only the refreshed header -- the gem the revival cost has already left the balance and team_info is the client's only way to see that."
+    doc "MissionContinue response, sent only for a revival the server accepted (or a repeat of one): the client revives on any ordinary reply.  No response class exists for it, so this carries only the refreshed header -- the gem the revival cost has already left the balance and team_info is the client's only way to see that.  A refused revival gets a GmeErrorCommand::Retry error instead."
 
     field signalKey type="[SignalKey]::size(1)" {
         key "6FrKacq7"
@@ -617,7 +637,17 @@ json MissionNumInfo {
 
     field serial_id type="u32::str" {
         key "k9cxD7Ba"
-        doc "Nonzero mission serial id stored by the client before battle starts."
+        doc """
+        The BATTLE's serial, not the mission id.  MissionNumResponse::readParam
+        @0x13E39C8 stores it (MissionInfo::setMissionSerialID) and the client
+        only ever echoes it: MissionEnd, MissionContinue and the raid requests
+        send it back, MissionScene::initBattle @0x18040AC seeds BattleState's
+        RNG from it, and the start scenes tag the saved battle files and helper
+        record with it; the mission travels separately
+        (UserState::getLastMissionID).  MissionStart issues a fresh one per
+        battle from 1000000001 up (gimuserver/gme/common/MissionRuns.hpp); a
+        value below that is the mission id an older server sent.
+        """
     }
 
     field drop_info type="str" {
@@ -790,17 +820,46 @@ json MissionRewardInfo {
 
     field clear_dungeon_id type="str" {
         key "4sQ8vBXm"
-        doc "setClearDungeonID @0x13E3E58; read by GameUtils::getAppearDungeon and MissionResultFriendRequestScene::changeNextScene."
+        doc """
+        The dungeon this result COMPLETED for the first time, else "".
+        setClearDungeonID @0x13E3E58.  MissionResultFriendRequestScene::
+        changeNextScene @0x18C301C plays that dungeon's end script whenever
+        GameUtils::existDungeonEvent(id, "1") holds (map1-ending.txt on dungeon
+        80), with no once-only check, and GameUtils::getAppearDungeon @0x1196FE4
+        animates DungeonMstList::getNext of it on the dungeon list.  "" is the
+        client's own empty value: GameUtils::deleteAppearDungeon @0x1197188
+        writes it after the animation.  MissionRewardInfo::init leaves the field
+        alone, so an omitted key keeps the PREVIOUS result's id.
+        """
     }
 
     field clear_area_id type="str" {
         key "NgPQbA46"
-        doc "setClearAreaID @0x13E3EFC; read by MissionResultFriendRequestScene::changeNextScene and CoopRaidResultScene::initialize."
+        doc """
+        The area of a first clear that OPENED another story area (85 -> Morgan),
+        else "0".  setClearAreaID @0x13E3EFC; read by changeNextScene and
+        CoopRaidResultScene::initialize.  Anything but the one-character "0" --
+        an empty string included -- makes changeNextScene reset UserState's last
+        area (setLastAreaID("")), so the map opens on the new area; "0" is the
+        only neutral value.
+        """
     }
 
     field clear_mission_id type="u32::str" {
         key "mauD5qZ1"
-        doc "setClearMissionID @0x13E3FA0; read by MissionResultFriendRequestScene::changeNextScene."
+        doc """
+        The mission this result cleared for the FIRST time, else 0.
+        setClearMissionID @0x13E3FA0; read only by changeNextScene, which
+        offers the Randall presentation for "12" and otherwise PLAYS the
+        mission's end script whenever GameUtils::existMissionEvent(id, "1")
+        holds -- unconditionally, so a repeat clear must not name it.  Mission
+        10's script (map1-dungeon0-1end.txt, the Farm announcement) ends on
+        script op 41 = 0: return point 0, which MissionEventScene::updateEvent
+        maps to HomeScene2.  Sending it on every clear replayed that scene and
+        sent the player Home after each repeat (2026-10-02).  Mission row 0
+        has no script, so 0 is neutral.  With all three ids neutral a story
+        result goes to scene 61, DungeonSelectScene2 (the area's dungeon list).
+        """
     }
 
     field reward_units type="str" {
